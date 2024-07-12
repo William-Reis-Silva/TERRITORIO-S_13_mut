@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/index.css" />
+    <title>Editar</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script src="js/Firebaseconfig.js"></script>
+  </head>
+  <body>
+    <body>
+  <h1>Registro de Dados</h1>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Mapa</th>
+        <th>Bairro</th>
+        <th>Designado Para</th>
+        <th>Data de Início</th>
+        <th>Data de Conclusão</th>
+        <th>Status</th>
+        <th>Ação</th>
+      </tr>
+    </thead>
+    <tbody id="corpoTabela">
+      <!-- Dados serão carregados aqui -->
+    </tbody>
+  </table>
+
+  <!-- Formulário de Edição -->
+  <div id="formEdicao" style="display:none;">
+    <label for="data_conclusao_edit">Data de Conclusão:</label>
+    <input type="date" id="data_conclusao_edit">
+    <button onclick="salvarEdicao()">Salvar</button>
+    <button onclick="document.getElementById('formEdicao').style.display='none'">Cancelar</button>
+  </div>
+
+  <script src="js/editar.js"></script>
+ 
+
+  </body>
+</html>

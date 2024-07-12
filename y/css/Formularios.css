@@ -1,0 +1,150 @@
+/* Estilize o contêiner para controlar o posicionamento */
+#icone-container {
+    position: relative; /* Torna o posicionamento relativo ao seu contêiner pai */
+}
+
+/* Estilize o ícone */
+#icone {
+    position: absolute; /* Posiciona o ícone absolutamente dentro do seu contêiner */
+    top: 10px; /* Ajuste conforme necessário */
+    left: 10px; /* Ajuste conforme necessário */
+}
+
+/* Estilos para dispositivos com largura de tela maior que 600px */
+@media screen and (min-width: 730px) {
+    /* Estilos para os botões */
+    button {
+        padding: 5px 10px;
+        font-size: 16px;
+    }
+    #box {
+    position: relative;
+    padding-left: 30px; 
+    width: 500px;
+    margin: 0 auto;
+    height: 80vh;
+    padding: 10px;
+    text-align: center;
+    background-color: #33629e;
+    border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border: 2px solid #3498db;
+}
+#icone {
+  width: 120px;
+  height:120px;
+}
+#numero_mapa{
+    width: 100px;
+}
+input,select {
+
+    width: 400px;
+    height: 30px;
+    border: 2px solid #3498db;
+    text-align: center;
+    color: #1e2f68;
+    border-radius: 7px;
+} 
+
+
+}
+
+/* Estilos para dispositivos com largura de tela menor ou igual a 600px */
+@media screen and (max-width: 730px) {
+    /* Estilos para os botões */
+    button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    /* Estilos para o título */
+    h1 {
+        font-size: 24px;
+    }
+     #box {
+    position: relative;
+    width: 90vw;
+    margin: 0 auto;
+    height: 80vh;
+    padding: 5px;
+    text-align: center;
+    background-color: #33629e;
+    border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border: 2px solid #3498db;
+}
+#numero_mapa{
+    width: 50px;
+}
+#icone {
+  width: 100px;
+  height: 100px;
+}
+input,select{
+
+    width: 80vw;
+    height: 30px;
+    border: 2px solid #3498db;
+    text-align: center;
+    color: #1e2f68;
+    border-radius: 7px;
+} 
+
+}
+
+/* Estilos gerais */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #253875;
+    color: white;
+}
+h1{ text-align: center;}
+
+
+#app button {
+    margin: 0 5px; /* Adiciona margem aos botões */
+}
+
+
+/* Estilize o botão */
+button {
+    background-color: #007bff;
+    color: white;
+
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1); /* Adiciona uma sombra sutil */
+    transition: transform 0.3s, box-shadow 0.3s; /* Adiciona uma transição suave */
+}
+
+/* Efeito hover */
+button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px); /* Move o botão para cima */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); /* Aumenta a sombra para dar a sensação de profundidade */
+}
+.sucesso {
+    color: green;
+    font-weight: bold;
+    text-align: center;
+}
+#box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#box > div {
+  margin: 5px;
+}
+h2{display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+}
