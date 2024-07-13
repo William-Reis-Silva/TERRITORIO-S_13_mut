@@ -1,6 +1,6 @@
+var database = firebase.database();
 // Adicione um ouvinte de eventos ao campo "numero_mapa"
-document
-  .getElementById("numero_mapa")
+document.getElementById("numero_mapa")
   .addEventListener("change", function (event) {
     var numeroMapa = event.target.value;
     var database = firebase.database();
