@@ -1,3 +1,4 @@
+var registroAtual = null;
 
 function converterData(data) {
   if (!data) return "";
@@ -9,36 +10,8 @@ function determinarStatus(dataConclusao) {
   return dataConclusao === "" ? "Em andamento" : "Concluído";
 }
 
-function exibirFormularioEdicao(registro) {
-  var modal = document.getElementById("myModal");
-  var span = document.getElementsByClassName("close")[0];
-
-  document.getElementById("numero_mapa_edit").value = registro.numeroMapa;
-  document.getElementById("bairro_edit").value = registro.bairro;
-  document.getElementById("designado_para_edit").value = registro.designadoPara;
-  document.getElementById("data_inicio_edit").value = registro.dataInicio;
-  document.getElementById("data_conclusao_edit").value = registro.dataConclusao;
-
-  registroAtual = registro;
-
-  modal.style.display = "block";
-
-  span.onclick = function () {
-    modal.style.display = "none";
-  };
-
-  window.onclick = function (event) {
-    if (event.target == modal) {
-      modal.style.display = "none";
-    }
-  };
-}
-
-var registroAtual = null;
-
 function carregarDados() {
-  var ano = new Date().getFullYear();
-  var tabelaRef = firebase.database().ref(`Registro_S_13/Ano/${ano}/Bairros`);
+  var tabelaRef = firebase.database().ref("Bairros");
 
   tabelaRef.once("value", function (snapshot) {
     var corpoTabela = document.getElementById("corpoTabela");
@@ -52,11 +25,10 @@ function carregarDados() {
 
       mapasSnapshot.forEach(function (mapaSnapshot) {
         var numeroMapa = mapaSnapshot.key;
-        mapaSnapshot.forEach(function (registroSnapshot) {
+        var historicoSnapshot = mapaSnapshot.child("historico");
+
+        historicoSnapshot.forEach(function (registroSnapshot) {
           var item = registroSnapshot.val();
-          if (!item || registroSnapshot.key === "R0") {
-            return;
-          }
           item.id = registroSnapshot.key;
           item.bairro = bairro;
           item.numeroMapa = numeroMapa;
@@ -97,9 +69,6 @@ function carregarDados() {
 
       if (status === "Em andamento") {
         newRow.classList.add("status-andamento");
-      }
-
-      if (status === "Em andamento") {
         cellStatus.classList.add("status-andamento");
       } else {
         cellStatus.classList.add("status-concluido");
@@ -114,24 +83,43 @@ function carregarDados() {
   });
 }
 
+function exibirFormularioEdicao(registro) {
+  var modal = document.getElementById("myModal");
+  var span = document.getElementsByClassName("close")[0];
+
+  document.getElementById("numero_mapa_edit").value = registro.numeroMapa;
+  document.getElementById("bairro_edit").value = registro.bairro;
+  document.getElementById("designado_para_edit").value = registro.designadoPara;
+  document.getElementById("data_inicio_edit").value = registro.dataInicio;
+  document.getElementById("data_conclusao_edit").value = registro.dataConclusao;
+
+  registroAtual = registro;
+
+  modal.style.display = "block";
+
+  span.onclick = function () {
+    modal.style.display = "none";
+  };
+
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+}
+
 function salvarEdicao() {
   if (registroAtual) {
     var registroAtualizado = {
-      ...registroAtual,
-      numeroMapa: document.getElementById("numero_mapa_edit").value,
-      bairro: document.getElementById("bairro_edit").value,
-      designadoPara: document.getElementById("designado_para_edit").value,
       dataInicio: document.getElementById("data_inicio_edit").value,
       dataConclusao: document.getElementById("data_conclusao_edit").value,
+      designadoPara: document.getElementById("designado_para_edit").value,
     };
 
-    delete registroAtualizado.id;
-    delete registroAtualizado.numeroMapa;
-    delete registroAtualizado.bairro;
-
-    var registroRef = firebase
-      .database()
-      .ref(`Registro_S_13/Ano/${new Date().getFullYear()}/Bairros/${registroAtual.bairro}/Mapas/${registroAtual.numeroMapa}/${registroAtual.id}`);
+    var database = firebase.database();
+    var registroRef = database.ref(
+      `Bairros/${registroAtual.bairro}/Mapas/${registroAtual.numeroMapa}/historico/${registroAtual.id}`
+    );
 
     registroRef.update(registroAtualizado, function (error) {
       if (error) {
@@ -139,8 +127,8 @@ function salvarEdicao() {
       } else {
         console.log("Registro atualizado com sucesso");
         carregarDados();
-        var formEdicao = document.getElementById("formEdicao");
-        formEdicao.style.display = "none";
+        var modal = document.getElementById("myModal");
+        modal.style.display = "none";
       }
     });
   }
@@ -148,9 +136,10 @@ function salvarEdicao() {
 
 function deletarRegistro() {
   if (registroAtual) {
-    var registroRef = firebase
-      .database()
-      .ref(`Registro_S_13/Ano/${new Date().getFullYear()}/Bairros/${registroAtual.bairro}/Mapas/${registroAtual.numeroMapa}/${registroAtual.id}`);
+    var database = firebase.database();
+    var registroRef = database.ref(
+      `Bairros/${registroAtual.bairro}/Mapas/${registroAtual.numeroMapa}/historico/${registroAtual.id}`
+    );
 
     registroRef.remove(function (error) {
       if (error) {
@@ -158,8 +147,8 @@ function deletarRegistro() {
       } else {
         console.log("Registro deletado com sucesso");
         carregarDados();
-        var formEdicao = document.getElementById("formEdicao");
-        formEdicao.style.display = "none";
+        var modal = document.getElementById("myModal");
+        modal.style.display = "none";
       }
     });
   }
