@@ -12,8 +12,10 @@ document
         var mapas = childSnapshot.val().Mapas;
 
         for (var key in mapas) {
-          if (mapas.hasOwnProperty(key) && mapas[key] == parseInt(numeroMapa)) {
-            console.log("O mapa " + numeroMapa + " pertence ao bairro: " + bairro);
+          if (mapas.hasOwnProperty(key) && key == numeroMapa) {
+            console.log(
+              "O mapa " + numeroMapa + " pertence ao bairro: " + bairro
+            );
             document.getElementById("bairro").value = bairro;
             return;
           }
@@ -30,9 +32,13 @@ document.getElementById("Salvar").addEventListener("click", function (event) {
   var dataInicio = document.getElementById("data_inicio").value.trim();
   var dataConclusao = document.getElementById("data_conclusao").value.trim();
   var bairro = document.getElementById("bairro").value.trim();
-  var ano = new Date(dataInicio).getFullYear();
 
-  if (numeroMapa === '' || designadoPara === '' || dataInicio === '' || bairro === '') {
+  if (
+    numeroMapa === "" ||
+    designadoPara === "" ||
+    dataInicio === "" ||
+    bairro === ""
+  ) {
     alert("Por favor, preencha todos os campos do formulário.");
     return;
   }
@@ -40,13 +46,17 @@ document.getElementById("Salvar").addEventListener("click", function (event) {
   var dadosFormulario = {
     dataInicio: dataInicio,
     dataConclusao: dataConclusao,
-    designadoPara: designadoPara
+    designadoPara: designadoPara,
   };
 
   var database = firebase.database();
-  var referencia = database.ref(`Registro_S_13/Ano/${ano}/Bairros/${bairro}/Mapas/${numeroMapa}`);
+  var referenciaHistorico = database.ref(
+    `Bairros/${bairro}/Mapas/${numeroMapa}/historico`
+  );
 
-  referencia.push(dadosFormulario)
+  // Atualizar o histórico
+  referenciaHistorico
+    .push(dadosFormulario)
     .then(function () {
       console.log("Dados salvos com sucesso no Firebase Realtime Database.");
       document.getElementById("numero_mapa").value = "";
