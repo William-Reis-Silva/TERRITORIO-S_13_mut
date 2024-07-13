@@ -1,167 +1,165 @@
-/** @format */
-function exibirFormularioEdicao(registro) {
-  var modal = document.getElementById("myModal");
-  var span = document.getElementsByClassName("close")[0];
+ var registroAtual = null;
 
-  // Preenche os campos do formulário com os dados do registro
-  document.getElementById("numero_mapa_edit").value = registro.Mapa;
-  document.getElementById("bairro_edit").value = registro.bairros;
-  document.getElementById("designado_para_edit").value = registro.designadoPara;
-  document.getElementById("data_inicio_edit").value = registro.dataInicio;
-  document.getElementById("data_conclusao_edit").value = registro.dataConclusao;
-
-  registroAtual = registro; // Armazena o registro atual
-
-  // Exibe o modal
-  modal.style.display = "block";
-
-  // Fecha o modal quando o usuário clica no botão de fechar
-  span.onclick = function () {
-    modal.style.display = "none";
-  };
-
-  // Fecha o modal quando o usuário clica em qualquer lugar fora do modal
-  window.onclick = function (event) {
-    if (event.target == modal) {
-      modal.style.display = "none";
+    function converterData(data) {
+      if (!data) return "";
+      var partes = data.split("-");
+      return partes[2] + "/" + partes[1] + "/" + partes[0];
     }
-  };
-}
 
-var registroAtual = null; // Variável global para armazenar o registro atual
+    function determinarStatus(dataConclusao) {
+      return dataConclusao === "" ? "Em andamento" : "Concluído";
+    }
 
-function converterData(data) {
-  var partes = data.split("-");
-  return partes[2] + "/" + partes[1] + "/" + partes[0];
-}
+    function carregarDados() {
+      var tabelaRef = firebase.database().ref("Bairros");
 
-function determinarStatus(dataConclusao) {
-  return dataConclusao === "" ? "Em andamento" : "Concluído";
-}
+      tabelaRef.once("value", function (snapshot) {
+        var corpoTabela = document.getElementById("corpoTabela");
+        corpoTabela.innerHTML = "";
 
-function carregarDados() {
-  var tabelaRef = firebase.database().ref("`Registro_S_13/Ano/${ano}/Bairros/${bairro}/Mapas/Mapa ${numeroMapa}`");
+        var dados = [];
 
-  tabelaRef.once("value", function (snapshot) {
-    var corpoTabela = document.getElementById("corpoTabela");
-    corpoTabela.innerHTML = ""; // Limpa a tabela antes de adicionar novos dados
+        snapshot.forEach(function (bairroSnapshot) {
+          var bairro = bairroSnapshot.key;
+          var mapasSnapshot = bairroSnapshot.child("Mapas");
 
-    var dados = [];
+          mapasSnapshot.forEach(function (mapaSnapshot) {
+            var numeroMapa = mapaSnapshot.key;
+            var historicoSnapshot = mapaSnapshot.child("historico");
 
-    snapshot.forEach(function (childSnapshot) {
-      var item = childSnapshot.val();
-      item.id = childSnapshot.key; // Adiciona a chave do Firebase como id do item
-      dados.push(item);
-    });
+            historicoSnapshot.forEach(function (registroSnapshot) {
+              var item = registroSnapshot.val();
+              item.id = registroSnapshot.key;
+              item.bairro = bairro;
+              item.numeroMapa = numeroMapa;
+              dados.push(item);
+            });
+          });
+        });
 
-    // Ordenar os dados com base na data
-    dados.sort(function (a, b) {
-      var dataA = new Date(a.dataInicio);
-      var dataB = new Date(b.dataInicio);
-      return dataB - dataA; // Ordena do último para o primeiro
-    });
+        dados.sort(function (a, b) {
+          var statusA = determinarStatus(a.dataConclusao);
+          var statusB = determinarStatus(b.dataConclusao);
 
-    // Adicionar os dados ordenados na tabela
-    dados.forEach(function (item) {
-      var newRow = corpoTabela.insertRow();
+          if (statusA === "Em andamento" && statusB === "Concluído") return -1;
+          if (statusA === "Concluído" && statusB === "Em andamento") return 1;
 
-      var cellMapa = newRow.insertCell(0);
-      var cellBairro = newRow.insertCell(1);
-      var cellDesignado = newRow.insertCell(2);
-      var cellInicio = newRow.insertCell(3);
-      var cellConclusao = newRow.insertCell(4);
-      var cellstatus = newRow.insertCell(5);
+          var dataA = new Date(a.dataInicio);
+          var dataB = new Date(b.dataInicio);
+          return dataB - dataA;
+        });
 
-      cellMapa.innerHTML = item.numeroMapa;
-      cellBairro.innerHTML = item.bairro;
-      cellDesignado.innerHTML = item.designadoPara;
-      cellInicio.innerHTML = converterData(item.dataInicio); // Converter a data
-      cellConclusao.innerHTML = converterData(item.dataConclusao); // Converter a data
+        dados.forEach(function (item) {
+          var newRow = corpoTabela.insertRow();
 
-      // Determinar o status com base na data de conclusão
-      var status = determinarStatus(item.dataConclusao);
+          var cellMapa = newRow.insertCell(0);
+          var cellBairro = newRow.insertCell(1);
+          var cellDesignado = newRow.insertCell(2);
+          var cellInicio = newRow.insertCell(3);
+          var cellConclusao = newRow.insertCell(4);
+          var cellStatus = newRow.insertCell(5);
 
-      // Adicionar a classe CSS ao status para torná-lo visualmente mais claro
-      if (status === "Em andamento") {
-        cellstatus.classList.add("status-andamento");
-      } else {
-        cellstatus.classList.add("status-concluido");
-      }
+          cellMapa.innerHTML = item.numeroMapa;
+          cellBairro.innerHTML = item.bairro;
+          cellDesignado.innerHTML = item.designadoPara;
+          cellInicio.innerHTML = converterData(item.dataInicio);
+          cellConclusao.innerHTML = converterData(item.dataConclusao);
 
-      cellstatus.innerHTML = status;
+          var status = determinarStatus(item.dataConclusao);
 
-      // Adicionar evento de duplo clique para cada linha
-      newRow.ondblclick = function () {
-        exibirFormularioEdicao(item);
+          if (status === "Em andamento") {
+            newRow.classList.add("status-andamento");
+            cellStatus.classList.add("status-andamento");
+          } else {
+            cellStatus.classList.add("status-concluido");
+          }
+
+          cellStatus.innerHTML = status;
+
+          newRow.ondblclick = function () {
+            exibirFormularioEdicao(item);
+          };
+        });
+      });
+    }
+
+    function exibirFormularioEdicao(registro) {
+      var modal = document.getElementById("myModal");
+      var span = document.getElementsByClassName("close")[0];
+
+      document.getElementById("numero_mapa_edit").value = registro.numeroMapa;
+      document.getElementById("bairro_edit").value = registro.bairro;
+      document.getElementById("designado_para_edit").value = registro.designadoPara;
+      document.getElementById("data_inicio_edit").value = registro.dataInicio;
+      document.getElementById("data_conclusao_edit").value = registro.dataConclusao;
+
+      registroAtual = registro;
+
+      modal.style.display = "block";
+
+      span.onclick = function () {
+        modal.style.display = "none";
       };
-    });
-  });
-}
 
-function exibirFormularioEdicao(registro) {
-  var formEdicao = document.getElementById("formEdicao");
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+    }
 
-  // Preenche os campos do formulário com os dados do registro
-  document.getElementById("numero_mapa_edit").value = registro.numeroMapa;
-  document.getElementById("bairro_edit").value = registro.bairro;
-  document.getElementById("designado_para_edit").value = registro.designadoPara;
-  document.getElementById("data_inicio_edit").value = registro.dataInicio;
-  document.getElementById("data_conclusao_edit").value = registro.dataConclusao;
+    function salvarEdicao() {
+      if (registroAtual) {
+        var dataInicioEdit = document.getElementById("data_inicio_edit").value;
+        var dataConclusaoEdit = document.getElementById(
+          "data_conclusao_edit"
+        ).value;
 
-  registroAtual = registro; // Armazena o registro atual
+        var registroAtualizado = {
+          dataInicio: dataInicioEdit,
+          dataConclusao: dataConclusaoEdit,
+          designadoPara: document.getElementById("designado_para_edit").value,
+        };
 
-  // Exibe o formulário de edição
-  formEdicao.style.display = "block";
-}
+        var status = determinarStatus(dataConclusaoEdit);
 
-function salvarEdicao() {
-  var dataConclusaoEdit = document.getElementById("data_conclusao_edit").value;
-
-  if (registroAtual) {
-    // Atualiza a data de conclusão do registro atual
-    var registroAtualizado = {
-      ...registroAtual,
-      dataConclusao: dataConclusaoEdit,
-    };
-
-    // Referência ao registro no Firebase
-    var registroRef = firebase
-      .database()
-      .ref("`Registro_S_13/Ano/${ano}/Bairros/${bairro}/Mapas/Mapa ${numeroMapa}`/" + registroAtual.id);
-
-    // Salva as alterações no Firebase
-    registroRef.update(registroAtualizado, function (error) {
-      if (error) {
-        console.error("Erro ao atualizar o registro:", error);
-      } else {
-        console.log("Registro atualizado com sucesso");
-        carregarDados(); // Recarrega os dados na tabela
-        var formEdicao = document.getElementById("formEdicao");
-        formEdicao.style.display = "none"; // Oculta o formulário de edição
+        var database = firebase.database();
+        var registroRef = database.ref(
+          `Bairros/${registroAtual.bairro}/Mapas/${registroAtual.numeroMapa}/historico}`
+        );
+        registroRef.update(registroAtualizado, function (error) {
+          if (error) {
+            console.error("Erro ao atualizar o registro:", error);
+          } else {
+            statusRef.set(status, function (statusError) {
+              if (statusError) {
+                console.error("Erro ao atualizar o status:", statusError);
+              } else {
+                console.log("Registro e status atualizados com sucesso");
+                carregarDados();
+                var modal = document.getElementById("myModal");
+                modal.style.display = "none";
+              }
+            });
+          }
+        });
       }
-    });
-  }
-}
+    }
 
-function deletarRegistro() {
-  if (registroAtual) {
-    var registroRef = firebase
-      .database()
-      .ref("`Registro_S_13/Ano/${ano}/Bairros/${bairro}/Mapas/Mapa ${numeroMapa}`/" + registroAtual.id);
+    function deletarRegistro() {
+      if (registroAtual) {
+        var database = firebase.database();
+        var registroRef = database.ref(`Bairros/${registroAtual.bairro}/Mapas/${registroAtual.numeroMapa}/historico/${registroAtual.id}`);
 
-    registroRef.remove(function (error) {
-      if (error) {
-        console.error("Erro ao deletar o registro:", error);
-      } else {
-        console.log("Registro deletado com sucesso");
-        carregarDados(); // Recarrega os dados na tabela
-        var formEdicao = document.getElementById("formEdicao");
-        formEdicao.style.display = "none"; // Oculta o formulário de edição
+        registroRef.remove(function (error) {
+          if (error) {
+            console.error("Erro ao deletar o registro:", error);
+          } else {
+            console.log("Registro deletado com sucesso");
+            carregarDados();
+            var modal = document.getElementById("myModal");
+            modal.style.display = "none";
+          }
+        });
       }
-    });
-  }
-}
-
-window.onload = function () {
-  carregarDados();
-};
+    }
