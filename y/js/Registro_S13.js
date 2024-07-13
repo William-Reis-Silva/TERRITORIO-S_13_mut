@@ -48,26 +48,28 @@ document.getElementById("Salvar").addEventListener("click", function (event) {
     dataConclusao: dataConclusao,
     designadoPara: designadoPara,
   };
-
-  var database = firebase.database();
-  var referenciaHistorico = database.ref(
-    `Bairros/${bairro}/Mapas/${numeroMapa}/historico`
+var referenciaHistorico = database.ref(
+  `Bairros/${bairro}/Mapas/${numeroMapa}/historico`
+);
+  // Verificar o caminho gerado e os dados que serão salvos
+  console.log(
+    `Salvando dados em: Bairros/${bairro}/Mapas/${numeroMapa}/historico`
   );
+  console.log(dadosFormulario);
 
-  // Atualizar o histórico
-  referenciaHistorico
-    .push(dadosFormulario)
-    .then(function () {
-      console.log("Dados salvos com sucesso no Firebase Realtime Database.");
+  // Use push() para adicionar um novo item ao histórico
+  referenciaHistorico.push(dadosFormulario, function (error) {
+    if (error) {
+      console.error("Erro ao salvar os dados: ", error);
+      alert("Erro ao salvar os dados.");
+    } else {
+      alert("Dados salvos com sucesso!");
+      // Limpar o formulário após salvar
       document.getElementById("numero_mapa").value = "";
       document.getElementById("designado_para").value = "";
       document.getElementById("data_inicio").value = "";
       document.getElementById("data_conclusao").value = "";
       document.getElementById("bairro").value = "";
-      alert("Dados salvos com sucesso!");
-    })
-    .catch(function (error) {
-      console.error("Erro ao salvar os dados:", error);
-      alert("Erro ao salvar os dados. Por favor, tente novamente.");
-    });
+    }
+  });
 });
