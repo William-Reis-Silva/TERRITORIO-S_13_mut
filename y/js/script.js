@@ -1,87 +1,105 @@
+document.addEventListener("DOMContentLoaded", function () {
+  var database = firebase.database();
+  const startDate = new Date(2023, 8, 1); // Setembro 1, 2023
+  const endDate = new Date(2024, 7, 31); // Agosto 31, 2024
 
-async function extrairDados() {
-  const ref = firebase.database().ref('Bairros');
-  const snapshot = await ref.once('value');
-  return snapshot.val();
-}
+  function analisarConclusoes(data, startDate, endDate) {
+    const detalhesBairro = {};
 
-async function processarDados() {
-  const dados = await extrairDados();
-  const registros = [];
+    Object.keys(data).forEach((bairro) => {
+      detalhesBairro[bairro] = {};
+      const bairroData = data[bairro].Mapas;
 
-  for (const bairro in dados) {
-    if (dados.hasOwnProperty(bairro)) {
-      const mapas = dados[bairro].Mapas;
-      for (const numeroMapa in mapas) {
-        if (mapas.hasOwnProperty(numeroMapa)) {
-          const historico = mapas[numeroMapa].historico;
-          for (const idHistorico in historico) {
-            if (historico.hasOwnProperty(idHistorico)) {
-              const detalhes = historico[idHistorico];
-              registros.push({
-                Bairro: bairro,
-                NumeroMapa: numeroMapa,
-                IdHistorico: idHistorico,
-                DataInicio: detalhes.dataInicio || '',
-                DataConclusao: detalhes.dataConclusao || '',
-                DesignadoPara: detalhes.designadoPara || ''
-              });
+      Object.keys(bairroData).forEach((mapaId) => {
+        detalhesBairro[bairro][mapaId] = 0;
+        const mapaInfo = bairroData[mapaId];
+
+        if (mapaInfo.historico) {
+          Object.values(mapaInfo.historico).forEach((hist) => {
+            const dataInicio = hist.dataInicio
+              ? new Date(hist.dataInicio)
+              : null;
+            const dataConclusao = hist.dataConclusao
+              ? new Date(hist.dataConclusao)
+              : null;
+
+            if (
+              dataInicio &&
+              dataConclusao &&
+              startDate <= dataInicio &&
+              dataInicio <= endDate &&
+              startDate <= dataConclusao &&
+              dataConclusao <= endDate
+            ) {
+              detalhesBairro[bairro][mapaId] += 1;
             }
-          }
+          });
         }
-      }
-    }
+      });
+    });
+
+    return detalhesBairro;
   }
-  return registros;
-}
 
-async function gerarGrafico() {
-  const dados = await processarDados();
-  const statusPorBairro = dados.reduce((acc, curr) => {
-    const bairro = curr.Bairro;
-    const status = curr.DataConclusao ? 'Concluído' : 'Em Aberto';
-    if (!acc[bairro]) {
-      acc[bairro] = { 'Concluído': 0, 'Em Aberto': 0 };
-    }
-    acc[bairro][status]++;
-    return acc;
-  }, {});
+  function converterParaDataFrame(detalhesBairro) {
+    const data = [];
 
-  const labels = Object.keys(statusPorBairro);
-  const concluidoData = labels.map(label => statusPorBairro[label].Concluído);
-  const emAbertoData = labels.map(label => statusPorBairro[label]['Em Aberto']);
+    Object.keys(detalhesBairro).forEach((bairro) => {
+      Object.keys(detalhesBairro[bairro]).forEach((mapaId) => {
+        const conclusoes = detalhesBairro[bairro][mapaId];
+        data.push({
+          Bairro: bairro,
+          "Mapa ID": mapaId,
+          Conclusões: conclusoes,
+        });
+      });
+    });
 
-  const ctx = document.getElementById('statusChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: 'Concluído',
-          data: concluidoData,
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        },
-        {
-          label: 'Em Aberto',
-          data: emAbertoData,
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          borderColor: 'rgba(255, 99, 132, 1)',
-          borderWidth: 1
-        }
-      ]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
-  });
-}
+    return data;
+  }
 
-// Chame a função para gerar o gráfico quando a página carregar
-window.onload = gerarGrafico;
+  function fetchMapData() {
+    return database
+      .ref("Bairros")
+      .once("value")
+      .then((snapshot) => snapshot.val());
+  }
+
+  fetchMapData()
+    .then((data) => {
+      const detalhesBairro = analisarConclusoes(data, startDate, endDate);
+      const dfDetalhesBairro = converterParaDataFrame(detalhesBairro);
+
+      // Exibir a tabela
+      const tableContainer = document.getElementById("table-container");
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+
+      // Add headers
+      const headers = ["Bairro", "Mapa ID", "Conclusões"];
+      const tr = document.createElement("tr");
+      headers.forEach((header) => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+
+      // Add rows
+      dfDetalhesBairro.forEach((row) => {
+        const tr = document.createElement("tr");
+        headers.forEach((header) => {
+          const td = document.createElement("td");
+          td.textContent = row[header];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      tableContainer.appendChild(table);
+    })
+    .catch((error) => console.error("Error fetching data:", error));
+});

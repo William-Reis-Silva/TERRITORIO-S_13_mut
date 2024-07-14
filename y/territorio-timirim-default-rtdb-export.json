@@ -1,0 +1,496 @@
+{
+  "Bairros": {
+    "Alto Serenata": {
+      "Mapas": {
+        "33": {
+          "historico": {
+            "-O1iWb7BmYmrfSLXNPQd": {
+              "dataConclusao": "",
+              "dataInicio": "2024-07-13",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 33"
+        }
+      }
+    },
+    "Alto Timirim": {
+      "Mapas": {
+        "1": {
+          "historico": {
+            "-NuHMmAmeZCd0RlY21zl": {
+              "dataConclusao": "2024-03-28",
+              "dataInicio": "2024-03-26",
+              "designadoPara": "Congregação"
+            },
+            "-O1iU04iQpWujVv0XWfa": {
+              "dataConclusao": "2024-07-13",
+              "dataInicio": "2024-07-13",
+              "designadoPara": "Grupo Timirim"
+            }
+          },
+          "id": "Mapa 1"
+        },
+        "2": {
+          "historico": {
+            "-NuHMq9XhohzX4v_OiYv": {
+              "dataConclusao": "2024-03-30",
+              "dataInicio": "2024-03-29",
+              "designadoPara": "Congregação"
+            },
+            "-NyBq7XrMd6GCI6HHg9D": {
+              "dataConclusao": "2024-05-24",
+              "dataInicio": "2024-04-01",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 2"
+        }
+      }
+    },
+    "Coqueiro": {
+      "Mapas": {
+        "12": {
+          "id": "Mapa 12"
+        }
+      }
+    },
+    "Córrego do caçador": {
+      "Mapas": {
+        "26": {
+          "historico": {
+            "-O0yfQCWy11Xs-kDv-_U": {
+              "dataConclusao": "2023-05-13",
+              "dataInicio": "2023-05-10",
+              "designadoPara": "Congregação"
+            },
+            "-Ny4v8Ya27DWiHRGOM9W": {
+              "dataConclusao": "2024-04-16",
+              "dataInicio": "2024-04-01",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 26"
+        },
+        "27": {
+          "id": "Mapa 27"
+        }
+      }
+    },
+    "Eldorado": {
+      "Mapas": {
+        "39": {
+          "historico": {
+            "-O1eIgQ9U13oxCbuwE2T": {
+              "dataConclusao": "2023-04-09",
+              "dataInicio": "2023-01-01",
+              "designadoPara": "Grupo Eldorado"
+            }
+          },
+          "id": "Mapa 39"
+        },
+        "40": {
+          "historico": {
+            "-O1eJ8S7_Ajzu3H4qYW9": {
+              "dataConclusao": "2023-07-23",
+              "dataInicio": "2023-04-16",
+              "designadoPara": "Grupo Eldorado"
+            }
+          },
+          "id": "Mapa 40"
+        },
+        "41": {
+          "historico": {
+            "-O1eJGIWGD3tZnUcB9Xz": {
+              "dataConclusao": "2023-10-01",
+              "dataInicio": "2023-07-30",
+              "designadoPara": "Grupo Eldorado"
+            }
+          },
+          "id": "Mapa 41"
+        }
+      }
+    },
+    "Jardim Primavera": {
+      "Mapas": {
+        "23": {
+          "historico": {
+            "-NyGZKN0w-kPyVLfTiQT": {
+              "dataConclusao": "2024-05-24",
+              "dataInicio": "2024-05-07",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 23"
+        }
+      }
+    },
+    "Jhon Kennedy": {
+      "Mapas": {
+        "13": {
+          "historico": {
+            "-O1gbhru5cgwnPnuqxnW": {
+              "dataConclusao": "2024-07-13",
+              "dataInicio": "2024-07-13",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 13"
+        }
+      }
+    },
+    "João XIII": {
+      "Mapas": {
+        "24": {
+          "historico": {
+            "-O0Wou_z4Kdk0eJbxZGb": {
+              "dataConclusao": "2023-06-11",
+              "dataInicio": "2023-05-08",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 24"
+        },
+        "25": {
+          "historico": {
+            "-O0Wp6tjd95kDMdMExgL": {
+              "dataConclusao": "2023-06-14",
+              "dataInicio": "2023-05-08",
+              "designadoPara": "Congregação"
+            },
+            "-O0twy7Jn5XF14MIbAKd": {
+              "dataConclusao": "2024-07-02",
+              "dataInicio": "2024-03-12",
+              "designadoPara": "Grupo Eldorado"
+            }
+          },
+          "id": "Mapa 25"
+        }
+      }
+    },
+    "Novo Horizonte": {
+      "Mapas": {
+        "28": {
+          "id": "Mapa 28"
+        },
+        "29": {
+          "id": "Mapa 29"
+        },
+        "30": {
+          "id": "Mapa 30"
+        },
+        "31": {
+          "id": "Mapa 31"
+        }
+      }
+    },
+    "Olaria": {
+      "Mapas": {
+        "8": {
+          "historico": {
+            "-O1eOdPxHyumYPIwUVe6": {
+              "dataConclusao": "2023-01-22",
+              "dataInicio": "2023-01-08",
+              "designadoPara": "Grupo Timirim"
+            }
+          },
+          "id": "Mapa 8"
+        },
+        "9": {
+          "id": "Mapa 9"
+        },
+        "10": {
+          "id": "Mapa 10"
+        },
+        "11": {
+          "id": "Mapa 11"
+        }
+      }
+    },
+    "Primavera": {
+      "Mapas": {
+        "18": {
+          "historico": {
+            "-O0Wkg29QDDU0w6UPdFK": {
+              "dataConclusao": "2023-01-25",
+              "dataInicio": "2022-12-21",
+              "designadoPara": "Congregação"
+            },
+            "-O100j0Y_1EBcL17Xr9E": {
+              "dataConclusao": "2024-07-05",
+              "dataInicio": "2024-07-05",
+              "designadoPara": "Campanha Congresso"
+            }
+          },
+          "id": "Mapa 18"
+        },
+        "19": {
+          "historico": {
+            "-O0WlWQ0_LjgNwWzpD6f": {
+              "dataConclusao": "2023-05-15",
+              "dataInicio": "2023-01-08",
+              "designadoPara": "Grupo Primavera"
+            },
+            "-O0ydfTBdcXv35rMGwnc": {
+              "dataConclusao": "2023-04-16",
+              "dataInicio": "2023-01-08",
+              "designadoPara": "Grupo Primavera"
+            },
+            "-O100pw8mOLfbwAWU5PG": {
+              "dataConclusao": "2024-07-07",
+              "dataInicio": "2024-07-05",
+              "designadoPara": "Campanha Congresso"
+            }
+          },
+          "id": "Mapa 19"
+        },
+        "20": {
+          "historico": {
+            "-O0Wlcvd6FGXf-Q8Z3r1": {
+              "dataConclusao": "2023-02-18",
+              "dataInicio": "2023-01-25",
+              "designadoPara": "Congregação"
+            },
+            "-O100uelgB9eDn2JUm8I": {
+              "dataConclusao": "2024-07-13",
+              "dataInicio": "2024-07-12",
+              "designadoPara": "Campanha Congresso"
+            }
+          },
+          "id": "Mapa 20"
+        },
+        "21": {
+          "historico": {
+            "-O0WpGObcIVMjN5DO5ea": {
+              "dataConclusao": "2024-02-10",
+              "dataInicio": "2024-01-20",
+              "designadoPara": "Congregação"
+            },
+            "-O1015qt0xAgz4-pfWi2": {
+              "dataConclusao": "2024-07-12",
+              "dataInicio": "2024-07-10",
+              "designadoPara": "Campanha Congresso"
+            }
+          },
+          "id": "Mapa 21"
+        },
+        "22": {
+          "historico": {
+            "-O0WpWPM_ld9Gw2j4BwL": {
+              "dataConclusao": "2024-02-14",
+              "dataInicio": "2024-02-10",
+              "designadoPara": "Congregação"
+            },
+            "-O101AZ9yHcLgyvBIL9d": {
+              "dataConclusao": "2024-07-13",
+              "dataInicio": "2024-07-06",
+              "designadoPara": "Campanha Congresso"
+            }
+          },
+          "id": "Mapa 22"
+        }
+      }
+    },
+    "Quitandinha": {
+      "Mapas": {
+        "34": {
+          "id": "Mapa 34"
+        },
+        "35": {
+          "id": "Mapa 35"
+        },
+        "36": {
+          "id": "Mapa 36"
+        },
+        "37": {
+          "id": "Mapa 37"
+        },
+        "38": {
+          "id": "Mapa 38"
+        }
+      }
+    },
+    "Santa Maria": {
+      "Mapas": {
+        "14": {
+          "historico": {
+            "-O0WnXheDAUGpYrKW9IV": {
+              "dataConclusao": "2023-03-01",
+              "dataInicio": "2023-02-21",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 14"
+        },
+        "15": {
+          "historico": {
+            "-O0WoaJ625LH_6QYj3z9": {
+              "dataConclusao": "2023-04-27",
+              "dataInicio": "2023-04-25",
+              "designadoPara": "Grupo Eldorado"
+            }
+          },
+          "id": "Mapa 15"
+        },
+        "16": {
+          "historico": {
+            "-O0yaBn25YhoXxtBVx27": {
+              "dataConclusao": "2023-01-25",
+              "dataInicio": "2022-12-21",
+              "designadoPara": "Congregação"
+            },
+            "-O0Wnmnd4Lqz0MDcQ0Gg": {
+              "dataConclusao": "2023-04-18",
+              "dataInicio": "2023-03-01",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 16"
+        },
+        "17": {
+          "historico": {
+            "-O0WolTU4nHdUGm_rJpl": {
+              "dataConclusao": "2023-05-06",
+              "dataInicio": "2023-04-28",
+              "designadoPara": "Grupo Eldorado"
+            }
+          },
+          "id": "Mapa 17"
+        }
+      }
+    },
+    "Serenata": {
+      "Mapas": {
+        "32": {
+          "historico": {
+            "-O0eqQV5pO_9iZeMVKhs": {
+              "dataConclusao": "",
+              "dataInicio": "2024-07-02",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 32"
+        }
+      }
+    },
+    "Timirim": {
+      "Mapas": {
+        "3": {
+          "historico": {
+            "-NuHNSDOzmuuXQ1gNbDe": {
+              "dataConclusao": "2024-03-02",
+              "dataInicio": "2024-03-02",
+              "designadoPara": "Congregação"
+            },
+            "-O-l4bk6mJhyTSd_xE2W": {
+              "dataConclusao": "2024-06-19",
+              "dataInicio": "2024-06-11",
+              "designadoPara": "Congregação"
+            },
+            "-O0WmwiebKW01WbWT7SH": {
+              "dataConclusao": "2023-02-02",
+              "dataInicio": "2023-02-02",
+              "designadoPara": "Congregação"
+            },
+            "-O0Wnyrm27iuQ6dd0NCM": {
+              "dataConclusao": "2023-04-15",
+              "dataInicio": "2023-04-08",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 3"
+        },
+        "4": {
+          "historico": {
+            "-NuHNX0T9xyaZ-5F57fY": {
+              "dataConclusao": "2024-03-02",
+              "dataInicio": "2024-03-02",
+              "designadoPara": "Congregação"
+            },
+            "-O-l4e7ZfkDuo9fPFSUI": {
+              "dataConclusao": "2024-06-25",
+              "dataInicio": "2024-06-04",
+              "designadoPara": "Congregação"
+            },
+            "-O0WmefXyCqEhb36iyjD": {
+              "dataConclusao": "2023-02-04",
+              "dataInicio": "2023-02-01",
+              "designadoPara": "Congregação"
+            },
+            "-O0Wo7WPHY8szgLXrPmE": {
+              "dataConclusao": "2023-04-15",
+              "dataInicio": "2023-04-08",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 4"
+        },
+        "5": {
+          "historico": {
+            "-NuHNaI5HHY4NYuaDt0A": {
+              "dataConclusao": "2024-03-02",
+              "dataInicio": "2024-03-02",
+              "designadoPara": "Congregação"
+            },
+            "-O0LBDHXyxUAWgNXemb_": {
+              "dataConclusao": "2024-06-26",
+              "dataInicio": "2024-06-26",
+              "designadoPara": "Congregação"
+            },
+            "-O0WmmPHpwlM29D7PaGO": {
+              "dataConclusao": "2023-02-05",
+              "dataInicio": "2023-02-04",
+              "designadoPara": "Congregação"
+            },
+            "-O0WoMljNjcz23-yJvSe": {
+              "dataConclusao": "2023-04-28",
+              "dataInicio": "2023-04-22",
+              "designadoPara": "Congregação"
+            },
+            "-O1iQG_UYrizvFODSn8R": {
+              "dataConclusao": "2024-07-13",
+              "dataInicio": "2024-07-13",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 5"
+        },
+        "6": {
+          "historico": {
+            "-NuHNfvocxFKFi2Yka6y": {
+              "dataConclusao": "2024-03-02",
+              "dataInicio": "2024-03-02",
+              "designadoPara": "Congregação"
+            },
+            "-O0LBHEpZR_xqfg6z7-2": {
+              "dataConclusao": "2024-06-28",
+              "dataInicio": "2024-06-26",
+              "designadoPara": "Congregação"
+            },
+            "-O0Wn63OwXQts8MfhhTg": {
+              "dataConclusao": "2023-02-05",
+              "dataInicio": "2023-02-05",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 6"
+        },
+        "7": {
+          "historico": {
+            "-NuHNoN5M0QAdVyVAqeZ": {
+              "dataConclusao": "2024-03-02",
+              "dataInicio": "2024-03-02",
+              "designadoPara": "Congregação"
+            },
+            "-O0WnGYHdL1kZiBNG_Ax": {
+              "dataConclusao": "2023-02-05",
+              "dataInicio": "2023-02-05",
+              "designadoPara": "Congregação"
+            }
+          },
+          "id": "Mapa 7"
+        }
+      }
+    }
+  }
+}
