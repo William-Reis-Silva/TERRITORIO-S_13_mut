@@ -14,25 +14,39 @@
       const database = firebase.database();
       const bairrosRef = database.ref("Bairros");
 
+      // Carregar e armazenar todos os dados em cache
       bairrosRef.once("value", function (snapshot) {
-        mapData = snapshot.val(); // Carregar e armazenar todos os dados em cache
-        renderTable(mapData); // Chamar função para construir a tabela com dados em cache
+        mapData = snapshot.val();
+        renderTable(mapData);
+      });
+
+      // Listener para atualizações nos dados
+      bairrosRef.on("child_changed", function (snapshot) {
+        const updatedData = snapshot.val();
+        mapData[snapshot.key] = updatedData;
+        renderTable(mapData); // Atualizar a tabela com os dados em cache atualizados
       });
     });
 
     function renderTable(data) {
-      const table = document.querySelector("table");
+      const table = document.querySelector("table tbody");
+      table.innerHTML = ''; // Limpar a tabela antes de renderizar
+
       const maxMapas = 41; // Total de mapas
 
       for (let i = 1; i <= maxMapas; i++) {
         let found = false;
         Object.keys(data).forEach((bairro) => {
           const mapas = data[bairro].Mapas;
-          if (mapas && mapas[i]) {
-            found = true;
-            const mapa = mapas[i];
-            const historico = mapa.historico || []; // Adiciona um array vazio como fallback
-            addRow(table, i, mapa, historico);
+          if (mapas) {
+            Object.keys(mapas).forEach((mapKey) => {
+              const mapa = mapas[mapKey];
+              if (mapa.id === `Mapa ${i}`) {
+                found = true;
+                const historico = Object.values(mapa.historico || {}); // Converte o objeto historico em um array
+                addRow(table, i, mapa, historico);
+              }
+            });
           }
         });
         if (!found) {
@@ -151,25 +165,29 @@
   <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
   <h3>Ano de serviço: 2024</h3>
   <table>
-    <tr>
-      <th rowspan="2">Terr. n.º</th>
-      <th rowspan="2">Última data concluída</th>
-      <th colspan="2">Designado para</th>
-      <th colspan="2">Designado para</th>
-      <th colspan="2">Designado para</th>
-      <th colspan="2">Designado para</th>
-    </tr>
-    <tr>
-      <th>Data da designação</th>
-      <th>Data da conclusão</th>
-      <th>Data da designação</th>
-      <th>Data da conclusão</th>
-      <th>Data da designação</th>
-      <th>Data da conclusão</th>
-      <th>Data da designação</th>
-      <th>Data da conclusão</th>
-    </tr>
-    <!-- Data rows will be filled here using JavaScript -->
+    <thead>
+      <tr>
+        <th rowspan="2">Terr. n.º</th>
+        <th rowspan="2">Última data concluída</th>
+        <th colspan="2">Designado para</th>
+        <th colspan="2">Designado para</th>
+        <th colspan="2">Designado para</th>
+        <th colspan="2">Designado para</th>
+      </tr>
+      <tr>
+        <th>Data da designação</th>
+        <th>Data da conclusão</th>
+        <th>Data da designação</th>
+        <th>Data da conclusão</th>
+        <th>Data da designação</th>
+        <th>Data da conclusão</th>
+        <th>Data da designação</th>
+        <th>Data da conclusão</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data rows will be filled here using JavaScript -->
+    </tbody>
   </table>
 </body>
 </html>
