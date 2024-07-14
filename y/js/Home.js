@@ -1,3 +1,20 @@
+// Observar alterações no estado de autenticação do usuário
+firebase.auth().onAuthStateChanged(function (user) {
+  if (user) {
+    // Recuperar o nome do usuário do Realtime Database
+    const userId = user.uid;
+    const databaseRef = firebase.database().ref("usuarios/" + userId);
+
+    // Opcional: você pode buscar o nome do usuário aqui, se necessário
+    databaseRef.once("value", function (snapshot) {
+      const userName = snapshot.val().usuario;
+      document.getElementById("username").innerText = userName;
+    });
+  } else {
+    // Redirecionar ou exibir uma mensagem para usuários não autenticados
+  }
+});
+
 var registroAtual = null;
 
 function converterData(data) {

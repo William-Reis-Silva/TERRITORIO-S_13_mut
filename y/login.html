@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <title>Login</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="JS/firebaseconfig.js"></script>
+    <link rel="stylesheet" href="css/login.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <form id="login-form">
+        <h1>Login</h1>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          id="login-senha"
+          name="login-senha"
+          placeholder="Senha"
+          required
+        />
+        <button type="submit">Entrar</button>
+        <a href="index.html" class="botao-voltar">Voltar ao Início</a>
+      </form>
+      <p id="error-message"></p>
+      <p>
+        Ainda não tem uma conta? <a href="Cadastro.html">Cadastre-se aqui</a>
+      </p>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("login-form");
+        const errorMessageElement = document.getElementById("error-message");
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+
+          const email = form.email.value;
+          const senha = form["login-senha"].value;
+
+          // Fazer login usando Firebase Authentication
+          firebase
+            .auth()
+            .signInWithEmailAndPassword(email, senha)
+            .then((userCredential) => {
+              // Usuário logado com sucesso
+              const user = userCredential.user;
+              console.log("Usuário logado:", user);
+
+              // Redirecionar para a página home após o login bem-sucedido
+              window.location.href = "index.html";
+            })
+            .catch((error) => {
+              console.error("Erro ao fazer login:", error);
+
+              // Exibir mensagem de erro para o usuário
+              errorMessageElement.textContent =
+                "Email ou senha incorretos. Por favor, tente novamente.";
+            });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -198,8 +198,8 @@ img {
 
 h1 {
   color: #253875;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin-top: 3px;
+  margin: auto;
+  margin-bottom: 10px;
   text-align: center;
   text-decoration: blanchedalmond;
 }
@@ -277,4 +277,13 @@ td {
 
 .status-concluido {
   background-color: green; /* Define a cor verde para "Concluído" */
+}
+#user-greeting {
+  margin:auto;
+  margin-top: 20px;
+  margin-left: 50px;
+  text-align: left;
+  color: #253875;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font: bold 16px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }

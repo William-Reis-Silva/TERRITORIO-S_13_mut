@@ -1,9 +1,27 @@
+// Observar alterações no estado de autenticação do usuário
+firebase.auth().onAuthStateChanged(function (user) {
+  if (user) {
+    // Recuperar o nome do usuário do Realtime Database
+    const userId = user.uid;
+    const databaseRef = firebase.database().ref("usuarios/" + userId);
+
+    // Opcional: você pode buscar o nome do usuário aqui, se necessário
+    databaseRef.once("value", function (snapshot) {
+      const userName = snapshot.val().usuario;
+      document.getElementById("username").innerText = userName;
+    });
+  } else {
+    // Redirecionar ou exibir uma mensagem para usuários não autenticados
+  }
+});
+
 var database = firebase.database();
+
 // Adicione um ouvinte de eventos ao campo "numero_mapa"
-document.getElementById("numero_mapa")
+document
+  .getElementById("numero_mapa")
   .addEventListener("change", function (event) {
     var numeroMapa = event.target.value;
-    var database = firebase.database();
     var bairrosRef = database.ref("Bairros");
 
     bairrosRef.once("value", function (snapshot) {
@@ -13,9 +31,6 @@ document.getElementById("numero_mapa")
 
         for (var key in mapas) {
           if (mapas.hasOwnProperty(key) && key == numeroMapa) {
-            console.log(
-              "O mapa " + numeroMapa + " pertence ao bairro: " + bairro
-            );
             document.getElementById("bairro").value = bairro;
             return;
           }
@@ -48,15 +63,9 @@ document.getElementById("Salvar").addEventListener("click", function (event) {
     dataConclusao: dataConclusao,
     designadoPara: designadoPara,
   };
-var referenciaHistorico = database.ref(
-  `Bairros/${bairro}/Mapas/${numeroMapa}/historico`
-);
-  // Verificar o caminho gerado e os dados que serão salvos
-  console.log(
-    `Salvando dados em: Bairros/${bairro}/Mapas/${numeroMapa}/historico`
+  var referenciaHistorico = database.ref(
+    `Bairros/${bairro}/Mapas/${numeroMapa}/historico`
   );
-  console.log(dadosFormulario);
-
   // Use push() para adicionar um novo item ao histórico
   referenciaHistorico.push(dadosFormulario, function (error) {
     if (error) {

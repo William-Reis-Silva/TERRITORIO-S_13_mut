@@ -11,17 +11,19 @@
   <title>Controle de Território</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="js/Firebaseconfig.js"></script>
 </head>
 <body>
   <header>
+    
     <nav class="nav-bar">
       <div class="logo">
         <img src="img/logo.png" alt="logo" />
       </div>
    <div class="nav-list">
         <ul>
-          <li class="nav-item"><a href="Analise.html" class="nav-link">Analise registro</a></li>
+          <li class="nav-item"><a href="login.html" class="nav-link">Login</a></li>
           <li class="nav-item dropdown">
             <a href="#" class="nav-link">Território</a>
             <ul class="dropdown-menu">
@@ -40,6 +42,7 @@
               <li><a href="Territorio/Santa Maria.html">Santa Maria</a></li>
             </ul>
           </li>
+          <li class="nav-item"><a href="Analise.html" class="nav-link">Analise registro</a></li>
           <li class="nav-item"><a href="S_13.html" class="nav-link">Registros_S_13</a></li>
           <li class="nav-item"><a href="Territorio/Mapa.html" class="nav-link">Mapa</a></li>
         </ul>
@@ -55,27 +58,28 @@
     </nav>
      <div class="mobile-menu">
       <ul>
-      <li class="nav-item"><a href="Analise.html" class="nav-link">Analise registro</a></li>
+        <li class="nav-item"><a href="login.html" class="nav-link">Login</a></li>
         <li class="nav-item"><a href="Territorio/index_territorio.html" class="nav-link">Território</a></li>
         <li class="nav-item dropdown">
-          <a href="#" class="nav-link">Mapas</a>
           <ul class="dropdown-menu">
-           <li><a href="Territorio/quitandinha.html">Quitandinha</a></li>
-              <li><a href="Territorio/Primavera.html">Primavera</a></li>
-              <li><a href="Territorio/Jardim Primavera.html">Jardim Primavera</a></li>
-              <li><a href="Territorio/JoãoXXII.html">João XIII</a></li>
-              <li><a href="Territorio/Córrego do Caçador.html">Córrego do Caçador</a></li>
-              <li><a href="Territorio/Olaria.html">Olaria</a></li>
-              <li><a href="Territorio/Novo Horizonte.html">Novo Horizonte</a></li>
-              <li><a href="Territorio/Serenata.html">Serenata</a></li>
-              <li><a href="Territorio/Coqueiro.html">Coqueiro</a></li>
-              <li><a href="Territorio/Alto Timirim.html">Alto Timirim</a></li>
-              <li><a href="Territorio/Timirim.html">Timirim</a></li>
-              <li><a href="Territorio/Eldorado.html">Eldorado</a></li>
-              <li><a href="Territorio/Santa Maria.html">Santa Maria</a></li>
+            <li><a href="Territorio/quitandinha.html">Quitandinha</a></li>
+            <li><a href="Territorio/Primavera.html">Primavera</a></li>
+            <li><a href="Territorio/Jardim Primavera.html">Jardim Primavera</a></li>
+            <li><a href="Territorio/JoãoXXII.html">João XIII</a></li>
+            <li><a href="Territorio/Córrego do Caçador.html">Córrego do Caçador</a></li>
+            <li><a href="Territorio/Olaria.html">Olaria</a></li>
+            <li><a href="Territorio/Novo Horizonte.html">Novo Horizonte</a></li>
+            <li><a href="Territorio/Serenata.html">Serenata</a></li>
+            <li><a href="Territorio/Coqueiro.html">Coqueiro</a></li>
+            <li><a href="Territorio/Alto Timirim.html">Alto Timirim</a></li>
+            <li><a href="Territorio/Timirim.html">Timirim</a></li>
+            <li><a href="Territorio/Eldorado.html">Eldorado</a></li>
+            <li><a href="Territorio/Santa Maria.html">Santa Maria</a></li>
           </ul>
         </li>
+        <li class="nav-item"><a href="Analise.html" class="nav-link">Analise registro</a></li>
         <li class="nav-item"><a href="S_13.html" class="nav-link">Registros_S_13</a></li>
+        <a href="Territorio/Mapa.html" class="nav-link">Mapas</a>
       </ul>
       <div class="login-button">
         <button><a href="Registro_S13.html">Novo Registro</a></button>
@@ -83,6 +87,7 @@
     </div>
   </header>
   <div id="frameRegistros">
+    <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
     <h1>Últimos Registros</h1>
     <div id="Registro">
       <table id="tabelaDados">
