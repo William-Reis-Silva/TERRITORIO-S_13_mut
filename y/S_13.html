@@ -3,129 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Registro de Designação de Território</title>
+  <title>Foulario S_13</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="js/Firebaseconfig.js"></script>
-  <script>
-    let mapData = {}; // Cache para armazenar os dados dos mapas
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const database = firebase.database();
-      const bairrosRef = database.ref("Bairros");
-
-      // Carregar e armazenar todos os dados em cache
-      bairrosRef.once("value", function (snapshot) {
-        mapData = snapshot.val();
-        renderTable(mapData);
-      });
-
-      // Listener para atualizações nos dados
-      bairrosRef.on("child_changed", function (snapshot) {
-        const updatedData = snapshot.val();
-        mapData[snapshot.key] = updatedData;
-        renderTable(mapData); // Atualizar a tabela com os dados em cache atualizados
-      });
-    });
-
-    function renderTable(data) {
-      const table = document.querySelector("table tbody");
-      table.innerHTML = ''; // Limpar a tabela antes de renderizar
-
-      const maxMapas = 41; // Total de mapas
-
-      for (let i = 1; i <= maxMapas; i++) {
-        let found = false;
-        Object.keys(data).forEach((bairro) => {
-          const mapas = data[bairro].Mapas;
-          if (mapas) {
-            Object.keys(mapas).forEach((mapKey) => {
-              const mapa = mapas[mapKey];
-              if (mapa.id === `Mapa ${i}`) {
-                found = true;
-                const historico = Object.values(mapa.historico || {}); // Converte o objeto historico em um array
-                addRow(table, i, mapa, historico);
-              }
-            });
-          }
-        });
-        if (!found) {
-          // Adiciona uma linha vazia se o mapa não for encontrado
-          addEmptyRow(table, i);
-        }
-      }
-    }
-
-    function formatDate(dateString) {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-
-    function addRow(table, mapNumber, mapa, historico) {
-      const row = table.insertRow(-1);
-      const cellTerr = row.insertCell(0);
-      cellTerr.innerHTML = mapNumber; // Número do mapa
-      cellTerr.rowSpan = 2;
-
-      const cellUltData = row.insertCell(1);
-      cellUltData.innerHTML =
-        historico.length > 0
-          ? formatDate(historico[historico.length - 1].dataConclusao)
-          : "";
-      cellUltData.rowSpan = 2;
-
-      // Adiciona as células para cada designado para
-      for (let j = 0; j < 4; j++) {
-        const cellDesigPara = row.insertCell(2 + j);
-        cellDesigPara.colSpan = 2;
-        if (j < historico.length) {
-          cellDesigPara.innerHTML = historico[j].designadoPara;
-        } else {
-          cellDesigPara.innerHTML = "";
-        }
-      }
-
-      // Segunda linha para datas
-      const rowDates = table.insertRow(-1);
-      for (let j = 0; j < 4; j++) {
-        if (j < historico.length) {
-          const cellDataDesig = rowDates.insertCell(2 * j);
-          const cellDataConc = rowDates.insertCell(1 + 2 * j);
-          cellDataDesig.innerHTML = formatDate(historico[j].dataInicio);
-          cellDataConc.innerHTML = formatDate(historico[j].dataConclusao);
-        } else {
-          rowDates.insertCell(2 * j).innerHTML = "";
-          rowDates.insertCell(1 + 2 * j).innerHTML = "";
-        }
-      }
-    }
-
-    function addEmptyRow(table, mapNumber) {
-      const row = table.insertRow(-1);
-      const cellTerr = row.insertCell(0);
-      cellTerr.innerHTML = mapNumber;
-      cellTerr.rowSpan = 2;
-
-      const cellUltData = row.insertCell(1);
-      cellUltData.innerHTML = "";
-      cellUltData.rowSpan = 2;
-
-      for (let k = 0; k < 4; k++) {
-        const cellEmpty = row.insertCell(2 + k);
-        cellEmpty.colSpan = 2;
-        cellEmpty.innerHTML = "";
-      }
-
-      const rowDates = table.insertRow(-1);
-      for (let k = 0; k < 8; k++) {
-        rowDates.insertCell(k).innerHTML = "";
-      }
-    }
-  </script>
   <style>
     @page {
       size: A4;
@@ -136,35 +19,85 @@
       width: 21cm;
       height: 29.7cm;
       margin: 0 auto;
-      padding: 0;
+      padding: 20px;
       box-sizing: border-box;
       font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
     }
+
     h2 {
       text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
     }
+
     table {
-      width: 98%;
+      width: 100%;
       border-collapse: collapse;
+      margin-bottom: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
 
     th,
     td {
-      border: 1px solid black;
-      padding: 8px;
+      border: 1px solid #ddd;
+      padding: 12px;
       text-align: center;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     th {
       background-color: #f2f2f2;
+      color: #333;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    #yearControls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #yearControls button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #yearControls button:hover {
+      background-color: #45a049;
+    }
+
+    #yearControls span {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
   <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
-  <h3>Ano de serviço: 2024</h3>
-  <table>
+  <div id="yearControls">
+    <button id="prevYearBtn">Ano Anterior</button>
+    <span id="serviceYear"></span>
+    <button id="nextYearBtn">Próximo Ano</button>
+    <button id="generatePdfBtn">Gerar PDF</button>
+  </div>
+  <table id="territoryTable">
     <thead>
       <tr>
         <th rowspan="2">Terr. n.º</th>
@@ -189,5 +122,7 @@
       <!-- Data rows will be filled here using JavaScript -->
     </tbody>
   </table>
+  <script src="js/S_13.js"></script>
+  <script src="js/generatePdf.js"></script>
 </body>
 </html>
