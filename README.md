@@ -2,7 +2,8 @@
 
 # Projeto de Registro de Designação de Território
 Sistema de controle de território com mapas e formulário S_13
-Este projeto tem como objetivo gerenciar e gerar relatórios em PDF dos registros de designação de território, utilizando Firebase para hospedagem e Cloud Functions para a geração de PDFs com Python.
+Este projeto tem como objetivo gerenciar e gerar relatórios em PDF dos registros de designação de território, utilizando Firebase para hospedagem e Cloud Functions para a geração de PDFs com Python. 
+[]Falta implementar o python
 
 ## Estrutura do Projeto
 
