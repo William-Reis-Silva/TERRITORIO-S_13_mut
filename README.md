@@ -6,7 +6,7 @@ Este projeto tem como objetivo gerenciar e gerar relatórios em PDF dos registro
 
 ## Estrutura do Projeto
 
-````meu_projeto/
+meu_projeto/
 │
 ├── public/
 │   ├── index.html
@@ -83,7 +83,6 @@ Durante a inicialização, selecione "Hosting" e "Functions".
 
 1. **Estrutura do Projeto com Cloud Functions:**
 
-   ```
    meu_projeto/
    │
    ├── public/
@@ -102,7 +101,6 @@ Durante a inicialização, selecione "Hosting" e "Functions".
    ├── requirements.txt
    ├── firebase.json
    └── .firebaserc
-   ```
 
 2. **Configurar o `main.py` para Cloud Functions:**
 
