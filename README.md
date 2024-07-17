@@ -1,14 +1,12 @@
-
-
 # Projeto de Registro de Designação de Território
+
 Sistema de controle de território com mapas e formulário S_13
-Este projeto tem como objetivo gerenciar e gerar relatórios em PDF dos registros de designação de território, utilizando Firebase para hospedagem e Cloud Functions para a geração de PDFs com Python. 
-[]Falta implementar o python
+Este projeto tem como objetivo gerenciar e gerar relatórios em PDF dos registros de designação de território, utilizando Firebase para hospedagem e Cloud Functions para a geração de PDFs com Python,
+[]Falta implementar o python.
 
 ## Estrutura do Projeto
 
-```
-meu_projeto/
+````meu_projeto/
 │
 ├── public/
 │   ├── index.html
@@ -26,8 +24,7 @@ meu_projeto/
 ├── requirements.txt
 ├── firebase.json
 ├── .firebaserc
-└── README.md
-```
+└── README.md````
 
 ## Passos para Configurar o Projeto
 
@@ -250,4 +247,3 @@ pdfkit.from_file(html_file, pdf_file, configuration=config)
 ```
 
 Se você tiver alguma dúvida ou problema, consulte a documentação oficial do Firebase ou busque ajuda na comunidade.
-
