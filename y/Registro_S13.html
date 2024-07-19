@@ -1,62 +1,75 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="css/Formularios.css" />
-  <title>Registro_S13</title>
-   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="js/Firebaseconfig.js"></script>
-</head>
-<body>
-  <h1>Registro_S_13</h1>
-  <form id="Registro">
-    <div id="box">
-      <img id="icone" src="img/logo.png" alt="Ícone" />
-      <input type="hidden" id="registro_id" name="registro_id" />
-      <div>
-        <label for="numero_mapa">Número do Mapa:</label><br />
-        <input type="text" id="numero_mapa" name="numero_mapa" required /><br /><br />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/Formularios.css" />
+    <title>Registro_S13</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="js/Firebaseconfig.js"></script>
+  </head>
+  <body>
+    <h1>Registro_S_13</h1>
+    <form id="Registro">
+      <div id="box">
+        <img id="icone" src="img/logo.png" alt="Ícone" />
+        <input type="hidden" id="registro_id" name="registro_id" />
+        <div>
+          <label for="numero_mapa">Número do Mapa:</label><br />
+          <input
+            type="text"
+            id="numero_mapa"
+            name="numero_mapa"
+            required
+          /><br /><br />
+        </div>
+        <div>
+          <label for="bairro">Bairro:</label><br />
+          <input type="text" id="bairro" name="bairro" required /><br /><br />
+        </div>
+        <div>
+          <label for="designado_para">Designado Para:</label><br />
+          <select id="designado_para">
+            <option value="Congregação">Congregação</option>
+            <option value="Grupo Primavera">Grupo Primavera</option>
+            <option value="Grupo Timirim">Grupo Timirim</option>
+            <option value="Grupo Eldorado">Grupo Eldorado</option>
+            <option value="Campanha Congresso">Campanha Congresso</option>
+            <option value="Campanha Celebração">Campanha Celebração</option>
+          </select>
+        </div>
+        <div>
+          <label for="data_inicio">Data de Início:</label><br />
+          <input
+            type="date"
+            id="data_inicio"
+            name="data_inicio"
+            required
+          /><br /><br />
+        </div>
+        <div>
+          <label for="data_conclusao">Data de Conclusão:</label><br />
+          <input
+            type="date"
+            id="data_conclusao"
+            name="data_conclusao"
+          /><br /><br />
+        </div>
+        <div>
+          <button id="Salvar" type="submit">Salvar</button>
+          <button id="Voltar" type="button">Voltar</button>
+        </div>
       </div>
-      <div>
-        <label for="bairro">Bairro:</label><br />
-        <input type="text" id="bairro" name="bairro" required /><br /><br />
-      </div>
-      <div>
-        <label for="designado_para">Designado Para:</label><br />
-        <select id="designado_para">
-          <option value="Congregação">Congregação</option>
-          <option value="Grupo Primavera">Grupo Primavera</option>
-          <option value="Grupo Timirim">Grupo Timirim</option>
-          <option value="Grupo Eldorado">Grupo Eldorado</option>
-          <option value="Campanha Congresso">Campanha Congresso</option>
-          <option value="Campanha Celebração">Campanha Celebração</option>
-        </select>
-      </div>
-      <div>
-        <label for="data_inicio">Data de Início:</label><br />
-        <input type="date" id="data_inicio" name="data_inicio" required /><br /><br />
-      </div>
-      <div>
-        <label for="data_conclusao">Data de Conclusão:</label><br />
-        <input type="date" id="data_conclusao" name="data_conclusao"><br /><br />
-      </div>
-      <div>
-        <button id="Salvar" type="submit">Salvar</button>
-        <button id="Voltar" type="button">Voltar</button>
-      </div>
-    </div>
-  </form>
+    </form>
 
-  <script>
-    function Voltar() {
-      window.location.href = "index.html";
-    }
-    document.getElementById("Voltar").addEventListener("click", Voltar);
-  </script>
-  <script type="text/javascript" src="js/Registro_S13.js"></script>
- 
-</body>
+    <script>
+      function Voltar() {
+        window.location.href = "index.html";
+      }
+      document.getElementById("Voltar").addEventListener("click", Voltar);
+    </script>
+    <script type="text/javascript" src="js/Registro_S13.js"></script>
+  </body>
 </html>
