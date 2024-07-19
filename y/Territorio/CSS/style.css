@@ -11,25 +11,33 @@ header {
 }
 
 .nav-bar {
-  display: block;
- align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem 6rem;
+  align-items: center;
+}
+
+#logo {
+  width: 40px;
+  height: 40px;
 }
 
 .nav-list {
-  display: block;
-  align-items: center;
-  padding: 10px;
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
 }
 
 .nav-list ul {
   display: flex;
   justify-content: center;
   list-style: none;
+  padding: 0;
 }
 
 .nav-item {
   margin: 0 15px;
-  position: relative; /* Necessário para o dropdown */
+  position: relative;
 }
 
 .nav-link {
@@ -64,15 +72,16 @@ header {
 .dropdown-menu li a {
   color: white;
   text-decoration: none;
-  justify-content: left;
 }
 
 .dropdown-menu li a:hover {
   color: rgb(245, 6, 6);
 }
+
 .nav-item.dropdown .dropdown-menu {
   display: none;
 }
+
 .nav-item.dropdown:hover .dropdown-menu {
   align-items: left;
   display: block;
@@ -100,62 +109,73 @@ header {
   display: none;
 }
 
+@media screen and (max-width: 835px) {
+  .login-button button a {
+    font-size: 0.9rem;
+  }
 
-h1 {
-  margin: 0 auto;
-  margin-top: 15px;
-  width: 95%;
-  padding: 5px;
-  display: flex;
-  justify-content: center;
-  color:white;
- 
+  .nav-link {
+    font-size: 0.9rem;
+  }
 }
 
+@media screen and (max-width: 730px) {
+  .nav-bar {
+    padding: 1.2rem 4rem;
+  }
 
-div.tabela {
-  margin: 0 auto;
-  width: 95%;
-  display: flex;
-  justify-content: center;
-  padding: 10px;
-  border-radius: 15px;
-  justify-content: center;
-  color: rgb(27, 13, 228);
-  background-color: blueviolet;
-}
+  .nav-item {
+    display: none;
+  }
 
-tr {
-  font-size: max(20px, 2vw);
-  height: 20px;
-  font-family: Arial;
-  background: #000;
-  color: #fff;
-}
+  .login-button {
+    display: none;
+  }
 
-td {
-  width: 10vw;
-  background-color: #fff;
-  color: #000;
-  border: 2px solid #000;
-  font-size: max(12px, 2vw);
-}
+  .mobile-menu-icon {
+    display: block;
+  }
 
-#map {
-  margin: 2px;
-  padding: 2px;
-  height: 500px;
-  /* The height is 500 pixels */
-  width: 98%;
-  /* The width is the width of the web page */
+  .mobile-menu-icon button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .mobile-menu ul {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    padding-bottom: 1rem;
+  }
+
+  .mobile-menu .nav-item {
+    display: block;
+    padding-top: 1.2rem;
+  }
+
+  .mobile-menu .login-button {
+    display: block;
+    padding: 1rem 2rem;
+  }
+
+  .mobile-menu .login-button button {
+    width: 100%;
+  }
+
+  .open {
+    display: block;
+  }
+
+  .content h1 {
+    font-size: 1rem;
+   
+  }
 }
 
 .conteudo img {
-  display: flex;
-  flex-wrap: wrap;
   width: 250px;
   height: 200px;
-  display: flex;
   float: left;
   padding: 10px;
   cursor: zoom-in;
@@ -182,18 +202,14 @@ td {
   display: block;
   margin: auto;
 }
-@media screen and (max-width: 730px) {
-  .conteudo {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
 
-  .conteudo img {
-    width: 250px;
-    height: 200px;
-    margin: 10px;
-    cursor: zoom-in;
-  }
-
+#map {
+  margin: 2px;
+  padding: 2px;
+  height: 500px;
+  width: 98%;
+}
+h1{
+  color: bisque;
+  text-align: center;
 }
