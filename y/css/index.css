@@ -280,13 +280,25 @@ td {
 }
 #user-greeting {
   display: inline;
-  background-color: #253875;
+
   width: 300px;
   margin:auto;
   text-align:center;
-  padding: 3px;
+  padding: 2px;
   border-radius: 3px;
-  color: #e2e3e9;
+  color: #f86605;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font: bold 14px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font: bold 12px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+#header h1{
+margin-top: 5px;
+}
+
+@media screen and (min-width: 730px) {
+ 
+#user-greeting {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font: bold 20px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+
 }
