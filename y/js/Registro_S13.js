@@ -66,13 +66,37 @@ document.getElementById("Salvar").addEventListener("click", function (event) {
   var referenciaHistorico = database.ref(
     `Bairros/${bairro}/Mapas/${numeroMapa}/historico`
   );
-  // Use push() para adicionar um novo item ao histórico
+  // Obtenha o modal
+  var modal = document.getElementById("dialog");
+
+  // Obtenha o <span> que fecha o modal
+  var span = document.getElementsByClassName("close")[0];
+
+  // Função para mostrar o modal com uma mensagem
+  function showDialog(message) {
+    document.getElementById("dialog-message").textContent = message;
+    modal.style.display = "block";
+  }
+
+  // Quando o usuário clicar no <span> (x), feche o modal
+  span.onclick = function () {
+    modal.style.display = "none";
+  };
+
+  // Quando o usuário clicar em qualquer lugar fora do modal, feche-o
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+
+  // Substituir alertas por diálogos
   referenciaHistorico.push(dadosFormulario, function (error) {
     if (error) {
       console.error("Erro ao salvar os dados: ", error);
-      alert("Erro ao salvar os dados.");
+      showDialog("Erro ao salvar os dados.");
     } else {
-      alert("Dados salvos com sucesso!");
+      showDialog("Dados salvos com sucesso!");
       // Limpar o formulário após salvar
       document.getElementById("numero_mapa").value = "";
       document.getElementById("designado_para").value = "";
