@@ -279,11 +279,14 @@ td {
   background-color: green; /* Define a cor verde para "Concluído" */
 }
 #user-greeting {
+  display: inline;
+  background-color: #253875;
+  width: 300px;
   margin:auto;
-  margin-top: 20px;
-  margin-left: 50px;
-  text-align: left;
-  color: #253875;
+  text-align:center;
+  padding: 3px;
+  border-radius: 3px;
+  color: #e2e3e9;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font: bold 16px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font: bold 14px "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
