@@ -1,122 +1,56 @@
-document.getElementById("generatePdfBtn").addEventListener("click", function () {
-  generatePDF();
-});
+document
+  .getElementById("generatePdfBtn")
+  .addEventListener("click", function () {
+    // Importa a biblioteca jsPDF e o plugin autoTable
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "pt", "a4");
-  doc.setFontSize(12);
+    // Adiciona o cabeçalho com o título e o ano de serviço dinâmico
+    const yearElement = document.getElementById("serviceYear");
+    const serviceYearFullText = yearElement
+      ? yearElement.textContent
+      : "Ano desconhecido";
 
-  const title = "REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO";
-  const startX = 150;
-  const startY = 30;
-  const title1 = "Ano de Serviço:";
-  const startX1 = 40;
-  const startY1 = 60;
-  const table = document.getElementById("territoryTable");
-  
-  // Define headers
-  const headers = [
-    [
-      {
-        content: "Terr. n.º",
-        rowSpan: 2,
-        styles: { valign: "middle", halign: "center" },
+    // Extrai apenas o ano de serviço do texto completo
+    const serviceYearMatch = serviceYearFullText.match(/(\d{4})/);
+    const serviceYear = serviceYearMatch
+      ? serviceYearMatch[0]
+      : "Ano desconhecido";
+
+    doc.setFontSize(14);
+    doc.text("REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO", 50, 15);
+    doc.setFontSize(12);
+    doc.text(`Ano de Serviço: ${serviceYear}`, 14, 25);
+
+    // Configurações do autoTable
+    doc.autoTable({
+      html: "#territoryTable",
+      theme: "grid", // Usa o tema 'grid' para garantir as bordas das células
+      startY: 30, // Define a posição inicial da tabela após o cabeçalho
+      headStyles: {
+        fillColor: [220, 220, 220], // Cor do cabeçalho (cinza claro)
+        textColor: [0, 0, 0], // Cor do texto do cabeçalho (preto))
       },
-      {
-        content: "Última data concluída",
-        rowSpan: 2,
-        styles: { valign: "middle", halign: "center" },
+      bodyStyles: {
+        fillColor: [255, 255, 255], // Fundo das células (branco)
+        textColor: [0, 0, 0], // Cor do texto (preto)
+        lineColor: [0, 0, 0], // Cor das bordas (preto)
+        lineWidth: 0.1, // Largura da borda
+        halign: "center", // Centraliza o texto no corpo da tabela
       },
-      { content: "Designado para ", colSpan: 2, styles: { halign: "center" } },
-      { content: "Designado para ", colSpan: 2, styles: { halign: "center" } },
-      { content: "Designado para ", colSpan: 2, styles: { halign: "center" } },
-      { content: "Designado para ", colSpan: 2, styles: { halign: "center" } },
-    ],
-    [
-      { content: "Data da designação", styles: { halign: "center" } },
-      { content: "Data da conclusão", styles: { halign: "center" } },
-      { content: "Data da designação", styles: { halign: "center" } },
-      { content: "Data da conclusão", styles: { halign: "center" } },
-      { content: "Data da designação", styles: { halign: "center" } },
-      { content: "Data da conclusão", styles: { halign: "center" } },
-      { content: "Data da designação", styles: { halign: "center" } },
-      { content: "Data da conclusão", styles: { halign: "center" } },
-    ],
-  ];
+      alternateRowStyles: {
+        fillColor: [255, 255, 255], // Fundo alternado (branco)
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 1,
+        lineColor: [0, 0, 0], // Cor das bordas (preto)
+        lineWidth: 0.1, // Largura da borda
+      },
+    });
+    // Visualiza o PDF em uma nova janela antes de salvar
+    window.open(doc.output("bloburl"), "_blank");
 
-  const data = [];
-
-  // Collect data
-  const rows = table.querySelectorAll("tbody tr");
-  for (let i = 0; i < rows.length; i += 2) {
-    const firstRowCells = rows[i].querySelectorAll("td");
-    const secondRowCells = rows[i + 1].querySelectorAll("td");
-
-    const rowData = [
-      firstRowCells[0] ? firstRowCells[0].innerText : "", // Terr. n.º
-      firstRowCells[1] ? firstRowCells[1].innerText : "", // Última data concluída
-      firstRowCells[2] ? firstRowCells[2].innerText : "", // Designado para 1
-      secondRowCells[0] ? secondRowCells[0].innerText : "", // Data da designação 1
-      secondRowCells[1] ? secondRowCells[1].innerText : "", // Data da conclusão 1
-      firstRowCells[3] ? firstRowCells[3].innerText : "", // Designado para 2
-      secondRowCells[2] ? secondRowCells[2].innerText : "", // Data da designação 2
-      secondRowCells[3] ? secondRowCells[3].innerText : "", // Data da conclusão 2
-      firstRowCells[4] ? firstRowCells[4].innerText : "", // Designado para 3
-      secondRowCells[4] ? secondRowCells[4].innerText : "", // Data da designação 3
-      secondRowCells[5] ? secondRowCells[5].innerText : "", // Data da conclusão 3
-      firstRowCells[5] ? firstRowCells[5].innerText : "", // Designado para 4
-      secondRowCells[6] ? secondRowCells[6].innerText : "", // Data da designação 4
-      secondRowCells[7] ? secondRowCells[7].innerText : "", // Data da conclusão 4
-    ];
-
-    data.push(rowData);
-  }
-
-  // Add title to PDF
-  doc.text(title, startX, startY,);
-  doc.text(title1, startX1, startY1);
-
-  // Use autoTable to add the table to the PDF
-  doc.autoTable({
-    startY: startY + 40,
-    head: headers,
-    body: data,
-    theme: "grid",
-    styles: {
-      fontSize: 8,
-      cellPadding: 4,
-      halign: "center", // Align all text to center
-      valign: "middle", // Align all text to middle
-    },
-    headStyles: {
-      fontStyle: "bold",
-    },
-    columnStyles: {
-      0: { cellWidth: 25 },
-      1: { cellWidth: 55 },
-      2: { cellWidth: 55 },
-      3: { cellWidth: 55 },
-      4: { cellWidth: 55 },
-      5: { cellWidth: 55 },
-      6: { cellWidth: 55 },
-      7: { cellWidth: 55 },
-      8: { cellWidth: 55 },
-      9: { cellWidth: 55 },
-      10: { cellWidth: 55 },
-      11: { cellWidth: 55 },
-      12: { cellWidth: 55 },
-      13: { cellWidth: 55 },
-    },
-    didDrawCell: function (data) {
-      // Merge cells logic for the first two rows (headers)
-      if (data.row.section === 'head' && data.row.index === 0 && (data.column.index === 0 || data.column.index === 1)) {
-        const cellHeight = data.cell.height * 2;
-        data.cell.height = cellHeight;
-        doc.rect(data.cell.x, data.cell.y, data.cell.width, cellHeight, 'S');
-      }
-    },
+    // Salva o PDF
+    doc.save("Registro S_13.pdf");
   });
-
-  doc.save("Registro_Designacao_Territorio.pdf");
-}
