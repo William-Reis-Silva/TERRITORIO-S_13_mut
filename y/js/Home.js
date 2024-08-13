@@ -26,7 +26,6 @@ function converterData(data) {
 function determinarStatus(dataConclusao) {
   return dataConclusao === "" ? "Em andamento" : "Concluído";
 }
-
 function carregarDados() {
   var tabelaRef = firebase.database().ref("Bairros");
 
@@ -54,6 +53,7 @@ function carregarDados() {
       });
     });
 
+    // Ordena os registros conforme já implementado
     dados.sort(function (a, b) {
       var statusA = determinarStatus(a.dataConclusao);
       var statusB = determinarStatus(b.dataConclusao);
@@ -66,6 +66,10 @@ function carregarDados() {
       return dataB - dataA;
     });
 
+    // Mantém apenas os 20 últimos registros
+    dados = dados.slice(0, 18  );
+
+    // Exibe os registros na tabela
     dados.forEach(function (item) {
       var newRow = corpoTabela.insertRow();
 

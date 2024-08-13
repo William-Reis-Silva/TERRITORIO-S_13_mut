@@ -91,12 +91,32 @@ document.getElementById("Salvar").addEventListener("click", function (event) {
   };
 
   // Substituir alertas por diálogos
+  // Função showDialog modificada
+  function showDialog(message, type) {
+    var dialog = document.getElementById("dialog");
+    var dialogMessage = document.getElementById("dialog-message");
+
+    dialogMessage.textContent = message;
+    if (type === "error") {
+      dialogMessage.className = "error";
+    } else {
+      dialogMessage.className = "success";
+    }
+
+    dialog.style.display = "block";
+  }
+
+  function closeDialog() {
+    document.getElementById("dialog").style.display = "none";
+  }
+
+  // Função para salvar os dados
   referenciaHistorico.push(dadosFormulario, function (error) {
     if (error) {
       console.error("Erro ao salvar os dados: ", error);
-      showDialog("Erro ao salvar os dados.");
+      showDialog("Erro ao salvar os dados.", "error");
     } else {
-      showDialog("Dados salvos com sucesso!");
+      showDialog("Dados salvos com sucesso!", "success");
       // Limpar o formulário após salvar
       document.getElementById("numero_mapa").value = "";
       document.getElementById("designado_para").value = "";

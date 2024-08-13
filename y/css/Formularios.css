@@ -161,11 +161,12 @@ h2{display: flex;
 
 /* Conteúdo do Modal */
 .modal-content {
-    background-color: #1be074;
+    background-color: white;
     margin: 15% auto;
     padding: 10px;
-    border: 1px solid #888;
+    border: 3px solid #0a0800;
     width: 80%;
+    border-radius: 10px;
 }
 
 /* Botão de Fechar */
@@ -186,4 +187,31 @@ h2{display: flex;
     color: black;
     font-size: large;
     font-weight: bold;
+}
+/* CSS */
+.close {
+    color: #e70a0a;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#dialog-message {
+    font-size: large;
+    font-weight: bold;
+}
+
+#dialog-message.success {
+    color:green;
+}
+
+#dialog-message.error {
+    color: red;
 }

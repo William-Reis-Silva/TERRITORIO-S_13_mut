@@ -11,14 +11,6 @@ function menuShow() {
   }
 ;
 
-document.addEventListener("DOMContentLoaded", function () {
-  const mensagemAcessoNegado = document.getElementById(
-    "mensagem-acesso-negado"
-  );
-  const links = document.querySelectorAll(
-    "#link-agendar, #link-relatorio, #link-perfil"
-  );
-
   firebase.auth().onAuthStateChanged(function (user) {
     const usuarioLogado = !!user;
 
@@ -55,5 +47,3 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   });
-})
-  

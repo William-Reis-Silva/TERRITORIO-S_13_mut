@@ -19,6 +19,7 @@
 
 <body>
   <header>
+    <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
     <nav class="nav-bar">
       <div class="logo">
         <img src="img/logo.png" alt="logo" />
@@ -31,56 +32,16 @@
           <li class="nav-item">
             <a href="Territorio/index_territorio.html" class="nav-link">Território</a>
           </li>
-
           <li class="nav-item">
-            <a href="Analise.html" class="nav-link">Analise registro</a>
+            <a href="Registro_S13.html" class="nav-link">Novo Registro</a>
           </li>
-          <li class="nav-item">
-            <a href="S_13.html" class="nav-link">Registros_S_13</a>
-          </li>
-          <li class="nav-item">
-            <a href="Territorio/Mapa.html" class="nav-link">Mapa</a>
-          </li>
-        </ul>
-      </div>
-      <div class="login-button">
-        <button><a href="Registro_S13.html">Novo Registro</a></button>
-      </div>
-      <div class="mobile-menu-icon">
-        <button onclick="menuShow()">
-          <img class="icon" src="img/menu_white_36dp.svg" alt="Menu" />
-        </button>
       </div>
     </nav>
-    <div class="mobile-menu">
-      <ul>
-        <li class="nav-item">
-          <a href="login.html" class="nav-link">Login</a>
-        </li>
-        <li class="nav-item">
-          <a href="Territorio/index_territorio.html" class="nav-link">Território</a>
-        </li>
-
-        <li class="nav-item">
-          <a href="Analise.html" class="nav-link">Analise registro</a>
-        </li>
-        <li class="nav-item">
-          <a href="S_13.html" class="nav-link">Registros_S_13</a>
-        </li>
-        <li class="nav-item">
-          <a href="Territorio/Mapa.html" class="nav-link">Mapas</a>
-        </li>
-      </ul>
-      <div class="login-button">
-        <button><a href="Registro_S13.html">Novo Registro</a></button>
-      </div>
-    </div>
   </header>
   <div id="frameRegistros">
-    <div id="header">
-      <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
-      <h1>Últimos Registros</h1>
-    </div>
+
+    <h1>Últimos Registros</h1>
+    
     <div id="Registro">
       <table id="tabelaDados">
         <thead>
@@ -124,6 +85,23 @@
       </div>
     </div>
   </div>
+  <footer>
+    <nav class="nav-bar">
+      <div class="nav-list">
+        <ul>
+          <li class="nav-item">
+            <a href="Analise.html" class="nav-link">Analise registro</a>
+          </li>
+          <li class="nav-item">
+            <a href="S_13.html" class="nav-link">Registros_S_13</a>
+          </li>
+          <li class="nav-item">
+            <a href="Territorio/Mapa.html" class="nav-link">Mapa</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </footer>
 
   <script src="js/index.js"></script>
   <script src="js/Home.js"></script>
