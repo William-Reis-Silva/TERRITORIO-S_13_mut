@@ -47,3 +47,19 @@ function menuShow() {
       }
     }
   });
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        const logoutLink = document.getElementById("logout");
+        logoutLink.addEventListener("click", function () {
+          firebase
+            .auth()
+            .signOut()
+            .then(function () {
+              console.log("Usuário deslogado com sucesso.");
+              window.location.href = "index.html";
+            })
+            .catch(function (error) {
+              console.error("Erro ao fazer logout:", error);
+            });
+        });
+      

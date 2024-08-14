@@ -1,12 +1,18 @@
-
-.conteudo img {
-  width: 250px;
-  height: 200px;
-  float: left;
-  padding: 10px;
-  cursor: zoom-in;
+.conteudo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
+.conteudo img {
+  width: 400px;
+  height: 350px;
+  margin: 10px;
+  /* Espaçamento uniforme ao redor de cada imagem */
+  cursor: zoom-in;
+  box-sizing: border-box;
+  /* Garante que o padding e as margens sejam incluídos nas dimensões da imagem */
+}
 .img {
   position: relative;
   cursor: pointer;
