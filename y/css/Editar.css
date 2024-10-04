@@ -31,7 +31,7 @@
 
 /* Estilo para o botão de fechar */
 .close {
-    color: #aaa;
+    color: #fa0000;
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -72,7 +72,7 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    background-color: #4CAF50;
+    background: linear-gradient(to right, #1E2733, #4A535E, #1E2733);
     color: white;
     font-size: 16px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
@@ -80,7 +80,7 @@
 }
 
 #formEdicao button:hover {
-    background-color: #0056b3;
+background: linear-gradient(to right, #4A535E,#1E2733, #4A535E);
     transform: translateY(-2px);
     /* Move o botão para cima */
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
