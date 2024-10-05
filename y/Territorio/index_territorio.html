@@ -30,21 +30,21 @@
             <li class="nav-item dropdown">
               <a href="#" class="nav-link">Território</a>
               <ul class="dropdown-menu">
-                <li><a href="javascript:void(0);" onclick="showSection('quitandinha')">Quitandinha</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('primavera')">Primavera</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('alto-serenata')">Alto Serenata</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('alto-timirim')">Alto Timirim</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('coqueiro')">Coqueiro</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('corrego-do-cacador')">Córrego do Caçador</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('eldorado')">Eldorado</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('jardim-primavera')">Jardim Primavera</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('joao-xxii')">João XXIII</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('corrego-do-cacador')">Córrego do Caçador</a>
-                </li>
-                <li><a href="javascript:void(0);" onclick="showSection('olaria')">Olaria</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('john-kennedy')">John Kennedy</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('novo-horizonte')">Novo Horizonte</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('serenata')">Serenata</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('coqueiro')">Coqueiro</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('alto-timirim')">Alto Timirim</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('timirim')">Timirim</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('eldorado')">Eldorado</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('olaria')">Olaria</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('primavera')">Primavera</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('quitandinha')">Quitandinha</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('santa-maria')">Santa Maria</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('alto-serenata')">Alto Serenata</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('serenata')">Serenata</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('timirim')">Timirim</a></li>
               </ul>
             </li>
               <li class="nav-item"><a href="index_territorio.html" class="nav-link">Voltar</a></li>
@@ -59,7 +59,7 @@
       <div id="home" class="section">
 
         <table id="tabelaProgramacao">
-          <caption style="font-size: 2.2em;font-weight: bold;">Programação de Campo</caption>
+          <caption>Programação de Campo</caption>
           <thead>
             <tr>
               <th>Dia</th>
@@ -71,7 +71,10 @@
           </thead>
           <tbody></tbody>
         </table>
-
+        <h2> Mapa atual </h2>
+        <div class="mapa">
+  <img src="" alt="Mapa do Território" onclick="openFullscreen(this.src)" />
+</div>
       </div>
       <div id="quitandinha" class="section" style="display:none;">
         <h1>Quitandinha</h1>
@@ -133,6 +136,12 @@
           <img src="Img/Olaria/Olaria mapa 11.jpg" alt="Olaria Mapa 11" onclick="openFullscreen(this.src)" />
         </div>
       </div>
+      <div id="john-kennedy" class="section" style="display:none;">
+        <h1>John Kennedy</h1>
+        <div class="conteudo">
+          <img src="Img/John Kennedy/John Kennedy mapa 13.jpg" alt="John Kennedy Mapa13" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
       <div id="novo-horizonte" class="section" style="display:none;">
         <h1>Novo Horizonte</h1>
         <div class="conteudo">
@@ -150,7 +159,7 @@
       <div id="serenata" class="section" style="display:none;">
         <h1>Serenata</h1>
         <div class="conteudo">
-          <img src="Img/Serenata/Serenata.jpg" alt="Serenata" onclick="openFullscreen(this.src)" />
+          <img src="Img/Serenata/Serenata Mapa 32.jpg" alt="Serenata" onclick="openFullscreen(this.src)" />
         </div>
       </div>
       <div id="coqueiro" class="section" style="display:none;">

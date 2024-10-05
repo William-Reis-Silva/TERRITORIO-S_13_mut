@@ -17,7 +17,7 @@ header {
 main {
   flex: 1;
   /* Ocupa o espaço disponível entre o header e o footer */
-  padding-bottom: 60px;
+  padding-bottom: 40px;
   /* Altura do rodapé */
 }
 
@@ -188,20 +188,19 @@ img {
 
 #frameRegistros {
   position: relative;
-  width: 98%;
+  width: 100%;
   margin: 0 auto;
-  margin-top: 15px;
+  margin-top: 19px;
   height: 100%;
   text-align: center;
   background-color: #e9ebee;
-  border-radius: 10px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-  border: 2px solid #3498db;
 }
 
 h1 {
   color: #253875;
   margin: auto;
+  padding-top: 10PX;
   margin-bottom: 10px;
   text-align: center;
   text-decoration: blanchedalmond;
