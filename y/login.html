@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -13,38 +14,42 @@
     <link rel="stylesheet" href="css/index.css">
   </head>
 
-  <body>
+  <body style=" background: linear-gradient(to bottom ,#1E2733,#384352,
+    #4A535E);">
 
-    <div class="container">
-      <form id="login-form">
-        <h1>Login</h1>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="Email"
-          required
-        />
-        <input
-          type="password"
-          id="login-senha"
-          name="login-senha"
-          placeholder="Senha"
-          required
-        />
+  <div class="container">
+    <form id="login-form">
+      <h1>Login</h1>
+      <input type="email" id="email" name="email" placeholder="Email" required />
+      <input type="password" id="login-senha" name="login-senha" placeholder="Senha" required />
+      <label class="show-password">Mostrar Senha</label>
+      <span id="toggle-password" style="cursor: pointer;">
+        <i class="fa fa-eye"></i>
+      </span>
         <button type="submit">Entrar</button>
         <a href="index.html" class="botao-voltar">Voltar ao Início</a>
       </form>
       <p id="error-message"></p>
       <p>
-        Ainda não tem uma conta? <a href="Cadastro.html" class="botao-voltar">Cadastre-se aqui</a>
+        Ainda não tem uma conta? <br><a href="Cadastro.html" class="botao-voltar">Cadastre-se aqui</a>
       </p>
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("login-form");
         const errorMessageElement = document.getElementById("error-message");
+        const passwordInput = document.getElementById("login-senha");
+        const togglePassword = document.getElementById("toggle-password");
+        const toggleIcon = togglePassword.querySelector("i");
+
+        // Alternar visibilidade da senha
+        togglePassword.addEventListener("click", () => {
+          const isPassword = passwordInput.type === "password";
+          passwordInput.type = isPassword ? "text" : "password";
+          toggleIcon.classList.toggle("fa-eye", !isPassword);
+          toggleIcon.classList.toggle("fa-eye-slash", isPassword);
+        });
 
         form.addEventListener("submit", (event) => {
           event.preventDefault();
@@ -73,6 +78,7 @@
             });
         });
       });
+
     </script>
   </body>
 </html>

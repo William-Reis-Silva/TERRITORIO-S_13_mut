@@ -9,11 +9,11 @@
   <meta name="color-scheme" content="light dark" />
   <link rel="stylesheet" href="CSS/style.css" />
   <link rel="shortcut icon" href="Img/icon/favicon.ico" type="image/x-icon">
-  <title>Controle de Território</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="js/Firebaseconfig.js"></script>
+  <script src="../js/Firebaseconfig.js"></script>
+  <title>Controle de Território</title>
 </head>
 
 <body>
@@ -33,10 +33,11 @@
                 <li><a href="javascript:void(0);" onclick="showSection('alto-serenata')">Alto Serenata</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('alto-timirim')">Alto Timirim</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('coqueiro')">Coqueiro</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('corrego-do-cacador')">Córrego do Caçador</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('corrego-do-cacador')">Córrego do Caçador</a>
+                </li>
                 <li><a href="javascript:void(0);" onclick="showSection('eldorado')">Eldorado</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('jardim-primavera')">Jardim Primavera</a></li>
-                <li><a href="javascript:void(0);" onclick="showSection('joao-xxii')">João XXIII</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('joao-xxiii')">João XXIII</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('john-kennedy')">John Kennedy</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('novo-horizonte')">Novo Horizonte</a></li>
                 <li><a href="javascript:void(0);" onclick="showSection('olaria')">Olaria</a></li>
@@ -47,8 +48,11 @@
                 <li><a href="javascript:void(0);" onclick="showSection('timirim')">Timirim</a></li>
               </ul>
             </li>
-              <li class="nav-item"><a href="index_territorio.html" class="nav-link">Voltar</a></li>
-              </li>
+            <li class="nav-item">
+              <a href="sabado.html" class="nav-link" target="_blank">Prog. Sábado</a>
+            </li>
+            <li class="nav-item"><a href="index_territorio.html" class="nav-link">Voltar</a></li>
+            </li>
           </ul>
         </div>
       </nav>
@@ -56,10 +60,11 @@
 
     <main>
 
-      <div id="home" class="section">
+      <div id="home" class="section" style="display:block;">
+        <table id="tabela-atividades">
+          <caption id="title">Programação de Campo<br>
+          <spn id="semana-atual" style="font-weight: bold; text-align: center;"></spn></caption>
 
-        <table id="tabelaProgramacao">
-          <caption>Programação de Campo</caption>
           <thead>
             <tr>
               <th>Dia</th>
@@ -69,58 +74,130 @@
               <th>Saída</th>
             </tr>
           </thead>
-          <tbody></tbody>
+
+          <tr>
+            <tb>
+              <td>Terça</td>
+              <td>Casa em casa</td>
+              <td>08:45</td>
+              <td>Joebel</td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+
+          <tr>
+            <tb>
+              <td>Quarta</td>
+              <td>Casa em casa</td>
+              <td>08:45</td>
+              <td>Thalles</td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+
+          <tr>
+            <tb>
+              <td>Quinta</td>
+              <td>Carrinho na feira</td>
+              <td>07:30</td>
+              <td>Lidinei</td>
+              <td>Feira Timirim</td>
+            </tb>
+          </tr>
+
+          <tr>
+            <tb>
+              <td>Sexta</td>
+              <td>Casa em casa</td>
+              <td>08:45</td>
+              <td>Werley</td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+          <tr>
+            <tb>
+              <td>Sábado</td>
+              <td>Casa em casa</td>
+              <td>09:00</td>
+              <td id="sabado"></td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+          <tr>
+            <tb>
+              <td>Domingo</td>
+              <td>Carrinho na Feira</td>
+              <td>07:30</td>
+              <td id="domingo"></td>
+              <td>Feira Timirim</td>
+            </tb>
+          </tr>
+          </tbody>
         </table>
-        <h2> Mapa atual </h2>
-        <div class="mapa">
-  <img src="" alt="Mapa do Território" onclick="openFullscreen(this.src)" />
-</div>
-      </div>
-      <div id="quitandinha" class="section" style="display:none;">
-        <h1>Quitandinha</h1>
-        <div class="conteudo">
-          <img src="Img/Quitandinha/Quitandinha Mapa 34 .jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
-          <img src="Img/Quitandinha/Quitandinha Mapa 35.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
-          <img src="Img/Quitandinha/Quitandinha Mapa 36.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
-          <img src="Img/Quitandinha/Quitandinha Mapa 37.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
-          <img src="Img/Quitandinha/Quitandinha Mapa 38.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
-          <img src="Img/Quitandinha/Quitandinha.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
-        </div>
-      </div>
-      <div id="primavera" class="section" style="display:none;">
-        <h1>Primavera</h1>
-        <div class="conteudo">
-          <img src="Img/Primavera/Primavera Mapa 18.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+        <table id="tabela-idoso">
+          <caption class="idosos">Trabalho especial com os idosos</caption>
+          <thead>
+            <tr>
+              <th class="idoso">Dia</th>
+              <th class="idoso">Idoso</th>
+              <th class="idoso">Dirigente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sábado</td>
+              <td id="idoso"></td>
+              <td id="acompanhate"></td>
+            </tr>
+          </tbody>
+        </table>
 
-          <img src="Img/Primavera/Primavera Mapa 19.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+        <div id="quitandinha" class="section" style="display:none;">
+          <h1>Quitandinha</h1>
+          <div class="conteudo">
+            <img src="Img/Quitandinha/Quitandinha Mapa 34 .jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="Img/Quitandinha/Quitandinha Mapa 35.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="Img/Quitandinha/Quitandinha Mapa 36.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="Img/Quitandinha/Quitandinha Mapa 37.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="Img/Quitandinha/Quitandinha Mapa 38.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="Img/Quitandinha/Quitandinha.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+          </div>
 
-          <img src="Img/Primavera/Primavera Mapa 20.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
 
-          <img src="Img/Primavera/Primavera Mapa 21.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+        </div>
+        <div id="primavera" class="section" style="display:none;">
+          <h1>Primavera</h1>
+          <div class="conteudo">
+            <img src="Img/Primavera/Primavera Mapa 18.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="Img/Primavera/Primavera Mapa 19.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="Img/Primavera/Primavera Mapa 20.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="Img/Primavera/Primavera Mapa 21.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="Img/Primavera/Primavera Mapa 22.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
+        <div id="jardim-primavera" class="section" style="display:none;">
+          <h1>Jardim Primavera</h1>
+          <div class="conteudo">
+            <img src="Img/Jardim Primavera/Jardim Primavera Mapa 23.jpg" alt="Jardim Primavera"
+              onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
+        <div id="joao-xxiii" class="section" style="display:none;">
+          <h1>João XXIII</h1>
+          <div class="conteudo">
+            <img src="Img/João XII/JoãoXIII.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
+            <img src="Img/João XII/JoãoXIII Mapa 24.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
+            <img src="Img/João XII/JoãoXIII Mapa 25.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
 
-          <img src="Img/Primavera/Primavera Mapa 22.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
-        </div>
-      </div>
-      <div id="jardim-primavera" class="section" style="display:none;">
-        <h1>Jardim Primavera</h1>
-        <div class="conteudo">
-          <img src="Img/Jardim Primavera/Jardim Primavera Mapa 23.jpg" alt="Jardim Primavera"
-            onclick="openFullscreen(this.src)" />
-        </div>
-      </div>
-      <div id="joao-xxii" class="section" style="display:none;">
-        <h1>João XXIII</h1>
-        <div class="conteudo">
-          <img src="Img/João XII/JoãoXIII Mapa 24.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
-          <img src="Img/João XII/JoãoXIII Mapa 25.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
-        </div>
       </div>
       <div id="corrego-do-cacador" class="section" style="display:none;">
         <h1>Córrego do Caçador</h1>
         <div class="conteudo">
-          <img src="Img/corrego do caçador/corrego do caçador Mapa 26.jpg" alt="Córrego do Caçador"
+          <img src="Img/Corrego do caçador/corrego do caçador Mapa 26.jpg" alt="Córrego do Caçador"
             onclick="openFullscreen(this.src)" />
-          <img src="Img/corrego do caçador/corrego do caçador Mapa 27.jpg" alt="Córrego do Caçador"
+          <img src="Img/Corrego do caçador/corrego do caçador Mapa 27.jpg" alt="Córrego do Caçador"
             onclick="openFullscreen(this.src)" />
         </div>
       </div>
@@ -139,7 +216,8 @@
       <div id="john-kennedy" class="section" style="display:none;">
         <h1>John Kennedy</h1>
         <div class="conteudo">
-          <img src="Img/John Kennedy/John Kennedy mapa 13.jpg" alt="John Kennedy Mapa13" onclick="openFullscreen(this.src)" />
+          <img src="Img/John Kennedy/John Kennedy mapa 13.jpg" alt="John Kennedy Mapa13"
+            onclick="openFullscreen(this.src)" />
         </div>
       </div>
       <div id="novo-horizonte" class="section" style="display:none;">
@@ -171,8 +249,8 @@
       <div id="alto-timirim" class="section" style="display:none;">
         <h1>Alto Timirim</h1>
         <div class="conteudo">
-          <img src="Img/Alto Timirim/Alto Timirim Mapa 1.jpg" alt="Alto Timirim" onclick="openFullscreen(this.src)" />
-          <img src="Img/Alto Timirim/Alto Timirim Mapa 2.jpg" alt="Alto Timirim" onclick="openFullscreen(this.src)" />
+          <img src="Img/Alto timirim/Alto Timirim Mapa 1.jpg" alt="Alto Timirim" onclick="openFullscreen(this.src)" />
+          <img src="Img/Alto timirim/Alto Timirim Mapa 2.jpg" alt="Alto Timirim" onclick="openFullscreen(this.src)" />
         </div>
       </div>
       <div id="timirim" class="section" style="display:none;">
@@ -222,28 +300,19 @@
       <div class="nav-list">
         <ul>
           <li class="nav-item">
-            <a href="Analise.html" class="nav-link" target="_blank">Analise registro</a>
-          </li>
-          <li class="nav-item">
-            <a href="S_13.html" class="nav-link" target="_blank">Registros-S-13</a>
-          </li>
-          <li class="nav-item">
             <a href="Territorio/Mapa.html" class="nav-link" target="_blank">Mapa</a>
-
           </li>
         </ul>
       </div>
     </nav>
   </footer>
+
   <script>
     function showSection(sectionId) {
-      // Esconde todas as seções
       const sections = document.querySelectorAll('.section');
       sections.forEach(section => {
         section.style.display = 'none';
       });
-
-      // Mostra a seção correta
       const activeSection = document.getElementById(sectionId);
       if (activeSection) {
         activeSection.style.display = 'block';
@@ -257,7 +326,8 @@
       });
     });
   </script>
-  <script src="script.js"></script>
+  <script src="tela cheia.js"></script>
+  <script src="Prog_campo.js"></script>
 </body>
 
 </html>
