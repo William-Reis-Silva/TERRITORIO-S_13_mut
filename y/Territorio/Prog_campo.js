@@ -51,36 +51,21 @@ function obterDatasFuturas() {
   );
   hoje.setHours(0, 0, 0, 0); // Zera as horas para evitar problemas com horário de verão
 
+  console.log("Data de hoje:", hoje.toLocaleDateString("pt-BR"));
+
   const diaSemana = hoje.getDay(); // 0 (domingo) até 6 (sábado)
 
-  // Encontra o sábado da semana atual
-  let diasParaSabado;
-  if (diaSemana === 6) {
-    // Se hoje é sábado
-    diasParaSabado = 0; // Usa o sábado atual
-  } else if (diaSemana === 0) {
-    // Se hoje é domingo
-    diasParaSabado = -1; // Usa o sábado que passou
-  } else {
-    diasParaSabado = 6 - diaSemana; // Dias até o sábado desta semana
-  }
+  // Encontrar a segunda-feira da semana atual (início da semana)
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
 
-  // Encontra o domingo da semana atual
-  let diasParaDomingo;
-  if (diaSemana === 0) {
-    // Se hoje é domingo
-    diasParaDomingo = 0; // Usa o domingo atual
-  } else {
-    diasParaDomingo = -diaSemana; // Dias até o domingo que passou
-  }
+  // Calcular o sábado da semana atual (inicioSemana + 5 dias)
+  const dataSabado = new Date(inicioSemana);
+  dataSabado.setDate(inicioSemana.getDate() + 5);
 
-  // Calcula a data do sábado
-  const dataSabado = new Date(hoje);
-  dataSabado.setDate(hoje.getDate() + diasParaSabado);
-
-  // Calcula a data do domingo
-  const dataDomingo = new Date(hoje);
-  dataDomingo.setDate(hoje.getDate() + diasParaDomingo);
+  // Calcular o domingo da semana atual (inicioSemana + 6 dias)
+  const dataDomingo = new Date(inicioSemana);
+  dataDomingo.setDate(inicioSemana.getDate() + 6);
 
   // Formata as datas no padrão DD-MM-YYYY
   const formatarData = (data) => {

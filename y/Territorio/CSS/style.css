@@ -1,6 +1,6 @@
 body {
+  width: 100%;
   min-height: 100vh;
-  /* Use viewport height instead of percentage */
   margin: 0;
   padding: 0;
   display: flex;
@@ -220,9 +220,11 @@ caption {
   margin: 10px 0;
   color: white;
 }
-#semana-atual{
+
+#semana-atual {
   font-size: 0.7em;
 }
+
 /* Estilo da Tabela */
 table {
   width: 100%;
@@ -254,13 +256,18 @@ th {
 td {
   font-size: 0.95em;
 }
-.idoso{
+
+.idoso {
   padding: 5px 7px;
 }
-.idosos{
+
+.idosos {
   margin: 0 0 5px 0;
- 
 }
+#idoso{
+text-align: center;
+}
+
 /* Linhas Alternadas */
 tbody tr:nth-child(even) {
   background-color: #f2f2f2;
@@ -280,6 +287,7 @@ tbody tr:hover {
   th,
   td {
     padding: 8px;
+    
   }
 
   caption {
@@ -287,20 +295,6 @@ tbody tr:hover {
   }
 }
 
-
-@media screen and (max-width: 835px) {
-  .button button a {
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-  }
-
-  .nav-link {
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 400;
-  }
-}
 
 @media screen and (max-width: 730px) {
   .nav-bar {
@@ -321,9 +315,10 @@ tbody tr:hover {
     text-align: left;
     font-size: 0.6rem;
   }
-  #idoso{
-    text-align: left;
-      font-size: 0.6rem;
+
+  #idoso {
+    text-align: center;
+    font-size: 0.6rem;
   }
 
   th {
@@ -339,5 +334,19 @@ tbody tr:hover {
     cursor: zoom-in;
     box-sizing: border-box;
     /* Garante que o padding e as margens sejam incluídos nas dimensões da imagem */
+  }
+}
+
+@media screen and (max-width: 835px) {
+  .button button a {
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .nav-link {
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 400;
   }
 }
