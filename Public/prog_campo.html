@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="img/icone-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="img/icone-192.png">
+    <link rel="stylesheet" href="css/styles.css" />
+    <title>Programação de campo</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="js/Firebaseconfig.js"></script>
+
+
+</head>
+
+<body>
+    <div class="container">
+        <!-- Tabela para exibir a programação -->
+        <table id="tabelaProgramacao">
+            <caption>Programação de Campo</caption>
+            <thead>
+                <tr>
+                    <th>Dia</th>
+                    <th>Modalidade</th>
+                    <th>Hora</th>
+                    <th>Dirigente</th>
+                    <th>Saída</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+<script src="Prog_campo.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Aplicativo para arranjo de campo">
+  <!-- PWA iOS Support -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arranjo de Campo">
+  <link rel="apple-touch-icon" href="img/icone-192.png">
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Favicon -->
+  <link rel="icon" href="./img/icone-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./img/icone-192.png">
+  <!--CSS-->
+  <link rel="stylesheet" href="./css/index.css" />
+  <link rel="stylesheet" href="./css/editar.css" />
+
+  <title>Controle de Território</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+</head>
+
+<body>
+  <header>
+
+    <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
+    <nav class="nav-bar">
+      <div class="logo">
+    <img src="img/logo.png" alt="logo" />
+      </div>
+      <div class="nav-list">
+        <ul>
+          <li class="nav-item">
+            <a href="login.html" class="nav-link">Login</a>
+          </li>
+          <li class="nav-item">
+            <a href="./Painel/painel.html" id="admin" class="nav-link" style="display:none">Admin</a>
+          </li>
+          <li class="nav-item">
+            <a href="Territorio/index_territorio.html" class="nav-link">Território</a>
+          </li>
+          <li class="nav-item">
+            <a href="Registro_S13.html" class="nav-link">Novo Registro</a>
+          </li>
+          <li class="nav-item">
+            <a href="#" id="logout" class="nav-link">Sair</a>
+          </li>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <div id="frameRegistros">
+      <div id="connection-status" class="connection-status">
+   
+        <samp id="conectado">🟢 Online</samp>
+   
+      </div>
+      <h1>Últimos Registros</h1>
+     
+      <div id="Registro">
+        <table id="tabelaDados">
+          <thead>
+            <tr>
+              <th>Mapa</th>
+              <th>Bairro</th>
+              <th>Designado Para</th>
+              <th>Data de Início</th>
+              <th>Data de Conclusão</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="lista-designacoes"></tbody>
+        </table>
+        <!-- Indicadores visuais -->
+        <div id="loading-indicator" style="display: none;">
+          ⏳ Carregando...
+        </div>
+
+        <!-- Botões opcionais -->
+
+
+        <div id="myModal" class="modal">
+          <div class="modal-content">
+            <h1 class="editar">Editar Registro</h1>
+            <span class="close">&times;</span>
+            <form id="formEdicao">
+              <label for="numero_mapa_edit">Número Mapa:</label>
+              <input type="text" id="numero_mapa_edit" disabled />
+              <br />
+              <label for="bairro_edit">Bairro:</label>
+              <input type="text" id="bairro_edit" disabled />
+              <br />
+              <label for="designado_para_edit">Designado Para:</label>
+              <input type="text" id="designado_para_edit" disabled />
+              <br />
+              <label for="data_inicio_edit">Data de Início:</label>
+              <input type="date" id="data_inicio_edit" />
+              <br />
+              <label for="data_conclusao_edit">Data de Conclusão:</label>
+              <input type="date" id="data_conclusao_edit" />
+              <br />
+              <div class="button-container">
+                <button type="button" id="salvar_edicao" class="btn btn-primary">
+                  <span>💾</span> Salvar
+                </button>
+                <button type="button" id="deletar_registro" class="btn btn-danger">
+                  <span>🗑️</span> Excluir
+                </button>
+                <button type="button" id="cancelar_edicao" class="btn btn-secondary">
+                  <span>❌</span> Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <nav class="nav-bar">
+      <div class="nav-list">
+        <ul>
+
+          <li class="nav-item">
+            <a href="S_13.html" id="admin" class="nav-link" target="_blank" style="display: none;">Registros-S-13</a>
+          </li>
+          <li class="nav-item">
+            <a href="Territorio/Mapa.html" class="nav-link" target="_blank">Mapa</a>
+
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </footer>
+  <script>
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('sw.js');
+          console.log('SW registrado com sucesso:', registration);
+
+          // Verificar atualizações
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  // Novo conteúdo disponível
+                  if (confirm('Nova versão disponível! Atualizar agora?')) {
+                    window.location.reload();
+                  }
+                }
+              }
+            });
+          });
+        } catch (error) {
+          console.error('Erro ao registrar SW:', error);
+        }
+      });
+    }
+
+    // Detectar instalação do PWA
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Mostrar botão de instalação customizado
+      const installButton = document.getElementById('install-button');
+      if (installButton) {
+        installButton.style.display = 'block';
+        installButton.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Usuário ${outcome} a instalação`);
+            deferredPrompt = null;
+            installButton.style.display = 'none';
+          }
+        });
+      }
+    });
+
+    // Detectar quando o app foi instalado
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA foi instalado');
+      deferredPrompt = null;
+    });
+  </script>
+ <script src="js/Firebaseconfig.js"></script>
+
+<script type="module" src="js/home.js"></script>
+</body>
+
+</html>

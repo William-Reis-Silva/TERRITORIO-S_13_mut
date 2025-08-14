@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin - Territórios</title>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
+        <h1>Painel Administrativo - Territórios</h1>
+        <nav>
+            <button onclick="showTab('gerenciar')">Gerenciar Território</button>
+            <button onclick="showTab('config')">Configurações</button>
+            <button onclick="showTab('relatorio')">Relatório</button>
+            <button onclick="voltar()">Voltar</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="gerenciar" class="tab active">
+            <h2>Gerenciar Território</h2>
+            <form id="gerenciar-form">
+                <label>Responsável:
+                    <input type="text" id="responsavel" required>
+                </label>
+                <label>Número do Mapa:
+                    <input type="number" id="mapa-num" required>
+                </label>
+                <label>Data de Designação:
+                    <input type="date" id="data-designacao" required>
+                </label>
+                <button type="submit">Designar</button>
+            </form>
+            <div id="gerenciar-result"></div>
+        </section>
+
+        <section id="config" class="tab">
+            <h2>Configurações de Território</h2>
+            <form id="config-form">
+                <label>Bairro:
+                    <input type="text" id="bairro" placeholder="Ex: Centro">
+                </label>
+                <label>Número do Mapa:
+                    <input type="number" id="mapa-config" placeholder="Ex: 1" min="1">
+                </label>
+                <label>Foto do Mapa:
+                    <input type="file" id="mapa-foto" accept="image/*">
+                    <small style="color: #666;">Selecione uma imagem (JPG, PNG, etc.)</small>
+                </label>
+                <button type="submit">Salvar Território</button>
+            </form>
+            <div id="config-result"></div>
+        </section>
+
+        <section id="relatorio" class="tab">
+            <h2>Relatório</h2>
+            <div id="relatorio-result">
+                <p>Carregando dados...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts carregados na ordem correta -->
+    <script src="../js/Firebaseconfig.js"></script>
+    <script>
+        // Aguardar o Firebase ser inicializado antes de carregar o script principal
+        window.addEventListener('load', function () {
+            // Verificar se Firebase foi inicializado
+            if (typeof firebase === 'undefined') {
+                alert('Erro: Firebase não foi carregado. Verifique a configuração.');
+                return;
+            }
+
+            // Carregar script principal
+            const script = document.createElement('script');
+            script.src = 'script.js';
+            document.body.appendChild(script);
+        });
+
+        // Função para alternar abas
+        const tabs = document.querySelectorAll('.tab');
+
+        function showTab(id) {
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(id).classList.add('active');
+
+            // Atualizar relatório quando a aba for selecionada
+            if (id === 'relatorio') {
+                setTimeout(atualizarRelatorio, 100);
+            }
+        }
+        // Função para voltar
+        function voltar() {
+            window.location.href = '../index.html'; // Redireciona para a página inicial
+        }
+    </script>
+</body>
+
+</html>
