@@ -1,11 +1,9 @@
 // Registro_S13.js - Versão atualizada com MapaLoader otimizado
 import unifiedDataManager from "./UnifiedDataManager.js";
-
-// Classe otimizada para carregar imagens dos mapas
 class MapaLoader {
   constructor() {
     this.baseUrl = "./img/mapas/";
-    this.imageFormats = ["jpg"];
+    this.imageFormats = ["jpg", "jpeg", "png", "webp"];
     this.currentImageUrl = null;
     this.loadingPromises = new Map();
     this.imageCache = new Map();
@@ -338,57 +336,54 @@ class RegistroS13 {
     this._atualizarStatusConexao();
   }
 
-_setupEventListeners() {
-  const numeroMapaInput = document.getElementById("numero_mapa");
-  if (numeroMapaInput) {
-    const handleMapaInput = async (e) => {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = setTimeout(async () => {
-        const val = e.target.value.trim();
-        const numero = parseInt(val, 10);
+  _setupEventListeners() {
+    const numeroMapaInput = document.getElementById("numero_mapa");
+    if (numeroMapaInput) {
+      // Usar debounce para evitar múltiplas chamadas
+      numeroMapaInput.addEventListener("input", (e) => {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(async () => {
+          const numero = parseInt(e.target.value);
+          if (!isNaN(numero) && numero > 0) {
+            await this._buscarTerritorio(numero);
+            await this.mapaLoader.carregarImagemMapa(numero);
+          } else {
+            document.getElementById("bairro").value = "";
+          }
+        }, 150);
+      });
 
-        if (!isNaN(numero) && numero > 0) {
-          console.log('[RegistroS13] handleMapaInput ->', numero, 'evento:', e.type);
-          await this._buscarTerritorio(numero);             // atualiza o bairro
-          await this.mapaLoader.carregarImagemMapa(numero); // carrega a imagem
-        } else {
-          document.getElementById("bairro").value = "";
-          this.mapaLoader.ocultarImagem();
-        }
-      }, 300); // debounce (ajuste se quiser mais/menos sensível)
-    };
-
-    // usamos INPUT e CHANGE (change cobre quando o campo perde foco com valor alterado)
-    numeroMapaInput.removeEventListener && numeroMapaInput.removeEventListener('input', handleMapaInput);
-    numeroMapaInput.addEventListener("input", handleMapaInput);
-    numeroMapaInput.addEventListener("change", handleMapaInput);
-  }
-
-  const salvarBtn = document.getElementById("Salvar");
-  if (salvarBtn) {
-    salvarBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      this._salvarRegistro();
-    });
-  }
-
-  const closeDialog = document.getElementById("close-dialog");
-  if (closeDialog) {
-    closeDialog.addEventListener("click", () => {
-      this._fecharDialogo();
-    });
-  }
-
-  window.addEventListener("click", (e) => {
-    const dialog = document.getElementById("dialog");
-    if (e.target === dialog) {
-      this._fecharDialogo();
+      numeroMapaInput.addEventListener("keyup", async (e) => {
+        clearTimeout(this.debounceTimer);
+        const numero = parseInt(e.target.value);
+        await this._buscarTerritorio(numero);
+      });
     }
-  });
 
-  this._setupValidacao();
-}
+    const salvarBtn = document.getElementById("Salvar");
+    if (salvarBtn) {
+      salvarBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this._salvarRegistro();
+      });
+    }
 
+    const closeDialog = document.getElementById("close-dialog");
+    if (closeDialog) {
+      closeDialog.addEventListener("click", () => {
+        this._fecharDialogo();
+      });
+    }
+
+    window.addEventListener("click", (e) => {
+      const dialog = document.getElementById("dialog");
+      if (e.target === dialog) {
+        this._fecharDialogo();
+      }
+    });
+
+    this._setupValidacao();
+  }
 
   _setupMapaLoader() {
     const numeroMapaInput = document.getElementById("numero_mapa");
