@@ -1,13 +1,14 @@
 (function () {
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyExampleKey1234567890",
-  authDomain: "meu-projeto.firebaseapp.com",
-  projectId: "meu-projeto",
-  storageBucket: "meu-projeto.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcd1234efgh5678",
-  measurementId: "G-ABCDEFG123" // opcional, usado no Analytics
+  apiKey: "AIzaSyBKnvObu_hob-RNi6MDZO7K7Zd00744w6g",
+  authDomain: "territorio-timirim.firebaseapp.com",
+  databaseURL: "https://territorio-timirim-default-rtdb.firebaseio.com",
+  projectId: "territorio-timirim",
+  storageBucket: "territorio-timirim.firebasestorage.app",
+  messagingSenderId: "309618565543",
+  appId: "1:309618565543:web:9671ff7cfc24f34ee19682",
+  measurementId: "G-CW0KC31FTV"
 };
 
   // Initialize Firebase

@@ -1,5 +1,6 @@
-// Registro_S13.js - Versão atualizada com MapaLoader otimizado
+// Registro_S13.js - Versão otimizada com carregamento simultâneo
 import unifiedDataManager from "./UnifiedDataManager.js";
+
 class MapaLoader {
   constructor() {
     this.baseUrl = "./img/mapas/";
@@ -266,7 +267,7 @@ class RegistroS13 {
     this.auth = firebase.auth();
     this.currentUser = null;
     this.mapaLoader = new MapaLoader();
-    this.debounceTimer = null; // Para debounce do input
+    this.debounceTimer = null; // Timer unificado para debounce
   }
 
   async init() {
@@ -339,24 +340,47 @@ class RegistroS13 {
   _setupEventListeners() {
     const numeroMapaInput = document.getElementById("numero_mapa");
     if (numeroMapaInput) {
-      // Usar debounce para evitar múltiplas chamadas
+      // Função unificada para processar mudanças no número do mapa
+      const processarMudancaMapa = async (valor) => {
+        const numero = parseInt(valor);
+        if (!isNaN(numero) && numero > 0) {
+          // Executar busca de território e carregamento de imagem simultaneamente
+          await Promise.all([
+            this._buscarTerritorio(numero),
+            this.mapaLoader.carregarImagemMapa(numero)
+          ]);
+        } else {
+          // Limpar campos se número inválido
+          const bairroInput = document.getElementById("bairro");
+          if (bairroInput) {
+            bairroInput.value = "";
+            bairroInput.placeholder = "Bairro será preenchido automaticamente";
+          }
+          this.mapaLoader.ocultarImagem();
+        }
+      };
+
+      // Event listener com debounce unificado para input
       numeroMapaInput.addEventListener("input", (e) => {
         clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(async () => {
-          const numero = parseInt(e.target.value);
-          if (!isNaN(numero) && numero > 0) {
-            await this._buscarTerritorio(numero);
-            await this.mapaLoader.carregarImagemMapa(numero);
-          } else {
-            document.getElementById("bairro").value = "";
-          }
-        }, 150);
+        this.debounceTimer = setTimeout(() => {
+          processarMudancaMapa(e.target.value);
+        }, 200); // Debounce reduzido para 200ms
       });
 
-      numeroMapaInput.addEventListener("keyup", async (e) => {
+      // Event listener para change (quando usuário sai do campo)
+      numeroMapaInput.addEventListener("change", (e) => {
         clearTimeout(this.debounceTimer);
-        const numero = parseInt(e.target.value);
-        await this._buscarTerritorio(numero);
+        processarMudancaMapa(e.target.value);
+      });
+
+      // Event listener para keyup (para casos específicos como Tab)
+      numeroMapaInput.addEventListener("keyup", (e) => {
+        // Se for Tab, Enter ou Escape, processar imediatamente
+        if (e.key === "Tab" || e.key === "Enter" || e.key === "Escape") {
+          clearTimeout(this.debounceTimer);
+          processarMudancaMapa(e.target.value);
+        }
       });
     }
 
@@ -386,23 +410,7 @@ class RegistroS13 {
   }
 
   _setupMapaLoader() {
-    const numeroMapaInput = document.getElementById("numero_mapa");
     const mapaImg = document.getElementById("mapa-preview");
-
-    if (numeroMapaInput) {
-      // Usar o mesmo debounce para o carregamento de imagens
-      numeroMapaInput.addEventListener("input", (e) => {
-        clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(async () => {
-          await this.mapaLoader.carregarImagemMapa(e.target.value);
-        }, 300);
-      });
-
-      numeroMapaInput.addEventListener("change", async (e) => {
-        clearTimeout(this.debounceTimer);
-        await this.mapaLoader.carregarImagemMapa(e.target.value);
-      });
-    }
 
     if (mapaImg) {
       mapaImg.addEventListener("click", () => {

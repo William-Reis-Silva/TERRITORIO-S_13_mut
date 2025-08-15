@@ -114,22 +114,57 @@ class Home {
 
     // ==================== RENDERIZAÇÃO DE DADOS ====================
 
-    _renderizarDados() {
-        if (!this.elements.tbody) {
-            console.warn("⚠️ Elemento tbody não encontrado");
-            return;
-        }
-
-        const registros = unifiedDataManager.data;
-        
-        if (registros.length === 0) {
-            this._exibirEstadoVazio();
-        } else {
-            this._renderizarTabela(registros);
-        }
-        this._esconderCarregamento();
+  _renderizarDados() {
+    if (!this.elements.tbody) {
+        console.warn("⚠️ Elemento tbody não encontrado");
+        return;
     }
 
+    const registros = unifiedDataManager.data;
+    
+    if (registros.length === 0) {
+        this._exibirEstadoVazio();
+    } else {
+        // NOVA ORDENAÇÃO: Em Andamento primeiro, depois por data
+        const registrosOrdenados = this._ordenarRegistrosPorPrioridade(registros);
+        this._renderizarTabela(registrosOrdenados);
+    }
+    this._esconderCarregamento();
+}
+
+// NOVO MÉTODO para ordenar com prioridade
+_ordenarRegistrosPorPrioridade(registros) {
+    return registros
+        .slice() // Criar cópia para não modificar o array original
+        .sort((a, b) => {
+            const statusA = this._determinarStatusRegistro(a);
+            const statusB = this._determinarStatusRegistro(b);
+            
+            // Prioridades:
+            // 1. Em Andamento = 1
+            // 2. Atrasado = 2
+            // 3. Concluído = 3
+            const prioridades = {
+                'em-andamento': 1,
+                'atrasado': 2,
+                'concluido': 3
+            };
+            
+            const prioridadeA = prioridades[statusA.classe];
+            const prioridadeB = prioridades[statusB.classe];
+            
+            // Se as prioridades são diferentes, ordenar por prioridade
+            if (prioridadeA !== prioridadeB) {
+                return prioridadeA - prioridadeB;
+            }
+            
+            // Se mesma prioridade, ordenar por data (mais recente primeiro)
+            const dataA = new Date(a.dataInicio || 0);
+            const dataB = new Date(b.dataInicio || 0);
+            return dataB - dataA;
+        })
+        .slice(0, 20); // Limitar aos 20 primeiros após ordenação
+}
     _exibirCarregamento() {
         if (this.elements.tbody) {
             this.elements.tbody.innerHTML = `
