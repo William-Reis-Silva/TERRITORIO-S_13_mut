@@ -10,7 +10,7 @@ body {
   padding: 20px;
   box-sizing: border-box;
   font-family: Arial, sans-serif;
-  background-color: #f4f4f9;
+  background-color: #ccc;
   color: #333;
 }
 
@@ -64,9 +64,22 @@ tr:hover {
   cursor: pointer;
   transition: background-color 0.3s;
 }
-
 #yearControls button:hover {
-  background-color: #45a049;
+  background-color:#102c11;
+}
+#yearControls button a {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: none;
+}
+#yearControls button a :hover {
+  background-color: #102c11;
 }
 
 #yearControls span {

@@ -17,8 +17,6 @@ class UnifiedDataManager {
     // Status
     this.isInitialized = false;
     this.isOnline = navigator.onLine;
-    
-    console.log('🚀 UnifiedDataManager inicializando...');
   }
 
   // ==================== INICIALIZAÇÃO ====================
@@ -49,8 +47,6 @@ class UnifiedDataManager {
       this._setupConnectionHandlers();
       
       this.isInitialized = true;
-      console.log('✅ UnifiedDataManager inicializado com sucesso!');
-      
       return true;
     } catch (error) {
       console.error('❌ Erro na inicialização:', error);
@@ -63,7 +59,7 @@ class UnifiedDataManager {
       await this.firestore.enablePersistence({
         synchronizeTabs: true // Sincroniza entre abas
       });
-      console.log('💾 Persistência offline habilitada');
+
     } catch (error) {
       if (error.code === 'failed-precondition') {
         console.warn('⚠️ Persistência não habilitada - múltiplas abas abertas');
@@ -89,7 +85,6 @@ class UnifiedDataManager {
         
         if (user) {
           this.currentUser = user;
-          console.log('👤 Usuário autenticado:', user.email);
           resolve(user);
         } else {
           reject(new Error('Usuário não autenticado'));
@@ -116,7 +111,7 @@ class UnifiedDataManager {
           isAdmin: userData.isAdmin === true,
           username: userData.usuario || userData.displayName || this.currentUser.email?.split('@')[0] || 'Usuário'
         };
-        console.log('👤 Permissões carregadas:', this.userPermissions);
+      
       } else {
         // Criar documento do usuário com permissões padrão
         const defaultUserData = {
@@ -138,7 +133,7 @@ class UnifiedDataManager {
           username: defaultUserData.usuario
         };
         
-        console.log('👤 Usuário criado com permissões padrão:', this.userPermissions);
+     
       }
     } catch (error) {
       console.error('❌ Erro ao carregar permissões:', error);
@@ -154,7 +149,7 @@ class UnifiedDataManager {
   // ==================== LISTENERS EM TEMPO REAL ====================
   _startRealtimeListeners() {
     try {
-      // Listener para registros (últimos 20)
+      // Listener para registros (Últimos 20)
       this.unsubscribeRegistros = this.firestore
         .collection('designacoes')
         .orderBy('dataInicio', 'desc')
@@ -172,7 +167,6 @@ class UnifiedDataManager {
           (error) => this._handleSnapshotError('territorios', error)
         );
 
-      console.log('🎧 Listeners em tempo real iniciados');
     } catch (error) {
       console.error('❌ Erro ao iniciar listeners:', error);
     }
@@ -191,19 +185,16 @@ class UnifiedDataManager {
           case 'added':
             this._addRegistro(registro, change.newIndex);
             hasChanges = true;
-            console.log(`➕ Registro adicionado: Mapa ${registro.mapa}`);
             break;
           
           case 'modified':
             this._updateRegistro(registro, change.oldIndex, change.newIndex);
             hasChanges = true;
-            console.log(`✏️ Registro modificado: Mapa ${registro.mapa}`);
             break;
           
           case 'removed':
             this._removeRegistro(change.doc.id);
             hasChanges = true;
-            console.log(`🗑️ Registro removido: ${change.doc.id}`);
             break;
         }
       });
@@ -229,7 +220,6 @@ class UnifiedDataManager {
           case 'added':
           case 'modified':
             this.territorios.set(territorio.mapa, territorio);
-            console.log(`🗺️ Território ${territorio.mapa} atualizado`);
             break;
           
           case 'removed':
@@ -237,7 +227,6 @@ class UnifiedDataManager {
             for (const [mapa, terr] of this.territorios.entries()) {
               if (terr.id === change.doc.id) {
                 this.territorios.delete(mapa);
-                console.log(`🗑️ Território ${mapa} removido`);
                 break;
               }
             }
@@ -283,8 +272,6 @@ class UnifiedDataManager {
 
       // Atualiza status do território se existir
       await this._updateTerritorioStatus(novoRegistro.mapa, novoRegistro.status);
-
-      console.log('✅ Designação criada:', docRef.id);
       this._emitEvent('designacaoCriada', { id: docRef.id, mapa: novoRegistro.mapa });
       
       return docRef.id;
@@ -312,15 +299,13 @@ class UnifiedDataManager {
         .doc(id)
         .update(updates);
 
-      // Atualiza status do território se mudou
-      const registro = this.registros.find(r => r.id === id);
-      if (registro) {
-        await this._updateTerritorioStatus(registro.mapa, updates.status);
+      // **FIX PRINCIPAL**: Sempre atualizar status do território quando há mudanças
+      const numeroMapa = updates.mapa || dadosAtualizados.mapa;
+      if (numeroMapa) {
+        await this._updateTerritorioStatus(numeroMapa, updates.status);
       }
 
-      console.log('✅ Designação atualizada:', id);
       this._emitEvent('designacaoAtualizada', { id, updates });
-      
       return true;
     } catch (error) {
       console.error('❌ Erro ao atualizar designação:', error);
@@ -345,8 +330,6 @@ class UnifiedDataManager {
       if (registro) {
         await this._updateTerritorioStatus(registro.mapa, 'disponível');
       }
-
-      console.log('✅ Designação deletada:', id);
       this._emitEvent('designacaoDeletada', { id, mapa: registro?.mapa });
       
       return true;
@@ -356,7 +339,7 @@ class UnifiedDataManager {
     }
   }
 
-  // ==================== OPERAÇÕES - TERRITÓRIOS ====================
+  // ==================== OPERAÇÕES - TERRITÓRIOS (VERSÃO CORRIGIDA) ====================
   getTerritorio(numeroMapa) {
     return this.territorios.get(numeroMapa) || null;
   }
@@ -366,23 +349,108 @@ class UnifiedDataManager {
   }
 
   async _updateTerritorioStatus(numeroMapa, novoStatus) {
-    try {
-      const territorio = this.territorios.get(numeroMapa);
-      if (territorio) {
-        const statusTerritorio = novoStatus === 'concluído' ? 'disponível' : 'em andamento';
-        
-        await this.firestore
+    try {    
+      // Primeiro, verificar se o território existe no cache local
+      let territorio = this.territorios.get(numeroMapa);
+      
+      // Se não está no cache, buscar direto no Firestore
+      if (!territorio) {        
+        const snapshot = await this.firestore
           .collection('territorios')
-          .doc(territorio.id)
-          .update({
-            status: statusTerritorio,
-            ultimaAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          
-        console.log(`🗺️ Status do território ${numeroMapa} atualizado para: ${statusTerritorio}`);
+          .where('mapa', '==', parseInt(numeroMapa)) // Garantir que seja número
+          .limit(1)
+          .get();
+        
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          territorio = { id: doc.id, ...doc.data() };
+          // Adicionar ao cache local
+          this.territorios.set(numeroMapa, territorio);
+        } else {
+          console.warn(`⚠️ Território ${numeroMapa} não existe no Firestore`);
+          return false;
+        }
       }
+
+      // Determinar o status correto do território
+      const statusTerritorio = this._determinarStatusTerritorio(novoStatus);
+      
+      // Verificar se precisa atualizar (evitar escritas desnecessárias)
+      if (territorio.status === statusTerritorio) {
+        return true;
+      }
+
+      // Atualizar no Firestore
+      await this.firestore
+        .collection('territorios')
+        .doc(territorio.id)
+        .update({
+          status: statusTerritorio,
+          ultimaAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+      // Atualizar cache local imediatamente
+      this.territorios.set(numeroMapa, {
+        ...territorio,
+        status: statusTerritorio,
+        ultimaAtualizacao: new Date()
+      });
+      return true;
+
     } catch (error) {
-      console.warn(`⚠️ Erro ao atualizar status do território ${numeroMapa}:`, error);
+      console.error(`❌ Erro ao atualizar status do território ${numeroMapa}:`, error);
+
+      if (error.code === 'unavailable' || error.message.includes('network')) {
+        setTimeout(() => {
+          this._updateTerritorioStatus(numeroMapa, novoStatus);
+        }, 2000);
+      }
+      
+      return false;
+    }
+  }
+
+  // **NOVO MÉTODO**: Lógica centralizada para determinar status do território
+  _determinarStatusTerritorio(statusDesignacao) {
+    switch (statusDesignacao) {
+      case 'concluído':
+      case 'concluido':
+      case 'disponível':
+      case 'disponivel':
+        return 'disponível';
+      
+      case 'em andamento':
+      case 'em_andamento':
+      case 'andamento':
+        return 'em andamento';
+      
+      default:
+        console.warn(`⚠️ Status desconhecido: ${statusDesignacao}, usando 'em andamento' como padrão`);
+        return 'em andamento';
+    }
+  }
+
+  // **NOVO MÉTODO**: Sincronizar todos os territórios (útil para manutenção)
+  async sincronizarTerritorios() {
+
+    try {
+      const designacoes = this.registros;
+      const territoriosProcessados = new Set();
+      
+      for (const designacao of designacoes) {
+        if (!territoriosProcessados.has(designacao.mapa)) {
+          await this._updateTerritorioStatus(designacao.mapa, designacao.status);
+          territoriosProcessados.add(designacao.mapa);
+          
+          // Pequeno delay para evitar rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Erro na sincronização de territórios:', error);
+      return false;
     }
   }
 
@@ -435,13 +503,11 @@ class UnifiedDataManager {
   _setupConnectionHandlers() {
     window.addEventListener('online', () => {
       this.isOnline = true;
-      console.log('🌐 Conexão restaurada');
       this._emitEvent('connectionRestored');
     });
 
     window.addEventListener('offline', () => {
       this.isOnline = false;
-      console.log('📱 Modo offline');
       this._emitEvent('connectionLost');
     });
   }
@@ -514,7 +580,7 @@ class UnifiedDataManager {
     link.click();
     
     URL.revokeObjectURL(url);
-    console.log('📁 Dados exportados!');
+ 
   }
 
   // ==================== CLEANUP ====================
@@ -535,7 +601,6 @@ class UnifiedDataManager {
     this.territorios.clear();
     this.isInitialized = false;
     
-    console.log('🧹 UnifiedDataManager destruído');
   }
 }
 

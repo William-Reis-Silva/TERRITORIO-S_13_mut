@@ -6,8 +6,6 @@ class Home {
         this.isInitialized = false;
         this.designacaoAtual = null;
         this.animationDuration = 300;
-        
-        // Cache de elementos DOM
         this.elements = this._cacheElements();
     }
 
@@ -50,8 +48,7 @@ class Home {
 
  async init() {
     try {
-        console.log("🚀 Iniciando Home...");
-
+ 
         if (!unifiedDataManager.isInitialized) {
             const success = await unifiedDataManager.init();
             if (!success) {
@@ -64,7 +61,6 @@ class Home {
         this._renderizarDados();
 
         this.isInitialized = true;
-        console.log("✅ Home inicializado com sucesso");
 
     } catch (error) {
     console.error("❌ Erro ao inicializar Home:", error);
@@ -100,7 +96,6 @@ class Home {
         // Atualizar status de conexão
         this._atualizarStatusConexao();
         
-        console.log("🎨 Interface configurada com permissões:", permissions);
     }
 
     _aplicarPermissoesEscrita(canWrite) {
@@ -218,12 +213,9 @@ _ordenarRegistrosPorPrioridade(registros) {
             const row = this._criarLinhaTabela(registro);
             fragment.appendChild(row);
         });
-
         // Atualizar tabela de uma vez
         this.elements.tbody.innerHTML = "";
         this.elements.tbody.appendChild(fragment);
-        
-        console.log(`✅ ${registrosLimitados.length} designações renderizadas`);
     }
 
     _criarLinhaTabela(registro) {
@@ -338,7 +330,6 @@ _formatarData(dataStr) {
         // Recarregar dados
         if (this.elements.recarregarBtn) {
             this.elements.recarregarBtn.addEventListener("click", () => {
-                console.log("🔄 Recarregando dados...");
                 this._exibirCarregamento();
                 setTimeout(() => this._renderizarDados(), 100);
             });

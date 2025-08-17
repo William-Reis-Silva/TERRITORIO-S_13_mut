@@ -42,9 +42,13 @@ nav button {
     cursor: pointer;
     transition: background-color 0.3s;
 }
-
+a{
+    text-decoration: none;
+     color: #fff;
+}
 nav button:hover {
-    background-color: #2980b9;
+    background-color: #176192;
+
 }
 
 main {

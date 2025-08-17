@@ -1,3 +1,15 @@
 {
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+
+    "cSpell.languageSettings": [
+      {
+        "languageId": "javascript",
+        "enabled": false
+          },
+          {
+            "languageId": "typescript", 
+            "enabled": false
+          }
+        ]
+      
 }

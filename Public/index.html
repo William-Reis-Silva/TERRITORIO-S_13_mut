@@ -56,6 +56,9 @@
             <a href="Registro_S13.html" class="nav-link">Novo Registro</a>
           </li>
           <li class="nav-item">
+            <a href="Territorio/Mapa.html" class="nav-link">Mapa</a>
+          </li>
+          <li class="nav-item">
             <a href="#" id="logout" class="nav-link">Sair</a>
           </li>
       </div>
@@ -136,7 +139,6 @@
     </div>
   </footer>
   <script>
-    // Registrar Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
@@ -184,7 +186,6 @@
         });
       }
     });
-
     // Detectar quando o app foi instalado
     window.addEventListener('appinstalled', () => {
       console.log('PWA foi instalado');
@@ -192,7 +193,6 @@
     });
   </script>
  <script src="js/Firebaseconfig.js"></script>
-
 <script type="module" src="js/home.js"></script>
 </body>
 

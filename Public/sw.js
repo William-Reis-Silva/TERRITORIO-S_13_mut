@@ -35,14 +35,11 @@ const FILES_TO_CACHE = [
   "/Territorio/script.js",
 
   // Imagens
+  "/img/icone-32x32.png",
   "/img/icone-192.png",
   "/img/icone-512.png",
   "/img/logo.png",
-  "/img/mapas/mapa_1.png",
-  "/img/mapas/mapa_2.png",
-  "/img/mapas/mapa_3.png",
-  "/img/mapas/mapa_4.png",
-  "/img/mapas/mapa_5.png",
+  "/img/mapas/",
 
   // Manifest
   "/manifest.json",
@@ -66,7 +63,6 @@ function getBaseURL() {
 }
 
 self.addEventListener("install", (event) => {
-  console.log("[SW] Instalando Service Worker");
 event.waitUntil(
   caches
     .open(CACHE_NAME)
@@ -85,7 +81,6 @@ self.addEventListener("activate", (event) => {
   console.log("[SW] Ativando Service Worker");
   event.waitUntil(  caches.keys().then((keyList) => { return Promise.all( keyList.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log("[SW] Removendo cache antigo:", key);
             return caches.delete(key);
           }
         })
@@ -103,11 +98,9 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
       if (response) {
-        console.log("[SW] Servindo do cache:", event.request.url);
+
         return response;
       }
-
-      console.log("[SW] Buscando da rede:", event.request.url);
       return fetch(event.request)
         .then((response) => {
           if (!response || response.status !== 200 || response.type !== "basic") {
