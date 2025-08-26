@@ -1,5 +1,9 @@
+*{ 
+  margin: 0;
+  padding: 0;
+}
 body {
-  width: 100%;
+  width: 100vw;
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -22,11 +26,23 @@ main {
   flex-direction: column;
   padding: 0 0 60px 0; /* remove espaço extra no topo */
 }
-#home{
+#home, #home-idoso {
+  width: 98%;
   background-color: #4A535E;
-  margin: 25px auto;
+  margin: 15px auto;
   border-radius: 10px;
   border-top: 6px solid #1E2733;
+}
+#home-idoso{
+  border-top: 6px solid #1906ee;
+}
+.tabela {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px auto;
 }
 
 footer {
@@ -220,9 +236,8 @@ caption {
 /* Estilo da Tabela */
 table {
   width: 100%;
-  max-width: 600px;
+  max-width:800px;
   margin: 0 auto;
-  padding: 10px;
   border-collapse: collapse;
   margin-top: 5px;
   background-color: #fff;
@@ -230,10 +245,33 @@ table {
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
+#tabela-idoso {
+  background-color: #FFF588;
+  margin: 0;
+  padding: 0;
+}
+#tabela-idoso td {
+  font-size: large;
+ color:#3006FF;
+ font-weight: bold;
+}
+.idosos{
+  background-color: #FFF588;
+  color:red;
+  margin:0;
+  padding: 5px;
+}
+#tabela-idoso th {
+  background-color: #AAA893;
+  color:#000000;
+  font-size: medium;
+ font-weight: bold;
+}
 thead {
   background-color: #3e883fcc;
   color: #fff;
+  margin: 0;
+  padding: 0;
 }
 
 th,
@@ -246,14 +284,6 @@ td {
 td {
   font-size: 0.95em;
   color: #333;
-}
-
-.idoso {
-  padding: 5px 7px;
-}
-
-.idosos {
-  margin: 0 0 5px 0;
 }
 
 #idoso {

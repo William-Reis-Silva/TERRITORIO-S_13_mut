@@ -8,6 +8,7 @@
   <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
   <link rel="stylesheet" href="CSS/style.css" />
+  <link rel="stylesheet" href="../css/tema.css" />
   <link rel="shortcut icon" href="../img/icone-192.png" type="image/x-icon">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -59,7 +60,7 @@
     </header>
 </div>
     <main>
-
+<div class="tabela">
       <div id="home" class="section" style="display:block;">
         <table id="tabela-atividades">
           <caption id="title">Programação de Campo<br>
@@ -110,7 +111,7 @@
               <td>Sexta</td>
               <td>Casa em casa</td>
               <td>08:45</td>
-              <td>Werley</td>
+              <td>Joebel</td>
               <td>Salão Timirim</td>
             </tb>
           </tr>
@@ -134,6 +135,8 @@
           </tr>
           </tbody>
         </table>
+        </div>
+        <div id="home-idoso" class="section" style="display:block;">
         <table id="tabela-idoso">
           <caption class="idosos">Trabalho especial com os idosos</caption>
           <thead>
@@ -146,12 +149,13 @@
           <tbody>
             <tr>
               <td>Sábado</td>
-              <td id="idoso"></td>
-              <td id="acompanhate"></td>
+              <td  id="idoso"></td>
+              <td  id="acompanhate"></td>
             </tr>
           </tbody>
         </table>
       </div>  
+</div>
       <div id="mapas">
         <div id="joao-xxiii" class="section" style="display:none;">
           <h1>João XXIII</h1>
