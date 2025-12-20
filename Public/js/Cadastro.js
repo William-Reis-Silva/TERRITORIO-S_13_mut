@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function () {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
 
-
     const usuario = form.usuário.value;
     const email = form.email.value;
     const senha = form.senha.value;
@@ -33,12 +32,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((userCredential) => {
         const user = userCredential.user;
 
+        // 🔑 Dados básicos sem campos bloqueados
         const userData = {
           usuario: usuario,
           email: email,
           criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-          isAdmin: false,
-          writtenPermission: false,
         };
 
         const db = firebase.firestore();

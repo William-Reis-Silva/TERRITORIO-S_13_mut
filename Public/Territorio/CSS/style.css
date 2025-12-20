@@ -26,6 +26,16 @@ main {
   flex-direction: column;
   padding: 0 0 60px 0; /* remove espaço extra no topo */
 }
+button{
+  background: linear-gradient(to right, #1E2733, #4A535E, #1E2733);
+  color: #A5DEFF;
+  border: none;
+  padding: 10px 20px;
+  margin: 20px 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em bold;
+}
 #home, #home-idoso {
   width: 98%;
   background-color: #4A535E;

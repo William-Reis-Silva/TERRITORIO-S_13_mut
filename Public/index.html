@@ -30,6 +30,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 </head>
 
@@ -190,6 +191,22 @@
     window.addEventListener('appinstalled', () => {
       console.log('PWA foi instalado');
       deferredPrompt = null;
+    });
+    // Esta verificação DEVE ser executada antes de qualquer código que precise de um usuário logado
+    // para evitar o loop de redirecionamento.
+    document.addEventListener("DOMContentLoaded", () => {
+        // Garante que o firebase-auth-compat.js carregou
+        firebase.auth().onAuthStateChanged(user => {
+            if (!user) {
+                // Se não houver usuário logado, redireciona para login e PARA a execução.
+                console.log("Usuário deslogado. Redirecionando.");
+                window.location.replace("login.html");
+            } else {
+                console.log("Usuário autenticado. Iniciando aplicação.");
+                // Aqui o código pode continuar a carregar home.js
+                // O unifiedDataManager.init() ainda deve ser chamado em home.js
+            }
+        });
     });
   </script>
  <script src="js/Firebaseconfig.js"></script>

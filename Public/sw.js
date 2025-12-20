@@ -55,6 +55,7 @@ const FILES_TO_CACHE = [
   "/Territorio/index_territorio.html",
   "/Territorio/Mapa.html",
   "/Territorio/tabela.html",
+  "Territorio/especial.html",
 ];
 
 // Função para obter URL base

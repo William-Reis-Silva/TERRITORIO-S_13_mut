@@ -12,9 +12,12 @@ const firebaseConfig = {
 };
 
   // Initialize Firebase
-  const app = firebase.initializeApp(firebaseConfig);
-  window.db = firebase.firestore();
-  window.storage = firebase.storage();
+  firebase.initializeApp(firebaseConfig);
+
+window.db = firebase.firestore();
+window.storage = firebase.storage();
+window.auth = firebase.auth();
+window.database = firebase.database();
 })();
 
 
