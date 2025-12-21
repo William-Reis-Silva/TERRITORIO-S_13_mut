@@ -1,81 +1,124 @@
-// 🔹 Login automático e carregamento inicial
+/*************************************************
+ * 🔐 AUTENTICAÇÃO
+ *************************************************/
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
-    console.log("Usuário autenticado, iniciando carregamento de dados...");
-    obterSemana(0);
+    console.log("✅ Usuário autenticado");
   } else {
-    console.log("Realizando login automático...");
+    console.log("🔓 Realizando login automático...");
     firebase
       .auth()
-      .signInWithEmailAndPassword("williamsilvatj@hotmail.com", "356473")
-      .then(() => {
-        console.log("Login automático realizado com sucesso");
-        obterSemana(0);
-      })
-      .catch((error) => {
-        console.error("Erro no login:", error);
-      });
+      .signInWithEmailAndPassword(
+        "williamsilvatj@hotmail.com",
+        "356473"
+      )
+      .then(() => console.log("✅ Login automático realizado"))
+      .catch((error) => console.error("❌ Erro no login:", error));
   }
 });
 
-// 🔹 Controle de navegação entre semanas
+/*************************************************
+ * 📅 CONTROLE DE SEMANAS
+ *************************************************/
 let offsetSemanas = 0;
 
-// Função principal para exibir a semana e carregar dados correspondentes
-function obterSemana(offset = 0) {
-  const hoje = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
-  );
-  const diaSemana = hoje.getDay(); // 0 = domingo, 6 = sábado
+/*************************************************
+ * 🚀 INICIALIZAÇÃO DA TELA
+ *************************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 DOM pronto, iniciando carregamento");
+  configurarBotoes();
+  obterSemana(0);
+});
 
-  // Segunda-feira da semana base
+/*************************************************
+ * ⏪⏩ BOTÕES DE NAVEGAÇÃO
+ *************************************************/
+function configurarBotoes() {
+  const btnAnterior = document.getElementById("semana-anterior");
+  const btnProxima = document.getElementById("semana-proxima");
+
+  if (!btnAnterior || !btnProxima) return;
+
+  btnAnterior.addEventListener("click", () => {
+    offsetSemanas--;
+    obterSemana(offsetSemanas);
+  });
+
+  btnProxima.addEventListener("click", () => {
+    offsetSemanas++;
+    obterSemana(offsetSemanas);
+  });
+}
+
+/*************************************************
+ * 📆 OBTÉM SEMANA ATUAL
+ *************************************************/
+function obterSemana(offset = 0) {
+  console.log("📆 Carregando semana", offset);
+
+  const hoje = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "America/Sao_Paulo",
+    })
+  );
+
+  const diaSemana = hoje.getDay(); // 0 = domingo
+
+  // Segunda-feira
   const inicioSemana = new Date(hoje);
   inicioSemana.setDate(
-    hoje.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1) + offset * 7
+    hoje.getDate() -
+      (diaSemana === 0 ? 6 : diaSemana - 1) +
+      offset * 7
   );
 
-  // Domingo da mesma semana
+  // Domingo
   const fimSemana = new Date(inicioSemana);
   fimSemana.setDate(inicioSemana.getDate() + 6);
 
-  // Nomes dos meses
-  const meses = [
-    "janeiro",
-    "fevereiro",
-    "março",
-    "abril",
-    "maio",
-    "junho",
-    "julho",
-    "agosto",
-    "setembro",
-    "outubro",
-    "novembro",
-    "dezembro",
-  ];
-
-  const formatarData = (data) =>
-    `${data.getDate()} de ${meses[data.getMonth()]}`;
-
-  // Atualiza o texto exibido
-  document.getElementById(
-    "semana-atual"
-  ).textContent = `Semana de ${formatarData(
-    inicioSemana
-  )} a ${formatarData(fimSemana)}`;
-
-  // Carrega dados do Firebase da semana exibida
+  atualizarTextoSemana(inicioSemana, fimSemana);
   carregarDados(inicioSemana);
 }
 
-// 🔹 Atualiza os dados da semana (sábado, domingo, idosos)
-function carregarDados(inicioSemana = null) {
-  const database = firebase.database();
+/*************************************************
+ * 📝 ATUALIZA TEXTO DA SEMANA
+ *************************************************/
+function atualizarTextoSemana(inicio, fim) {
+  const el = document.getElementById("semana-atual");
+  if (!el) return;
 
-  const baseDate =
-    inicioSemana ||
-    new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const segunda = new Date(baseDate);
+  const meses = [
+    "janeiro","fevereiro","março","abril","maio","junho",
+    "julho","agosto","setembro","outubro","novembro","dezembro",
+  ];
+
+  const formatar = (d) =>
+    `${d.getDate()} de ${meses[d.getMonth()]}`;
+
+  el.textContent = `Semana de ${formatar(inicio)} a ${formatar(fim)}`;
+}
+
+/*************************************************
+ * 🆔 GERA ID DO DOCUMENTO
+ *************************************************/
+function docId(tipo, data) {
+  const y = data.getFullYear();
+  const m = String(data.getMonth() + 1).padStart(2, "0");
+  const d = String(data.getDate()).padStart(2, "0");
+  return `${tipo}_${y}-${m}-${d}`;
+}
+
+/*************************************************
+ * 📦 CARREGA DADOS DO FIRESTORE (ATUALIZADO)
+ *************************************************/
+function carregarDados(inicioSemana) {
+  console.log("📦 Carregando dados Firestore");
+
+  const db = firebase.firestore();
+
+  const segunda = new Date(inicioSemana);
+  segunda.setHours(0, 0, 0, 0);
 
   const sabado = new Date(segunda);
   sabado.setDate(segunda.getDate() + 5);
@@ -83,60 +126,85 @@ function carregarDados(inicioSemana = null) {
   const domingo = new Date(segunda);
   domingo.setDate(segunda.getDate() + 6);
 
-  // Formata datas no padrão DD-MM-YYYY
-  const formatarData = (data) => {
-    const dia = String(data.getDate()).padStart(2, "0");
-    const mes = String(data.getMonth() + 1).padStart(2, "0");
-    const ano = data.getFullYear();
-    return `${dia}-${mes}-${ano}`;
-  };
+  // Obter o ano para acessar a coleção correta
+  const ano = sabado.getFullYear();
 
-  const dataSabado = formatarData(sabado);
-  const dataDomingo = formatarData(domingo);
+  const sabadoEl = document.getElementById("sabado");
+  const domingoEl = document.getElementById("domingo");
+  const idosoEl = document.getElementById("idoso");
+  const acompanhanteEl = document.getElementById("acompanhante");
 
-  console.log("🔸 Carregando dados de:", dataSabado, "até", dataDomingo);
+  // Limpar campos
+  if (sabadoEl) sabadoEl.textContent = "-";
+  if (domingoEl) domingoEl.textContent = "-";
+  if (idosoEl) idosoEl.textContent = "-";
+  if (acompanhanteEl) acompanhanteEl.textContent = "-";
 
-  // Limpa os campos antes de carregar novos
-  document.getElementById("sabado").textContent = "-";
-  document.getElementById("domingo").textContent = "-";
-  document.getElementById("idoso").textContent = "-";
-  document.getElementById("acompanhate").textContent = "-";
+  // 🔹 SÁBADO - Nova estrutura
+  db.collection("programacao")
+    .doc(String(ano))
+    .collection("agendamentos")
+    .doc(docId("sabado", sabado))
+    .get()
+    .then((doc) => {
+      if (doc.exists && sabadoEl) {
+        sabadoEl.textContent = doc.data().dirigente || "-";
+        console.log("✅ Dirigente sábado:", doc.data().dirigente);
+      } else {
+        console.log("⚠️ Nenhum dirigente encontrado para este sábado");
+      }
+    })
+    .catch((error) => {
+      console.error("❌ Erro ao buscar sábado:", error);
+      if (sabadoEl) sabadoEl.textContent = "Erro";
+    });
 
-  // 🔸 Busca dados no Firebase
-  database.ref(`tabela/sabado/${dataSabado}/dirigente`).once("value").then((snapshot) => {
-    document.getElementById("sabado").textContent = snapshot.val() || "-";
-  });
+  // 🔹 DOMINGO - Nova estrutura
+  db.collection("programacao")
+    .doc(String(ano))
+    .collection("agendamentos")
+    .doc(docId("domingo", domingo))
+    .get()
+    .then((doc) => {
+      if (doc.exists && domingoEl) {
+        domingoEl.textContent = doc.data().grupo || "-";
+        console.log("✅ Grupo domingo:", doc.data().grupo);
+      } else {
+        console.log("⚠️ Nenhum grupo encontrado para este domingo");
+      }
+    })
+    .catch((error) => {
+      console.error("❌ Erro ao buscar domingo:", error);
+      if (domingoEl) domingoEl.textContent = "Erro";
+    });
 
-  database.ref(`tabela/domingo/${dataDomingo}/grupo`).once("value").then((snapshot) => {
-    document.getElementById("domingo").textContent = snapshot.val() || "-";
-  });
+  // 🔹 IDOSOS - Nova estrutura
+  db.collection("programacao")
+    .doc(String(ano))
+    .collection("agendamentos")
+    .doc(docId("idosos", sabado))
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        console.log("⚠️ Nenhum idoso encontrado para este sábado");
+        return;
+      }
 
-  database.ref(`tabela/idosos/${dataSabado}/idoso`).once("value").then((snapshot) => {
-    document.getElementById("idoso").textContent = snapshot.val() || "-";
-  });
+      const d = doc.data();
 
-  database.ref(`tabela/idosos/${dataSabado}/acompanhante`).once("value").then((snapshot) => {
-    document.getElementById("acompanhate").textContent = snapshot.val() || "-";
-  });
+      if (idosoEl) {
+        idosoEl.textContent = d.idoso || "-";
+        console.log("✅ Idoso:", d.idoso);
+      }
+
+      if (acompanhanteEl) {
+        acompanhanteEl.textContent = d.acompanhante || "-";
+        console.log("✅ Acompanhante:", d.acompanhante);
+      }
+    })
+    .catch((error) => {
+      console.error("❌ Erro ao buscar idosos:", error);
+      if (idosoEl) idosoEl.textContent = "Erro";
+      if (acompanhanteEl) acompanhanteEl.textContent = "Erro";
+    });
 }
-
-// 🔹 Configura os botões de navegação
-document.addEventListener("DOMContentLoaded", () => {
-  const btnAnterior = document.getElementById("semana-anterior");
-  const btnProxima = document.getElementById("semana-proxima");
-
-  if (btnAnterior && btnProxima) {
-    btnAnterior.addEventListener("click", () => {
-      offsetSemanas--;
-      obterSemana(offsetSemanas);
-    });
-
-    btnProxima.addEventListener("click", () => {
-      offsetSemanas++;
-      obterSemana(offsetSemanas);
-    });
-  }
-
-  // Carrega a semana atual ao abrir
-  obterSemana(0);
-});

@@ -65,35 +65,12 @@
         firebase
           .auth()
           .signInWithEmailAndPassword(email, senha)
-          .then(async (userCredential) => {
+          .then((userCredential) => {
             const user = userCredential.user;
             console.log("Usuário logado:", user);
 
-            try {
-              // Verificar se é admin no Firestore
-              const userDoc = await firebase.firestore().collection("usuarios").doc(user.uid).get();
-
-              if (userDoc.exists) {
-                const userData = userDoc.data();
-
-                // Verificar se é admin
-                if (userData?.isAdmin === true) {
-                  // Redirecionar para o painel de admin
-                  window.location.href = "./index.html?admin=true";
-                } else {
-                  // Redirecionar para página inicial (usuário comum)
-                  window.location.href = "index.html";
-                }
-              } else {
-                // Usuário não encontrado no banco de dados
-                errorMessageElement.textContent = "Usuário não encontrado no sistema.";
-                await firebase.auth().signOut();
-              }
-            } catch (error) {
-              console.error("Erro ao verificar permissões do usuário:", error);
-              errorMessageElement.textContent = "Erro ao verificar permissões. Tente novamente.";
-              await firebase.auth().signOut();
-            }
+            // Redirecionar para página inicial
+            window.location.href = "index.html";
           })
           .catch((error) => {
             console.error("Erro ao fazer login:", error);
