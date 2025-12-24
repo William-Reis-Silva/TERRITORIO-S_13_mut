@@ -1,247 +1,158 @@
-# Projeto de Registro de Designação de Território
+📅 Painel Administrativo – Programação e Territórios
 
-Sistema de controle de território com mapas e formulário S_13
-Este projeto tem como objetivo gerenciar e gerar relatórios em PDF dos registros de designação de território, utilizando Firebase para hospedagem e Cloud Functions para a geração de PDFs com Python,
-[]Falta implementar o python.
+Sistema web para gerenciamento de territórios, designações, programação anual de atividades e relatórios, utilizando Firebase Authentication, Firestore, Realtime Database e Storage.
 
-## Estrutura do Projeto
+O projeto foi pensado para uso administrativo, com controle rigoroso de permissões, separando usuários comuns e administradores.
 
-meu_projeto/
-│
-├── public/
-│   ├── index.html
-│   ├── css/
-│   │   └── S_13.css
-│   ├── js/
-│   │   ├── Firebaseconfig.js
-│   │   ├── S_13.js
-│   │   └── generatePdf.js
-│   └── ...
-├── functions/
-│   ├── main.py
-│   ├── requirements.txt
-│   └── ...
-├── requirements.txt
-├── firebase.json
-├── .firebaserc
-└── README.md````
+🚀 Funcionalidades
+🔐 Autenticação
 
-## Passos para Configurar o Projeto
+Login com Firebase Authentication
 
-### 1. Criar um Projeto no Firebase
+Controle de acesso baseado em permissões no Firestore
 
-- Acesse [Firebase Console](https://console.firebase.google.com/).
-- Clique em "Add project" e siga as instruções para criar um novo projeto.
+Usuários não podem se promover a admin
 
-### 2. Instalar a Firebase CLI
+🗺️ Territórios
 
-```bash
-npm install -g firebase-tools
-```
+Cadastro e edição de territórios
 
-### 3. Inicializar o Firebase no Projeto
+Upload de imagens de mapas
 
-No diretório raiz do seu projeto (`meu_projeto`), execute:
+Associação de responsável, bairro e número do mapa
 
-```bash
-firebase login
-firebase init
-```
+📌 Designações
 
-Durante a inicialização, selecione "Hosting" e "Functions".
+Registro de designações com data
 
-### 4. Configurar Firebase Hosting
+Consulta por período
 
-- **firebase.json**:
+Histórico preservado
 
-  ```json
-  {
-    "hosting": {
-      "public": "public",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "function": "app"
-        }
-      ]
-    }
-  }
-  ```
+📅 Programação Anual
 
-- **.firebaserc**:
+Geração automática da escala anual
 
-  ```json
-  {
-    "projects": {
-      "default": "YOUR_PROJECT_ID"
-    }
-  }
-  ```
+Organização por ano
 
-### 5. Configurar Cloud Functions para Python
+Estrutura:
 
-1. **Estrutura do Projeto com Cloud Functions:**
+programacao/{ano}/agendamentos/{docId}
 
-   meu_projeto/
-   │
-   ├── public/
-   │   ├── index.html
-   │   ├── css/
-   │   │   └── S_13.css
-   │   ├── js/
-   │   │   ├── Firebaseconfig.js
-   │   │   ├── S_13.js
-   │   │   └── generatePdf.js
-   │   └── ...
-   ├── functions/
-   │   ├── main.py
-   │   ├── requirements.txt
-   │   └── ...
-   ├── requirements.txt
-   ├── firebase.json
-   └── .firebaserc
 
-2. **Configurar o `main.py` para Cloud Functions:**
+Escrita permitida somente para administradores
 
-   - **functions/main.py**:
+📊 Relatórios
 
-     ```python
-     from flask import Flask, request, send_file
-     import pdfkit
-     import os
+Visualização consolidada de dados
 
-     app = Flask(__name__)
+Atualização dinâmica ao trocar abas
 
-     @app.route('/generate-pdf', methods=['POST'])
-     def generate_pdf():
-         data = request.json
-         html_content = data.get('html')
-         
-         html_template = f"""
-         <!DOCTYPE html>
-         <html lang="pt-br">
-         <head>
-           <meta charset="UTF-8" />
-           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-           <title>Foulario S_13</title>
-           <style>
-             @page {{
-               size: A4;
-               margin: 1cm;
-             }}
-             body {{
-               width: 21cm;
-               height: 29.7cm;
-               margin: 0 auto;
-               padding: 20px;
-               box-sizing: border-box;
-               font-family: Arial, sans-serif;
-               background-color: #f4f4f9;
-               color: #333;
-             }}
-             h2 {{
-               text-align: center;
-               font-size: 24px;
-               margin-bottom: 20px;
-             }}
-             table {{
-               width: 100%;
-               border-collapse: collapse;
-               margin-bottom: 20px;
-               background-color: #fff;
-               box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-             }}
-             th, td {{
-               border: 1px solid #ddd;
-               padding: 12px;
-               text-align: center;
-               font-size: 14px;
-             }}
-             th {{
-               background-color: #f2f2f2;
-               color: #333;
-             }}
-             tr:nth-child(even) {{
-               background-color: #f9f9f9;
-             }}
-             tr:hover {{
-               background-color: #f1f1f1;
-             }}
-           </style>
-         </head>
-         <body>
-           <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
-           <table>
-             {html_content}
-           </table>
-         </body>
-         </html>
-         """
+🧠 Arquitetura de Dados (Firestore)
+usuarios/{uid}
+territorios/{id}
+designacoes/{id}
+agendamentos/{id}               // legado / simples
+programacao/{ano}/agendamentos/{docId}
+mapas/{id}
 
-         # Save the HTML to a file
-         html_file = '/tmp/table.html'
-         with open(html_file, 'w', encoding='utf-8') as f:
-             f.write(html_template)
+Documento de Usuário (usuarios/{uid})
+{
+  "isAdmin": true,
+  "writtenPermission": true
+}
 
-         # Convert HTML file to PDF
-         pdf_file = '/tmp/TerritoryReport.pdf'
-         pdfkit.from_file(html_file, pdf_file)
+🔐 Regras de Segurança
 
-         # Remove the HTML file
-         os.remove(html_file)
+Leitura permitida apenas para usuários autenticados
 
-         # Send the PDF file to the client
-         return send_file(pdf_file, as_attachment=True)
+Escrita controlada por permissões
 
-     if __name__ == '__main__':
-         app.run(debug=True)
-     ```
+Apenas administradores podem:
 
-   - **functions/requirements.txt**:
+Gerar programação anual
 
-     ```plaintext
-     Flask
-     pdfkit
-     ```
+Alterar dados críticos
 
-3. **Deploy as Cloud Functions:**
+Usuários não podem:
 
-   Primeiro, navegue até o diretório `functions`:
+Conceder permissões a si mesmos
 
-   ```bash
-   cd functions
-   ```
+Excluir documentos sensíveis
 
-   Instale as dependências:
+🛠️ Tecnologias Utilizadas
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+HTML5
 
-   Volte ao diretório raiz e execute:
+CSS3
 
-   ```bash
-   firebase deploy --only functions
-   ```
+JavaScript (Vanilla)
 
-### 6. Deploy do Firebase Hosting
+Firebase:
 
-Execute o comando para deploy do Firebase Hosting:
+Authentication
 
-```bash
-firebase deploy --only hosting
-```
+Firestore
 
-Com isso, seu site estará hospedado e as funções configuradas no Firebase. Você poderá acessar o site e usar a funcionalidade de geração de PDFs conforme configurado.
+Realtime Database
 
-### Notas Finais
+Storage
 
-Certifique-se de que o caminho para o executável `wkhtmltopdf` está correto. Caso contrário, especifique-o na configuração do `pdfkit`:
+ExcelJS (exportação)
 
-```python
-config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
-pdfkit.from_file(html_file, pdf_file, configuration=config)
-```
+Service Worker (cache/offline – opcional)
 
-Se você tiver alguma dúvida ou problema, consulte a documentação oficial do Firebase ou busque ajuda na comunidade.
+📂 Estrutura do Projeto
+/Public
+ ├── Painel
+ │   ├── programacao.js
+ │   ├── script.js
+ │   ├── style.css
+ │   └── index.html
+ ├── js
+ │   └── Firebaseconfig.js
+ └── sw.js
+
+▶️ Como Executar o Projeto
+
+Clone o repositório
+
+Configure o Firebase no arquivo:
+
+/js/Firebaseconfig.js
+
+
+Ative os serviços no Firebase Console:
+
+Authentication (Email/Senha)
+
+Firestore
+
+Storage (opcional)
+
+Crie o documento do usuário admin em:
+
+usuarios/{uid}
+
+
+Rode o projeto via servidor local (ex: Live Server)
+
+⚠️ Observações Importantes
+
+O botão “Gerar escala no Firebase” só aparece/funciona para administradores
+
+Tentativas de escrita sem permissão geram erro por segurança
+
+A estrutura foi pensada para crescer por ano, evitando sobrescrita futura
+
+🧩 Próximas Evoluções Planejadas
+
+Bloqueio de edição em anos passados
+
+Logs de auditoria (quem gerou / quando)
+
+Permissão intermediária (editor)
+
+Exportação por ano
+
+Modo simulação sem salvar
