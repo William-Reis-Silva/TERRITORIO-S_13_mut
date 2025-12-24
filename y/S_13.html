@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foulario S_13</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="css/S_13.css" />
+    <script src="js/Firebaseconfig.js"></script>
+  </head>
+  <body>
+    <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
+    <div id="yearControls">
+      <button id="prevYearBtn">Ano Anterior</button>
+      <span id="serviceYear"></span>
+      <button id="nextYearBtn">Próximo Ano</button>
+      <button id="generatePdfBtn">Gerar PDF</button>
+    </div>
+    <table id="territoryTable">
+      <thead>
+        <tr>
+          <th rowspan="2">Terr. n.º</th>
+          <th rowspan="2">Última data concluída</th>
+          <th colspan="2">Designado para</th>
+          <th colspan="2">Designado para</th>
+          <th colspan="2">Designado para</th>
+          <th colspan="2">Designado para</th>
+        </tr>
+        <tr>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data rows will be filled here using JavaScript -->
+      </tbody>
+    </table>
+    <script src="js/S_13.js"></script>
+    <script src="js/generatePdf.js"></script>
+  </body>
+</html>

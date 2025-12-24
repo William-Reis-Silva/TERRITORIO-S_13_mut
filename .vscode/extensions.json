@@ -1,6 +1,10 @@
 {
     "recommendations": [
+<<<<<<< HEAD
         "streetsidesoftware.code-spell-checker-portuguese-brazilian",
         "esbenp.prettier-vscode"
+=======
+        "dzhavat.bracket-pair-toggler"
+>>>>>>> 20149fcf881df1d54b326b8315f5845fea791690
     ]
 }

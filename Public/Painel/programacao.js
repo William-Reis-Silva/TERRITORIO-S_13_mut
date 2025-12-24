@@ -1,98 +1,143 @@
 /*************************************************
- * 📌 CONFIGURAÇÃO DA ESCALA
+ * 📦 CARREGAR CONFIGURAÇÕES DO FIRESTORE
  *************************************************/
-const escala = {
-  sabado: {
-    dirigentes: [
-      "Jhony",
-      "Joebel",
-      "Werlley",
-      "Wemerson",
-      "Lucas",
-      "Lidinei",
-      "Matheus",
-      "Thalles",
-      "William",
-    ],
-    index: 0,
-  },
+async function carregarConfiguracoes() {
+  const db = firebase.firestore();
+  
+  const config = {
+    dirigentes: [],
+    grupos: [],
+    idosos: [],
+    acompanhantes: []
+  };
 
-  domingo: {
-    grupos: [
-      "Grupo Eldorado",
-      "Grupo Primavera",
-      "Grupo Timirim",
-    ],
-    index: 0,
-  },
+  try {
+    // Carregar dirigentes
+    const dirigentesSnap = await db
+      .collection('escala-config')
+      .doc('listas')
+      .collection('dirigentes-sabado')
+      .where('ativo', '==', true)
+      .orderBy('ordem')
+      .get();
+    
+    dirigentesSnap.forEach(doc => {
+      config.dirigentes.push(doc.data().nome);
+    });
 
-  idosos: {
-    idosos: [
-      "Paulo Bezerra / Cleuza Armine",
-      "Cecilia Martins",
-      "Guiomar / Osvaldo",
-      "Aparecida Roque",
-      "Maria Martins",
-    ],
-    acompanhantes: [
-      "Werlley",
-      "William",
-      "Thalles",
-      "Matheus",
-      "Lidinei",
-      "Lucas",
-      "Wemerson",
-      "Joebel",
-      "Jhony",
-    ],
-    idosoIndex: 0,
-    acompanhanteIndex: 0,
-  },
-};
+    // Carregar grupos
+    const gruposSnap = await db
+      .collection('escala-config')
+      .doc('listas')
+      .collection('grupos-domingo')
+      .where('ativo', '==', true)
+      .orderBy('ordem')
+      .get();
+    
+    gruposSnap.forEach(doc => {
+      config.grupos.push(doc.data().nome);
+    });
+
+    // Carregar idosos
+    const idososSnap = await db
+      .collection('escala-config')
+      .doc('listas')
+      .collection('idosos')
+      .where('ativo', '==', true)
+      .orderBy('ordem')
+      .get();
+    
+    idososSnap.forEach(doc => {
+      config.idosos.push(doc.data().nome);
+    });
+
+    // Carregar acompanhantes
+    const acompanhantesSnap = await db
+      .collection('escala-config')
+      .doc('listas')
+      .collection('acompanhantes')
+      .where('ativo', '==', true)
+      .orderBy('ordem')
+      .get();
+    
+    acompanhantesSnap.forEach(doc => {
+      config.acompanhantes.push(doc.data().nome);
+    });
+
+    return config;
+  } catch (error) {
+    console.error('❌ Erro ao carregar configurações:', error);
+    throw error;
+  }
+}
 
 /*************************************************
- * 🔄 RESET DA ESCALA (NOVO ANO)
+ * 📊 CARREGAR ESTADO ATUAL DOS ÍNDICES
  *************************************************/
-function resetarEscala() {
-  escala.sabado.index = 0;
-  escala.domingo.index = 0;
-  escala.idosos.idosoIndex = 0;
-  escala.idosos.acompanhanteIndex = 0;
+async function carregarEstadoAtual() {
+  const db = firebase.firestore();
+  
+  try {
+    const doc = await db.collection('escala-config').doc('estado-atual').get();
+    
+    if (!doc.exists) {
+      // Primeira vez - começar do zero
+      return {
+        dirigenteSabado: 0,
+        grupoDomingo: 0,
+        idoso: 0,
+        acompanhante: 0
+      };
+    }
+
+    return doc.data();
+  } catch (error) {
+    console.error('❌ Erro ao carregar estado:', error);
+    // Se der erro, começar do zero
+    return {
+      dirigenteSabado: 0,
+      grupoDomingo: 0,
+      idoso: 0,
+      acompanhante: 0
+    };
+  }
+}
+
+/*************************************************
+ * 💾 SALVAR ESTADO ATUAL DOS ÍNDICES
+ *************************************************/
+async function salvarEstadoAtual(estado, ano) {
+  const db = firebase.firestore();
+  
+  try {
+    await db.collection('escala-config').doc('estado-atual').set({
+      dirigenteSabado: estado.dirigenteSabado,
+      grupoDomingo: estado.grupoDomingo,
+      idoso: estado.idoso,
+      acompanhante: estado.acompanhante,
+      ultimoAnoGerado: ano,
+      dataUltimaGeracao: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('✅ Estado salvo:', estado);
+  } catch (error) {
+    console.error('❌ Erro ao salvar estado:', error);
+    throw error;
+  }
 }
 
 /*************************************************
  * 🔢 FUNÇÕES DE ROTACIONAMENTO
  *************************************************/
-function proximoDirigenteSabado() {
-  const { dirigentes, index } = escala.sabado;
-  const nome = dirigentes[index];
-  escala.sabado.index = (index + 1) % dirigentes.length;
-  return nome;
-}
-
-function proximoGrupoDomingo() {
-  const { grupos, index } = escala.domingo;
-  const grupo = grupos[index];
-  escala.domingo.index = (index + 1) % grupos.length;
-  return grupo;
-}
-
-function proximoIdoso() {
-  const i = escala.idosos.idosoIndex;
-  const a = escala.idosos.acompanhanteIndex;
-
-  const resultado = {
-    idoso: escala.idosos.idosos[i],
-    acompanhante: escala.idosos.acompanhantes[a],
-  };
-
-  escala.idosos.idosoIndex =
-    (i + 1) % escala.idosos.idosos.length;
-
-  escala.idosos.acompanhanteIndex =
-    (a + 1) % escala.idosos.acompanhantes.length;
-
-  return resultado;
+function proximoItem(lista, index) {
+  if (!lista || lista.length === 0) {
+    throw new Error('Lista vazia');
+  }
+  
+  const item = lista[index];
+  const novoIndex = (index + 1) % lista.length;
+  
+  return { item, novoIndex };
 }
 
 /*************************************************
@@ -106,10 +151,9 @@ function gerarDocId(tipo, data) {
 }
 
 /*************************************************
- * 📂 REFERÊNCIA DO ANO (CORRIGIDA)
+ * 📂 REFERÊNCIA DO ANO
  *************************************************/
 function refAno(db, ano) {
-  // MUDANÇA: Agora usa a estrutura programacao/{ano}/agendamentos
   return db
     .collection("programacao")
     .doc(String(ano))
@@ -117,37 +161,27 @@ function refAno(db, ano) {
 }
 
 /*************************************************
- * 💾 FUNÇÕES DE SALVAMENTO (OTIMIZADO)
+ * 💾 FUNÇÕES DE SALVAMENTO
  *************************************************/
 function salvarSabado(db, ano, data, dirigente) {
   const id = gerarDocId("sabado", data);
-
-  return refAno(db, ano).doc(id).set({
-    dirigente
-  });
+  return refAno(db, ano).doc(id).set({ dirigente });
 }
 
 function salvarDomingo(db, ano, data, grupo) {
   const id = gerarDocId("domingo", data);
-
-  return refAno(db, ano).doc(id).set({
-    grupo
-  });
+  return refAno(db, ano).doc(id).set({ grupo });
 }
 
-function salvarIdosos(db, ano, data, idosos) {
+function salvarIdosos(db, ano, data, idoso, acompanhante) {
   const id = gerarDocId("idosos", data);
-
-  return refAno(db, ano).doc(id).set({
-    idoso: idosos.idoso,
-    acompanhante: idosos.acompanhante
-  });
+  return refAno(db, ano).doc(id).set({ idoso, acompanhante });
 }
 
 /*************************************************
  * 🚀 FUNÇÃO PRINCIPAL – GERAR E SALVAR ANO
  *************************************************/
-async function gerarESalvarAno(ano) {
+async function gerarESalvarAno(ano, opcoes = {}) {
   const db = firebase.firestore();
   const auth = firebase.auth();
 
@@ -191,18 +225,73 @@ async function gerarESalvarAno(ano) {
     return;
   }
 
+  // Carregar configurações do Firestore
+  console.log("📦 Carregando configurações...");
+  let config;
+  try {
+    config = await carregarConfiguracoes();
+  } catch (error) {
+    alert("❌ Erro ao carregar configurações: " + error.message);
+    return;
+  }
+
+  // Validar configurações
+  if (config.dirigentes.length === 0) {
+    alert("❌ Nenhum dirigente cadastrado! Cadastre pelo menos um dirigente.");
+    return;
+  }
+  if (config.grupos.length === 0) {
+    alert("❌ Nenhum grupo cadastrado! Cadastre pelo menos um grupo.");
+    return;
+  }
+  if (config.idosos.length === 0) {
+    alert("❌ Nenhum idoso cadastrado! Cadastre pelo menos um idoso.");
+    return;
+  }
+  if (config.acompanhantes.length === 0) {
+    alert("❌ Nenhum acompanhante cadastrado! Cadastre pelo menos um acompanhante.");
+    return;
+  }
+
+  console.log("✅ Configurações carregadas:", config);
+
+  // Carregar estado atual (índices)
+  const resetarIndices = opcoes.resetar || false;
+  let indices;
+  
+  if (resetarIndices) {
+    indices = {
+      dirigenteSabado: 0,
+      grupoDomingo: 0,
+      idoso: 0,
+      acompanhante: 0
+    };
+    console.log("🔄 Resetando índices para o início");
+  } else {
+    indices = await carregarEstadoAtual();
+    console.log("📊 Índices atuais:", indices);
+  }
+
   if (
     !confirm(
-      `Isso vai GERAR ou SOBRESCREVER a escala do ano ${ano}. Deseja continuar?`
+      `Isso vai GERAR ou SOBRESCREVER a escala do ano ${ano}.\n\n` +
+      `Próximos na escala:\n` +
+      `• Dirigente: ${config.dirigentes[indices.dirigenteSabado]}\n` +
+      `• Grupo: ${config.grupos[indices.grupoDomingo]}\n` +
+      `• Idoso: ${config.idosos[indices.idoso]}\n` +
+      `• Acompanhante: ${config.acompanhantes[indices.acompanhante]}\n\n` +
+      `Deseja continuar?`
     )
   ) {
     return;
   }
 
   console.log(`🚀 Gerando escala para ${ano}`);
-  resetarEscala();
 
   try {
+    let totalSabados = 0;
+    let totalDomingos = 0;
+
     for (let mes = 0; mes < 12; mes++) {
       const diasNoMes = new Date(ano, mes + 1, 0).getDate();
 
@@ -214,47 +303,78 @@ async function gerarESalvarAno(ano) {
 
         // 🔹 SÁBADO
         if (dow === 6) {
-          await salvarSabado(
-            db,
-            ano,
-            data,
-            proximoDirigenteSabado()
-          );
+          const { item: dirigente, novoIndex: novoDirigenteIndex } = 
+            proximoItem(config.dirigentes, indices.dirigenteSabado);
+          
+          const { item: idoso, novoIndex: novoIdosoIndex } = 
+            proximoItem(config.idosos, indices.idoso);
+          
+          const { item: acompanhante, novoIndex: novoAcompanhanteIndex } = 
+            proximoItem(config.acompanhantes, indices.acompanhante);
 
-          await salvarIdosos(
-            db,
-            ano,
-            data,
-            proximoIdoso()
-          );
+          await salvarSabado(db, ano, data, dirigente);
+          await salvarIdosos(db, ano, data, idoso, acompanhante);
+
+          indices.dirigenteSabado = novoDirigenteIndex;
+          indices.idoso = novoIdosoIndex;
+          indices.acompanhante = novoAcompanhanteIndex;
+          
+          totalSabados++;
         }
 
         // 🔹 DOMINGO
         if (dow === 0) {
-          await salvarDomingo(
-            db,
-            ano,
-            data,
-            proximoGrupoDomingo()
-          );
+          const { item: grupo, novoIndex: novoGrupoIndex } = 
+            proximoItem(config.grupos, indices.grupoDomingo);
+
+          await salvarDomingo(db, ano, data, grupo);
+
+          indices.grupoDomingo = novoGrupoIndex;
+          totalDomingos++;
         }
       }
     }
 
+    // Salvar estado final
+    await salvarEstadoAtual(indices, ano);
+
     console.log(`✅ Escala ${ano} salva com sucesso`);
-    alert(`Escala do ano ${ano} salva com sucesso!`);
+    console.log(`📊 Total: ${totalSabados} sábados, ${totalDomingos} domingos`);
+    
+    alert(
+      `✅ Escala do ano ${ano} salva com sucesso!\n\n` +
+      `📊 Estatísticas:\n` +
+      `• ${totalSabados} sábados programados\n` +
+      `• ${totalDomingos} domingos programados\n\n` +
+      `Próximos para ${ano + 1}:\n` +
+      `• Dirigente: ${config.dirigentes[indices.dirigenteSabado]}\n` +
+      `• Grupo: ${config.grupos[indices.grupoDomingo]}\n` +
+      `• Idoso: ${config.idosos[indices.idoso]}\n` +
+      `• Acompanhante: ${config.acompanhantes[indices.acompanhante]}`
+    );
+    
+    // Atualizar visualização do status
+    if (typeof carregarEstado === 'function') {
+      carregarEstado();
+    }
+
   } catch (error) {
     console.error("❌ Erro ao gerar escala:", error);
-    alert(`Erro ao gerar escala: ${error.message}`);
+    alert(`❌ Erro ao gerar escala: ${error.message}`);
   }
 }
 
 /*************************************************
  * 🖱️ BOTÃO DE AÇÃO
  *************************************************/
-document
-  .getElementById("gerarFirestore")
-  .addEventListener("click", () => {
-    const ano = Number(document.getElementById("ano").value);
-    gerarESalvarAno(ano);
-  });
+document.addEventListener('DOMContentLoaded', function() {
+  const btnGerar = document.getElementById("gerarFirestore");
+  
+  if (btnGerar) {
+    btnGerar.addEventListener("click", () => {
+      const ano = Number(document.getElementById("ano").value);
+      const resetar = confirm("Deseja começar do zero? (Clique em 'Cancelar' para continuar de onde parou)");
+      gerarESalvarAno(ano, { resetar });
+    });
+  }
+});

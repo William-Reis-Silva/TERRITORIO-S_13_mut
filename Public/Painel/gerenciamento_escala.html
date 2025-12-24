@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Escalas</title>
+
+    
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+    <script src="../js/Firebaseconfig.js"></script>
+
+ <link rel="stylesheet" href="style.css">
+
+    </head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Gerenciamento de Escalas</h1>
+            <p>Gerencie dirigentes, grupos e participantes</p>
+        </div>
+
+        <!-- Status Atual -->
+        <div class="status-card">
+            <h2>📊 Estado Atual da Escala</h2>
+            <div class="status-grid" id="status-grid">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Dirigentes de Sábado -->
+        <div class="section">
+            <div class="section-header">
+                <h3 class="section-title">🎤 Dirigentes de Sábado</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('dirigentes')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-dirigentes">
+                <div class="form-group">
+                    <label>Nome do Dirigente:</label>
+                    <input type="text" id="input-dirigente" placeholder="Ex: João Silva">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('dirigentes')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('dirigentes')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-dirigentes">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Grupos de Domingo -->
+        <div class="section">
+            <div class="section-header">
+                <h3 class="section-title">👥 Grupos de Domingo</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('grupos')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-grupos">
+                <div class="form-group">
+                    <label>Nome do Grupo:</label>
+                    <input type="text" id="input-grupo" placeholder="Ex: Grupo Esperança">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('grupos')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('grupos')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-grupos">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Idosos -->
+        <div class="section">
+            <div class="section-header">
+                <h3 class="section-title">👴 Idosos para Visita</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('idosos')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-idosos">
+                <div class="form-group">
+                    <label>Nome do Idoso:</label>
+                    <input type="text" id="input-idoso" placeholder="Ex: Maria Santos">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('idosos')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('idosos')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-idosos">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Acompanhantes -->
+        <div class="section">
+            <div class="section-header">
+                <h3 class="section-title">🤝 Acompanhantes</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('acompanhantes')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-acompanhantes">
+                <div class="form-group">
+                    <label>Nome do Acompanhante:</label>
+                    <input type="text" id="input-acompanhante" placeholder="Ex: Pedro Lima">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('acompanhantes')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('acompanhantes')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-acompanhantes">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração Firebase (substitua pelos seus dados)
+        // Assumindo que firebase já está carregado
+
+        const db = firebase.firestore();
+
+        // Mapear tipos para coleções
+        const collections = {
+            'dirigentes': 'dirigentes-sabado',
+            'grupos': 'grupos-domingo',
+            'idosos': 'idosos',
+            'acompanhantes': 'acompanhantes'
+        };
+
+        // Carregar tudo ao iniciar
+        window.addEventListener('load', () => {
+            carregarEstado();
+            carregarLista('dirigentes');
+            carregarLista('grupos');
+            carregarLista('idosos');
+            carregarLista('acompanhantes');
+        });
+
+        // Carregar estado atual
+        async function carregarEstado() {
+            const container = document.getElementById('status-grid');
+            
+            try {
+                const doc = await db.collection('escala-config').doc('estado-atual').get();
+                
+                if (!doc.exists) {
+                    container.innerHTML = `
+                        <div class="status-item">
+                            <div class="status-label">Status</div>
+                            <div class="status-value">Nenhuma escala gerada ainda</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const estado = doc.data();
+                console.log('Estado atual:', estado);
+                
+                container.innerHTML = `
+                    <div class="status-item">
+                        <div class="status-label">Último Ano Gerado</div>
+                        <div class="status-value">${estado.ultimoAnoGerado || '-'}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Próximo Dirigente (índice)</div>
+                        <div class="status-value">${estado.dirigenteSabado ?? 0}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Próximo Grupo (índice)</div>
+                        <div class="status-value">${estado.grupoDomingo ?? 0}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Próximo Idoso (índice)</div>
+                        <div class="status-value">${estado.idoso ?? 0}</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Erro ao carregar estado:', error);
+                container.innerHTML = '<div class="status-item">Erro ao carregar</div>';
+            }
+        }
+
+        // Carregar lista
+        async function carregarLista(tipo) {
+            const container = document.getElementById(`list-${tipo}`);
+            const collectionName = collections[tipo];
+
+            try {
+                const snapshot = await db
+                    .collection('escala-config')
+                    .doc('listas')
+                    .collection(collectionName)
+                    .orderBy('ordem')
+                    .get();
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            Nenhum item cadastrado. Clique em "Adicionar" para começar.
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-info">
+                                <div class="list-item-order">${data.ordem + 1}</div>
+                                <div class="list-item-name">${data.nome}</div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-secondary btn-sm" onclick="moverItem('${tipo}', '${doc.id}', 'up')" ${data.ordem === 0 ? 'disabled' : ''}>
+                                    ↑
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="moverItem('${tipo}', '${doc.id}', 'down')">
+                                    ↓
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="removerItem('${tipo}', '${doc.id}', '${data.nome}')">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar lista:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar</div>';
+            }
+        }
+
+        // Toggle formulário
+        function toggleAddForm(tipo) {
+            const form = document.getElementById(`add-form-${tipo}`);
+            const input = document.getElementById(`input-${tipo === 'dirigentes' ? 'dirigente' : tipo === 'grupos' ? 'grupo' : tipo === 'idosos' ? 'idoso' : 'acompanhante'}`);
+            
+            form.classList.toggle('active');
+            if (form.classList.contains('active')) {
+                input.focus();
+                input.value = '';
+            }
+        }
+
+        // Adicionar item
+        async function adicionarItem(tipo) {
+            const inputId = tipo === 'dirigentes' ? 'dirigente' : tipo === 'grupos' ? 'grupo' : tipo === 'idosos' ? 'idoso' : 'acompanhante';
+            const input = document.getElementById(`input-${inputId}`);
+            const nome = input.value.trim();
+
+            if (!nome) {
+                alert('Digite um nome');
+                return;
+            }
+
+            const collectionName = collections[tipo];
+
+            try {
+                // Buscar última ordem
+                const snapshot = await db
+                    .collection('escala-config')
+                    .doc('listas')
+                    .collection(collectionName)
+                    .orderBy('ordem', 'desc')
+                    .limit(1)
+                    .get();
+
+                const ultimaOrdem = snapshot.empty ? -1 : snapshot.docs[0].data().ordem;
+
+                // Adicionar novo
+                await db
+                    .collection('escala-config')
+                    .doc('listas')
+                    .collection(collectionName)
+                    .add({
+                        nome,
+                        ordem: ultimaOrdem + 1,
+                        ativo: true,
+                        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                toggleAddForm(tipo);
+                carregarLista(tipo);
+                alert('✅ Adicionado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao adicionar:', error);
+                alert('❌ Erro ao adicionar: ' + error.message);
+            }
+        }
+
+        // Remover item
+        async function removerItem(tipo, docId, nome) {
+            if (!confirm(`Tem certeza que deseja remover "${nome}"?`)) {
+                return;
+            }
+
+            const collectionName = collections[tipo];
+
+            try {
+                await db
+                    .collection('escala-config')
+                    .doc('listas')
+                    .collection(collectionName)
+                    .doc(docId)
+                    .delete();
+
+                // Reordenar
+                await reordenarLista(tipo);
+                carregarLista(tipo);
+                alert('✅ Removido com sucesso!');
+            } catch (error) {
+                console.error('Erro ao remover:', error);
+                alert('❌ Erro ao remover: ' + error.message);
+            }
+        }
+
+        // Mover item
+        async function moverItem(tipo, docId, direcao) {
+            const collectionName = collections[tipo];
+
+            try {
+                const snapshot = await db
+                    .collection('escala-config')
+                    .doc('listas')
+                    .collection(collectionName)
+                    .orderBy('ordem')
+                    .get();
+
+                const items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+
+                const index = items.findIndex(item => item.id === docId);
+                if (index === -1) return;
+
+                if (direcao === 'up' && index > 0) {
+                    // Trocar com anterior
+                    const temp = items[index].ordem;
+                    items[index].ordem = items[index - 1].ordem;
+                    items[index - 1].ordem = temp;
+
+                    await db.collection('escala-config').doc('listas').collection(collectionName).doc(items[index].id).update({ ordem: items[index].ordem });
+                    await db.collection('escala-config').doc('listas').collection(collectionName).doc(items[index - 1].id).update({ ordem: items[index - 1].ordem });
+                } else if (direcao === 'down' && index < items.length - 1) {
+                    // Trocar com próximo
+                    const temp = items[index].ordem;
+                    items[index].ordem = items[index + 1].ordem;
+                    items[index + 1].ordem = temp;
+
+                    await db.collection('escala-config').doc('listas').collection(collectionName).doc(items[index].id).update({ ordem: items[index].ordem });
+                    await db.collection('escala-config').doc('listas').collection(collectionName).doc(items[index + 1].id).update({ ordem: items[index + 1].ordem });
+                }
+
+                carregarLista(tipo);
+            } catch (error) {
+                console.error('Erro ao mover:', error);
+                alert('❌ Erro ao mover: ' + error.message);
+            }
+        }
+
+        // Reordenar lista após remoção
+        async function reordenarLista(tipo) {
+            const collectionName = collections[tipo];
+
+            const snapshot = await db
+                .collection('escala-config')
+                .doc('listas')
+                .collection(collectionName)
+                .orderBy('ordem')
+                .get();
+
+            let ordem = 0;
+            const batch = db.batch();
+
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { ordem: ordem++ });
+            });
+
+            await batch.commit();
+        }
+    </script>
+</body>
+</html>

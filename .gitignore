@@ -10,9 +10,13 @@ firebase-debug.*.log*
 # Firebase cache
 .firebase/
 
+<<<<<<< HEAD
 # Firebase configuration
 ./js/Firebaseconfig.js
 
+=======
+# Firebase config
+>>>>>>> 20149fcf881df1d54b326b8315f5845fea791690
 
 # Uncomment this if you'd like others to create their own Firebase project.
 # For a team working on the same Firebase project(s), it is recommended to leave
@@ -66,6 +70,9 @@ node_modules/
 
 # dotenv environment variables file
 .env
+<<<<<<< HEAD
 
 # dataconnect generated files
 .dataconnect
+=======
+>>>>>>> 20149fcf881df1d54b326b8315f5845fea791690

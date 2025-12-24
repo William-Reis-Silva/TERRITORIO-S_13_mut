@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/Editar.css" />
+  <title>Controle de Território</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="js/Firebaseconfig.js"></script>
+</head>
+
+<body>
+  <header>
+    <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
+    <nav class="nav-bar">
+      <div class="logo">
+        <img src="img/logo.png" alt="logo" />
+      </div>
+      <div class="nav-list">
+        <ul>
+          <li class="nav-item">
+            <a href="login.html" class="nav-link">Login</a>
+          </li>
+          <li class="nav-item">
+            <a href="Territorio/index_territorio.html" class="nav-link">Território</a>
+          </li>
+          <li class="nav-item">
+            <a href="Registro_S13.html" class="nav-link">Novo Registro</a>
+          </li>
+          <li class="nav-item">
+            <a href="#" id="logout" class="nav-link">Sair</a>
+          </li>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <div id="frameRegistros">
+      <h1>Últimos Registros</h1>
+      <div id="Registro">
+        <table id="tabelaDados">
+          <thead>
+            <tr>
+              <th>Mapa</th>
+              <th>Bairro</th>
+              <th>Designado Para</th>
+              <th>Data de Início</th>
+              <th>Data de Conclusão</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela"></tbody>
+        </table>
+        <div id="myModal" class="modal">
+          <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="formEdicao">
+              <label for="numero_mapa_edit">Número Mapa:</label>
+              <input type="text" id="numero_mapa_edit" disabled />
+              <br />
+              <label for="bairro_edit">Bairro:</label>
+              <input type="text" id="bairro_edit" disabled />
+              <br />
+              <label for="designado_para_edit">Designado Para:</label>
+              <input type="text" id="designado_para_edit" disabled />
+              <br />
+              <label for="data_inicio_edit">Data de Início:</label>
+              <input type="date" id="data_inicio_edit" />
+              <br />
+              <label for="data_conclusao_edit">Data de Conclusão:</label>
+              <input type="date" id="data_conclusao_edit" />
+              <br />
+              <button onclick="salvarEdicao()">Salvar</button>
+              <button onclick="deletarRegistro()">Excluir</button>
+              <button onclick="document.getElementById('formEdicao').style.display='none'">
+                Cancelar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <nav class="nav-bar">
+      <div class="nav-list">
+        <ul>
+   
+          <li class="nav-item">
+            <a href="S_13.html" class="nav-link" target="_blank">Registros-S-13</a>
+          </li>
+          <li class="nav-item">
+            <a href="Territorio/Mapa.html" class="nav-link" target="_blank">Mapa</a>
+
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </footer>
+
+  <script src="js/index.js"></script>
+  <script src="js/Home.js"></script>
+</body>
+
+</html>
