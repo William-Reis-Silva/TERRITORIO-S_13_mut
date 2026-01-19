@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciar Escalas</title>
-
-    
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -14,10 +12,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
     <script src="../js/Firebaseconfig.js"></script>
-
- <link rel="stylesheet" href="style.css">
-
-    </head>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
     <div class="container">
         <div class="header">
@@ -178,42 +174,103 @@
             const container = document.getElementById('status-grid');
             
             try {
-                const doc = await db.collection('escala-config').doc('estado-atual').get();
+                const estadoDoc = await db.collection('escala-config').doc('estado-atual').get();
                 
-                if (!doc.exists) {
+                if (!estadoDoc.exists) {
                     container.innerHTML = `
                         <div class="status-item">
                             <div class="status-label">Status</div>
                             <div class="status-value">Nenhuma escala gerada ainda</div>
                         </div>
+                        <div class="status-item" style="grid-column: 1 / -1; background: #fff3cd; border-left-color: #ffc107;">
+                            <div class="status-label">💡 Dica</div>
+                            <div class="status-value" style="font-size: 0.9em;">
+                                Cadastre dirigentes, grupos, idosos e acompanhantes abaixo, depois vá em "Programação" para gerar a escala do ano.
+                            </div>
+                        </div>
                     `;
                     return;
                 }
 
-                const estado = doc.data();
-                console.log('Estado atual:', estado);
+                const estado = estadoDoc.data();
+
+                // Buscar nomes das listas
+                const dirigentesSnap = await db.collection('escala-config').doc('listas').collection('dirigentes-sabado').orderBy('ordem').get();
+                const gruposSnap = await db.collection('escala-config').doc('listas').collection('grupos-domingo').orderBy('ordem').get();
+                const idososSnap = await db.collection('escala-config').doc('listas').collection('idosos').orderBy('ordem').get();
+                const acompanhantesSnap = await db.collection('escala-config').doc('listas').collection('acompanhantes').orderBy('ordem').get();
+
+                const dirigentes = [];
+                const grupos = [];
+                const idosos = [];
+                const acompanhantes = [];
+
+                dirigentesSnap.forEach(doc => dirigentes.push(doc.data().nome));
+                gruposSnap.forEach(doc => grupos.push(doc.data().nome));
+                idososSnap.forEach(doc => idosos.push(doc.data().nome));
+                acompanhantesSnap.forEach(doc => acompanhantes.push(doc.data().nome));
+
+                // Obter nomes com base nos índices
+                const proximoDirigente = dirigentes[estado.dirigenteSabado ?? 0] || 'Não cadastrado';
+                const proximoGrupo = grupos[estado.grupoDomingo ?? 0] || 'Não cadastrado';
+                const proximoIdoso = idosos[estado.idoso ?? 0] || 'Não cadastrado';
+                const proximoAcompanhante = acompanhantes[estado.acompanhante ?? 0] || 'Não cadastrado';
+
+                const proximoAno = (estado.ultimoAnoGerado || new Date().getFullYear()) + 1;
+                
+                // Calcular posição visual (índice + 1)
+                const posicaoDirigente = (estado.dirigenteSabado ?? 0) + 1;
+                const posicaoGrupo = (estado.grupoDomingo ?? 0) + 1;
+                const posicaoIdoso = (estado.idoso ?? 0) + 1;
+                const posicaoAcompanhante = (estado.acompanhante ?? 0) + 1;
                 
                 container.innerHTML = `
-                    <div class="status-item">
-                        <div class="status-label">Último Ano Gerado</div>
-                        <div class="status-value">${estado.ultimoAnoGerado || '-'}</div>
+                    <div class="status-item" style="grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                        <div class="status-label" style="color: rgba(255,255,255,0.9);">📅 Último Ano Gerado</div>
+                        <div class="status-value" style="font-size: 2em;">${estado.ultimoAnoGerado || '-'}</div>
+                        <div style="font-size: 0.85em; margin-top: 5px; opacity: 0.9;">
+                            Próximo ano será: ${proximoAno}
+                        </div>
                     </div>
                     <div class="status-item">
-                        <div class="status-label">Próximo Dirigente (índice)</div>
-                        <div class="status-value">${estado.dirigenteSabado ?? 0}</div>
+                        <div class="status-label">🎤 Próximo Ano 1° Dirigente de Sábado</div>
+                        <div class="status-value">${proximoDirigente}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoDirigente} de ${dirigentes.length}
+                        </div>
                     </div>
                     <div class="status-item">
-                        <div class="status-label">Próximo Grupo (índice)</div>
-                        <div class="status-value">${estado.grupoDomingo ?? 0}</div>
+                        <div class="status-label">👥 Próximo Ano 1° Grupo de Domingo</div>
+                        <div class="status-value">${proximoGrupo}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoGrupo} de ${grupos.length}
+                        </div>
                     </div>
                     <div class="status-item">
-                        <div class="status-label">Próximo Idoso (índice)</div>
-                        <div class="status-value">${estado.idoso ?? 0}</div>
+                        <div class="status-label">👴 Próximo Ano 1° Idoso</div>
+                        <div class="status-value">${proximoIdoso}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoIdoso} de ${idosos.length}
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">🤝 Próximo Ano 1° Acompanhante</div>
+                        <div class="status-value">${proximoAcompanhante}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoAcompanhante} de ${acompanhantes.length}
+                        </div>
                     </div>
                 `;
             } catch (error) {
                 console.error('Erro ao carregar estado:', error);
-                container.innerHTML = '<div class="status-item">Erro ao carregar</div>';
+                container.innerHTML = `
+                    <div class="status-item" style="grid-column: 1 / -1;">
+                        <div class="status-label">❌ Erro ao carregar</div>
+                        <div class="status-value" style="font-size: 0.9em; color: #dc3545;">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
             }
         }
 
@@ -321,6 +378,7 @@
 
                 toggleAddForm(tipo);
                 carregarLista(tipo);
+                carregarEstado(); // Atualizar estado também
                 alert('✅ Adicionado com sucesso!');
             } catch (error) {
                 console.error('Erro ao adicionar:', error);
@@ -347,6 +405,7 @@
                 // Reordenar
                 await reordenarLista(tipo);
                 carregarLista(tipo);
+                carregarEstado(); // Atualizar estado também
                 alert('✅ Removido com sucesso!');
             } catch (error) {
                 console.error('Erro ao remover:', error);

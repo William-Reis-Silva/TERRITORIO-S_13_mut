@@ -1,28 +1,10 @@
 {
   "hosting": {
-<<<<<<< HEAD
     "public": "public",
-=======
-    "public": "y",
->>>>>>> 20149fcf881df1d54b326b8315f5845fea791690
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ],
-<<<<<<< HEAD
-    "cleanUrls": true,
-    "rewrites": [
-      {
-        "source": "/index.html",
-        "destination": "/"
-=======
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
->>>>>>> 20149fcf881df1d54b326b8315f5845fea791690
-      }
     ]
   }
 }

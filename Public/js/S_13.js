@@ -1,17 +1,28 @@
 firebase.auth().onAuthStateChanged(function (user) {
   const usuarioLogado = !!user;
 
+  // Verificar se o elemento existe antes de tentar acessá-lo
+  const mensagemAcessoNegado = document.getElementById("mensagemAcessoNegado");
+  const links = document.querySelectorAll("a"); // ou o seletor correto para seus links
+
   if (!usuarioLogado) {
-    mensagemAcessoNegado.style.display = "none";
+    if (mensagemAcessoNegado) {
+      mensagemAcessoNegado.style.display = "none";
+    }
 
     links.forEach(function (link) {
       link.addEventListener("click", function (event) {
         event.preventDefault();
-        mensagemAcessoNegado.style.display = "block";
+        if (mensagemAcessoNegado) {
+          mensagemAcessoNegado.style.display = "block";
+        }
       });
     });
   } else {
-    document.getElementById("user-greeting").style.display = "block";
+    const userGreeting = document.getElementById("user-greeting");
+    if (userGreeting) {
+      userGreeting.style.display = "block";
+    }
 
     if (user.uid) {
       const userId = user.uid;
@@ -20,16 +31,19 @@ firebase.auth().onAuthStateChanged(function (user) {
       userDocRef
         .get()
         .then(function (doc) {
+          const usernameElement = document.getElementById("username");
+          if (!usernameElement) return;
+
           if (doc.exists) {
             const userData = doc.data();
             if (userData && userData.usuario) {
-              document.getElementById("username").textContent = userData.usuario;
+              usernameElement.textContent = userData.usuario;
             } else {
-              document.getElementById("username").textContent = "Usuário";
+              usernameElement.textContent = "Usuário";
             }
           } else {
             console.warn("Documento do usuário não encontrado");
-            document.getElementById("username").textContent = "Usuário";
+            usernameElement.textContent = "Usuário";
           }
         })
         .catch(function (error) {
@@ -57,6 +71,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   updateYearDisplay();
   renderTable(mapData);
+  
+  // Adicionar event listeners para os botões de navegação de ano
+  setupYearNavigation();
 });
 
 function getCurrentServiceYear() {
@@ -65,26 +82,61 @@ function getCurrentServiceYear() {
   return now.getMonth() < 8 ? year : year + 1;
 }
 
-function updateYearDisplay() {
-  const yearDisplay = document.getElementById("serviceYear");
-  const start = new Date(currentYear - 1, 8, 1);
-  const end = new Date(currentYear, 7, 31);
-  yearDisplay.innerHTML = `Ano de serviço: ${currentYear} (Período: ${formatDate(start)} - ${formatDate(end)})`;
+function setupYearNavigation() {
+  const prevYearBtn = document.getElementById("prevYearBtn");
+  const nextYearBtn = document.getElementById("nextYearBtn");
+
+  if (prevYearBtn) {
+    prevYearBtn.addEventListener("click", function () {
+      currentYear--;
+      updateYearDisplay();
+      renderTable(mapData);
+    });
+  }
+
+  if (nextYearBtn) {
+    nextYearBtn.addEventListener("click", function () {
+      currentYear++;
+      updateYearDisplay();
+      renderTable(mapData);
+    });
+  }
 }
 
+function updateYearDisplay() {
+  const yearDisplay = document.getElementById("serviceYear");
+  if (!yearDisplay) return;
+
+  const start = new Date(currentYear - 1, 8, 1);
+  const end = new Date(currentYear, 7, 31);
+  yearDisplay.innerHTML = `Ano de serviço: ${currentYear} (Período: ${formatDateFromObject(start)} - ${formatDateFromObject(end)})`;
+}
+
+// Nova função para formatar objetos Date
+function formatDateFromObject(dateObj) {
+  if (!dateObj) return "";
+  
+  return `${String(dateObj.getDate()).padStart(2, "0")}/${String(
+    dateObj.getMonth() + 1
+  ).padStart(2, "0")}/${dateObj.getFullYear()}`;
+}
+
+// Função para formatar strings de data
 function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}/${date.getFullYear()}`;
+  if (!dateStr) return "";
+
+  const [year, month, day] = dateStr.split("-");
+  // Usar os valores diretamente sem criar objeto Date para evitar problemas de fuso horário
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
 }
 
 function renderTable(data) {
   const table = document.querySelector("table tbody");
+  if (!table) return;
+  
   table.innerHTML = "";
 
-  const maxMapas = Math.max(...Object.keys(data).map(Number));//quantidade de mapas automática 
+  const maxMapas = Math.max(...Object.keys(data).map(Number)); // quantidade de mapas automática 
   const start = new Date(currentYear - 1, 8, 1);
   const end = new Date(currentYear, 7, 31);
 
