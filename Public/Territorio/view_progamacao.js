@@ -31,12 +31,37 @@ function formatarPeriodoSemana(sabado, domingo) {
     
     // Formatar considerando mudança de mês
     if (segundaFeira.getMonth() === domingoFim.getMonth()) {
-        // Mesma mês
+        // Mesmo mês
         return `Semana de ${segundaFeira.getDate()} a ${domingoFim.getDate()} de ${meses[segundaFeira.getMonth()]}`;
     } else {
         // Meses diferentes
         return `Semana de ${segundaFeira.getDate()} de ${meses[segundaFeira.getMonth()]} a ${domingoFim.getDate()} de ${meses[domingoFim.getMonth()]}`;
     }
+}
+
+// Nova função para obter a chave da semana baseada na segunda-feira
+function getChaveSemana(data) {
+    let diaSemana = data.getDay();
+    let diasParaSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+    
+    let segundaFeira = new Date(data);
+    segundaFeira.setDate(data.getDate() + diasParaSegunda);
+    
+    // Usar ano-mês-dia da segunda-feira como chave única
+    const ano = segundaFeira.getFullYear();
+    const mes = String(segundaFeira.getMonth()).padStart(2, '0');
+    const dia = String(segundaFeira.getDate()).padStart(2, '0');
+    
+    return `${ano}-${mes}-${dia}`;
+}
+
+// Nova função para determinar em qual mês exibir a semana
+function getMesExibicao(sabado, domingo, idosos) {
+    // Prioridade: sábado > domingo > idosos
+    if (sabado) return sabado.data.getMonth();
+    if (domingo) return domingo.data.getMonth();
+    if (idosos) return idosos.data.getMonth();
+    return null;
 }
 
 function aplicarFiltro() {
@@ -45,7 +70,7 @@ function aplicarFiltro() {
         const dadosFiltrados = {};
         Object.keys(dadosCompletos).forEach(chave => {
             const semana = dadosCompletos[chave];
-            if (mesFiltro === '' || semana.mes === parseInt(mesFiltro)) {
+            if (mesFiltro === '' || semana.mesExibicao === parseInt(mesFiltro)) {
                 dadosFiltrados[chave] = semana;
             }
         });
@@ -97,17 +122,15 @@ async function carregarProgramacao() {
             const [y, m, d] = dataStr.split('-');
             const data = new Date(y, m - 1, d);
 
-            const mes = data.getMonth();
-            const semana = Math.ceil(data.getDate() / 7);
-            const chave = `${mes}-${semana}`;
+            // Usar a chave baseada na segunda-feira da semana
+            const chave = getChaveSemana(data);
 
             if (!dados[chave]) {
                 dados[chave] = {
-                    mes,
-                    semana,
                     sabado: null,
                     domingo: null,
-                    idosos: null
+                    idosos: null,
+                    mesExibicao: null // Será definido depois
                 };
             }
 
@@ -128,6 +151,12 @@ async function carregarProgramacao() {
                     acompanhante: doc.data().acompanhante
                 };
             }
+        });
+
+        // Definir o mês de exibição para cada semana
+        Object.keys(dados).forEach(chave => {
+            const semana = dados[chave];
+            semana.mesExibicao = getMesExibicao(semana.sabado, semana.domingo, semana.idosos);
         });
 
         dadosCompletos = dados;
@@ -158,10 +187,13 @@ function renderizarProgramacao(dados, ano) {
 
     const porMes = {};
     Object.values(dados).forEach(semana => {
-        if (!porMes[semana.mes]) {
-            porMes[semana.mes] = [];
+        const mesExib = semana.mesExibicao;
+        if (mesExib !== null) {
+            if (!porMes[mesExib]) {
+                porMes[mesExib] = [];
+            }
+            porMes[mesExib].push(semana);
         }
-        porMes[semana.mes].push(semana);
     });
 
     let html = '';
@@ -172,6 +204,13 @@ function renderizarProgramacao(dados, ano) {
                 <h2 class="month-title">${meses[mes]} ${ano}</h2>
                 <div class="week-grid">
         `;
+
+        // Ordenar semanas por data
+        porMes[mes].sort((a, b) => {
+            const dataA = a.sabado?.data || a.domingo?.data || a.idosos?.data;
+            const dataB = b.sabado?.data || b.domingo?.data || b.idosos?.data;
+            return dataA - dataB;
+        });
 
         porMes[mes].forEach(semana => {
             // Unir sábado e domingo em um único card
@@ -194,7 +233,7 @@ function renderizarProgramacao(dados, ano) {
                                 <div class="info-row">
                                     <div class="info-icon">🎤</div>
                                     <div class="info-content">
-                                        <div class="info-label">Dirigente</div>
+                                        <div class="info-label">Dirigente de Campo</div>
                                         <div class="info-value">${semana.sabado.dirigente}</div>
                                     </div>
                                 </div>
