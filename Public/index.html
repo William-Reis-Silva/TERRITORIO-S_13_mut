@@ -1,216 +1,716 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="format-detection" content="telephone=no" />
-  <meta name="msapplication-tap-highlight" content="no" />
   <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
-  <meta name="color-scheme" content="light dark" />
-  <!-- PWA Meta Tags -->
-  <meta name="theme-color" content="#000000">
-  <meta name="description" content="Aplicativo para arranjo de campo">
-  <!-- PWA iOS Support -->
+  <meta name="theme-color" content="#080A0F">
+  <meta name="description" content="Território S-13 — Controle de Designações">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Arranjo de Campo">
+  <meta name="apple-mobile-web-app-title" content="Território S-13">
   <link rel="apple-touch-icon" href="img/icone-192.png">
-  <!-- Manifest -->
   <link rel="manifest" href="manifest.json">
-
-  <!-- Favicon -->
   <link rel="icon" href="./img/icone-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="./img/icone-192.png">
-  <!--CSS-->
-  <link rel="stylesheet" href="./css/index.css" />
-  <link rel="stylesheet" href="./css/editar.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="./css/design-system.css" />
+  <title>Território S-13</title>
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    main { flex: 1; }
 
-  <title>Controle de Território</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .toolbar-left { display: flex; flex-direction: column; gap: 0.2rem; }
+    .toolbar-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 
-</head>
+    /* ── FILTROS ── */
+    .filters {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .filter-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.75rem; font-weight: 600;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+      cursor: pointer; width: auto;
+      transition: all var(--duration) var(--ease);
+    }
+    .filter-btn:hover { border-color: var(--border-hover); color: var(--text-primary); box-shadow: none; transform: none; }
+    .filter-btn.active { background: var(--accent-dim); border-color: rgba(232,64,28,0.3); color: var(--accent); }
 
-<body>
-  <header>
-
-    <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
-    <nav class="nav-bar">
-      <div class="logo">
-    <img src="img/logo.png" alt="logo" />
-      </div>
-      <div class="nav-list">
-        <ul>
-          <li class="nav-item">
-            <a href="login.html" class="nav-link">Login</a>
-          </li>
-          <li class="nav-item">
-            <a href="./Painel/painel.html" id="admin" class="nav-link" style="display:none">Admin</a>
-          </li>
-          <li class="nav-item">
-            <a href="Territorio/index_territorio.html" class="nav-link">Território</a>
-          </li>
-          <li class="nav-item">
-            <a href="Registro_S13.html" class="nav-link">Novo Registro</a>
-          </li>
-          <li class="nav-item">
-            <a href="Territorio/Mapa.html" class="nav-link">Mapa</a>
-          </li>
-          <li class="nav-item">
-            <a href="#" id="logout" class="nav-link">Sair</a>
-          </li>
-      </div>
-    </nav>
-  </header>
-  <main>
-    <div id="frameRegistros">
-      <div id="connection-status" class="connection-status">
-   
-        <samp id="conectado">🟢 Online</samp>
-   
-      </div>
-      <h1>Últimos Registros</h1>
-     
-      <div id="Registro">
-        <table id="tabelaDados">
-          <thead>
-            <tr>
-              <th>Mapa</th>
-              <th>Bairro</th>
-              <th>Designado Para</th>
-              <th>Data de Início</th>
-              <th>Data de Conclusão</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="lista-designacoes"></tbody>
-        </table>
-        <!-- Indicadores visuais -->
-        <div id="loading-indicator" style="display: none;">
-          ⏳ Carregando...
-        </div>
-
-        <!-- Botões opcionais -->
-
-
-        <div id="myModal" class="modal">
-          <div class="modal-content">
-            <h1 class="editar">Editar Registro</h1>
-            <span class="close">&times;</span>
-            <form id="formEdicao">
-              <label for="numero_mapa_edit">Número Mapa:</label>
-              <input type="text" id="numero_mapa_edit" disabled />
-              <br />
-              <label for="bairro_edit">Bairro:</label>
-              <input type="text" id="bairro_edit" disabled />
-              <br />
-              <label for="designado_para_edit">Designado Para:</label>
-              <input type="text" id="designado_para_edit" disabled />
-              <br />
-              <label for="data_inicio_edit">Data de Início:</label>
-              <input type="date" id="data_inicio_edit" />
-              <br />
-              <label for="data_conclusao_edit">Data de Conclusão:</label>
-              <input type="date" id="data_conclusao_edit" />
-              <br />
-              <div class="button-container">
-                <button type="button" id="salvar_edicao" class="btn btn-primary">
-                  <span>💾</span> Salvar
-                </button>
-                <button type="button" id="deletar_registro" class="btn btn-danger">
-                  <span>🗑️</span> Excluir
-                </button>
-                <button type="button" id="cancelar_edicao" class="btn btn-secondary">
-                  <span>❌</span> Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-  <footer>
-    <div class="footer-content">
-      <p>© 2024 Territórios - Todos os direitos reservados.</p>
-      <p>Desenvolvido por <a href="https://github.com/william-Reis-Silva" target="_blank">William Silva</a></p>
-    </div>
-  </footer>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        try {
-          const registration = await navigator.serviceWorker.register('sw.js');
-          console.log('SW registrado com sucesso:', registration);
-
-          // Verificar atualizações
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed') {
-                if (navigator.serviceWorker.controller) {
-                  // Novo conteúdo disponível
-                  if (confirm('Nova versão disponível! Atualizar agora?')) {
-                    window.location.reload();
-                  }
-                }
-              }
-            });
-          });
-        } catch (error) {
-          console.error('Erro ao registrar SW:', error);
-        }
-      });
+    /* ── BADGE PENDENTES ── */
+    .pendentes-alert {
+      display: none;
+      align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--warning-dim);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius);
+      margin-bottom: 1.25rem;
+      font-size: 0.82rem; font-weight: 500;
+      color: var(--warning);
+    }
+    .pendentes-alert a {
+      color: var(--warning); font-weight: 700;
+      text-decoration: none; margin-left: auto;
+      font-size: 0.78rem;
+      border-bottom: 1px solid currentColor;
     }
 
-    // Detectar instalação do PWA
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
+    /* ── TABELA AÇÕES ── */
+    .tbl-edit {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.28rem 0.6rem;
+      font-size: 0.72rem; font-weight: 500;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer; width: auto;
+      transition: all var(--duration) var(--ease);
+    }
+    .tbl-edit:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border-hover); box-shadow: none; transform: none; }
 
-      // Mostrar botão de instalação customizado
-      const installButton = document.getElementById('install-button');
-      if (installButton) {
-        installButton.style.display = 'block';
-        installButton.addEventListener('click', async () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Usuário ${outcome} a instalação`);
-            deferredPrompt = null;
-            installButton.style.display = 'none';
-          }
+    /* ── MODAL EDITAR ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: var(--bg-overlay);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 300;
+      align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 480px;
+      padding: 1.75rem;
+      animation: modalIn 0.25s var(--ease);
+    }
+
+    .modal-head {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .modal-head h2 { font-size: 1.05rem; font-weight: 700; }
+
+    .modal-close {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-hover); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); cursor: pointer;
+      color: var(--text-secondary); font-size: 0.85rem;
+    }
+    .modal-close:hover { color: var(--text-primary); box-shadow: none; transform: none; }
+
+    .field-ro input {
+      opacity: 0.45; pointer-events: none; cursor: default;
+    }
+
+    .modal-meta {
+      display: flex; gap: 0.5rem; align-items: center;
+      margin-bottom: 1.25rem; flex-wrap: wrap;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem; margin-top: 1rem;
+    }
+
+    /* ── MODAL CONFIRMAR DELETE ── */
+    .confirm-box {
+      background: var(--bg-elevated);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 380px;
+      padding: 1.75rem; text-align: center;
+      animation: modalIn 0.22s var(--ease);
+    }
+    .confirm-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--error-dim);
+      border: 1px solid rgba(239,68,68,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 1.2rem; color: var(--error);
+    }
+    .confirm-box h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .confirm-box p  { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .confirm-btns { display: flex; gap: 0.6rem; justify-content: center; }
+    .confirm-btns button { width: auto; padding: 0.6rem 1.25rem; }
+
+    /* ── TOAST ── */
+    .toast-wrap {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      z-index: 500; display: flex; flex-direction: column; gap: 0.4rem;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.7rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      font-size: 0.82rem; font-weight: 500;
+      min-width: 240px; pointer-events: all;
+      animation: toastIn 0.3s var(--ease);
+    }
+    .toast.ok   { border-color: rgba(34,197,94,0.3); }
+    .toast.ok i { color: var(--success); }
+    .toast.err  { border-color: rgba(239,68,68,0.3); }
+    .toast.err i{ color: var(--error); }
+    @keyframes toastIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:none} }
+
+    @media (max-width: 640px) {
+      .modal-actions { grid-template-columns: 1fr; }
+      .hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <a href="index.html" class="site-logo">
+    <img src="img/logo.png" alt="Logo" />
+    <span class="site-logo-text">S-13</span>
+    <span class="site-logo-badge">Beta</span>
+  </a>
+  <nav class="site-nav">
+    <div id="user-chip" class="user-chip" style="display:none">
+      <span class="user-dot"></span>
+      <span id="username-chip"></span>
+    </div>
+    <div class="nav-divider"></div>
+    <a href="./Painel/painel.html" id="nav-admin" class="nav-link" style="display:none">
+      Admin <span id="nav-badge" style="display:none;background:var(--accent);color:#fff;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:var(--radius-full);margin-left:0.25rem">0</span>
+    </a>
+    
+    <div class="nav-divider"></div>
+    <a href="Registro_S13.html" class="nav-link nav-link-cta">
+      <i class="fas fa-plus" style="font-size:0.8em"></i> Novo
+    </a>
+    <a href="#" id="btn-logout" class="nav-link" style="color:var(--text-disabled)" title="Sair">
+      <i class="fas fa-sign-out-alt" style="font-size:0.85em"></i>
+    </a>
+  </nav>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="page-wrapper">
+
+    <!-- Alerta de pendentes (admin/auxiliar) -->
+    <div id="pendentes-alert" class="pendentes-alert reveal">
+      <i class="fas fa-user-clock"></i>
+      <span id="pendentes-msg"></span>
+      <a href="Painel/painel.html">Revisar →</a>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar reveal">
+      <div class="toolbar-left">
+        <div class="page-eyebrow">Dashboard</div>
+        <h1>Últimos Registros</h1>
+      </div>
+      <div class="toolbar-right">
+        <div id="status-chip" class="status-chip status-online">
+          <span class="status-dot"></span>
+          <span id="status-label">Online</span>
+        </div>
+        <a href="Registro_S13.html" class="btn btn-primary"
+           style="width:auto;padding:0.55rem 1rem;font-size:0.85rem;">
+          <i class="fas fa-plus" style="font-size:0.8em"></i> Novo Registro
+        </a>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters reveal stagger-1">
+      <button class="filter-btn active" data-status="todos">Todos</button>
+      <button class="filter-btn" data-status="em_andamento">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--warning);display:inline-block"></span>
+        Em andamento
+      </button>
+      <button class="filter-btn" data-status="concluido">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>
+        Concluídos
+      </button>
+    </div>
+
+    <!-- Tabela -->
+    <div class="table-wrapper reveal stagger-2">
+      <div id="loading-row" style="padding:2.5rem;text-align:center;font-size:0.82rem;color:var(--text-disabled)">
+        <i class="fas fa-spinner fa-spin"></i> Carregando registros...
+      </div>
+      <table id="tabelaDados" style="display:none">
+        <thead>
+          <tr>
+            <th>Mapa</th>
+            <th>Bairro</th>
+            <th>Designado Para</th>
+            <th>Início</th>
+            <th>Conclusão</th>
+            <th>Status</th>
+            <th style="width:48px"></th>
+          </tr>
+        </thead>
+        <tbody id="lista-designacoes"></tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL EDITAR -->
+<div id="modal-editar" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Editar Designação</h2>
+      <button class="modal-close" id="modal-fechar">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-meta">
+      <span id="edit-mapa-badge" class="badge badge-accent" style="font-family:var(--font-mono)"></span>
+      <span id="edit-bairro-badge" style="font-size:0.8rem;color:var(--text-secondary)"></span>
+    </div>
+
+    <div class="field-ro">
+      <label>Designado Para</label>
+      <input type="text" id="edit-designado" readonly />
+    </div>
+
+    <label>Data de Início</label>
+    <input type="date" id="edit-inicio" />
+
+    <label>Data de Conclusão
+      <span style="color:var(--text-disabled);font-weight:400;font-size:0.9em">(opcional)</span>
+    </label>
+    <input type="date" id="edit-conclusao" />
+
+    <div id="edit-erro" style="display:none;font-size:0.78rem;color:var(--error);margin-bottom:0.75rem"></div>
+
+    <div class="modal-actions">
+      <button id="btn-salvar" class="btn-primary" onclick="salvarEdicao()">
+        <i class="fas fa-save" style="font-size:0.85em"></i> Salvar
+      </button>
+      <button id="btn-excluir" class="btn-danger" onclick="abrirConfirmDelete()">
+        <i class="fas fa-trash" style="font-size:0.85em"></i> Excluir
+      </button>
+      <button onclick="fecharModal()" class="btn-ghost" style="grid-column:span 2">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div id="modal-confirm" class="modal-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">
+      <i class="fas fa-trash"></i>
+    </div>
+    <h3>Excluir registro?</h3>
+    <p>Esta ação não pode ser desfeita. O histórico desta designação será removido permanentemente.</p>
+    <div class="confirm-btns">
+      <button onclick="fecharConfirm()" class="btn" style="width:auto">Cancelar</button>
+      <button id="btn-confirm-delete" class="btn btn-danger" style="width:auto" onclick="confirmarDelete()">
+        Sim, Excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <p>© 2024 Territórios — Todos os direitos reservados.</p>
+  <p>Desenvolvido por
+    <a href="https://github.com/william-Reis-Silva" target="_blank" rel="noopener">William Silva</a>
+  </p>
+</footer>
+
+<!-- PWA -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('sw.js');
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        w.addEventListener('statechange', () => {
+          if (w.state === 'installed' && navigator.serviceWorker.controller)
+            if (confirm('Nova versão disponível! Atualizar agora?')) window.location.reload();
         });
-      }
+      });
+    } catch (e) { console.error('SW:', e); }
+  });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase_config.js"></script>
+<script>
+// ================================================================
+//  ESTADO
+// ================================================================
+const app = {
+  userId:        null,
+  congregacaoId: null,
+  papel:         null,
+  registroId:    null,   // ID aberto no modal
+  filtro:        'todos',
+  dados:         [],     // cache dos registros carregados
+};
+
+// ================================================================
+//  BOOT
+// ================================================================
+document.addEventListener('DOMContentLoaded', async () => {
+
+  // Verificar conexão
+  window.addEventListener('online',  () => setStatus(true));
+  window.addEventListener('offline', () => setStatus(false));
+
+  // Auth guard
+  const { data: { session } } = await window.supabaseClient.auth.getSession();
+  if (!session) { window.location.replace('login.html'); return; }
+  app.userId = session.user.id;
+
+  // Carregar perfil
+  const { data: perfil } = await window.supabaseClient
+    .from('usuarios')
+    .select('nome, papel, congregacao_id')
+    .eq('id', app.userId)
+    .single();
+
+  if (!perfil) { window.location.replace('login.html'); return; }
+
+  // Redirecionar se pendente/rejeitado
+  if (['pendente', 'rejeitado'].includes(perfil.papel)) {
+    window.location.replace('login.html'); return;
+  }
+
+  app.congregacaoId = perfil.congregacao_id;
+  app.papel         = perfil.papel;
+
+  // UI de usuário
+  const chip = document.getElementById('user-chip');
+  chip.style.display = 'flex';
+  document.getElementById('username-chip').textContent = perfil.nome.split(' ')[0];
+
+  // Mostrar link Admin para gestores
+  if (['admin','auxiliar'].includes(perfil.papel)) {
+    document.getElementById('nav-admin').style.display = 'inline-flex';
+    carregarPendentes();
+  }
+
+  // Carregar designações
+  await carregarDesignacoes();
+
+  // Filtros
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      app.filtro = btn.dataset.status;
+      renderizarTabela();
     });
-    // Detectar quando o app foi instalado
-    window.addEventListener('appinstalled', () => {
-      console.log('PWA foi instalado');
-      deferredPrompt = null;
-    });
-    // Esta verificação DEVE ser executada antes de qualquer código que precise de um usuário logado
-    // para evitar o loop de redirecionamento.
-    document.addEventListener("DOMContentLoaded", () => {
-        // Garante que o firebase-auth-compat.js carregou
-        firebase.auth().onAuthStateChanged(user => {
-            if (!user) {
-                // Se não houver usuário logado, redireciona para login e PARA a execução.
-                console.log("Usuário deslogado. Redirecionando.");
-                window.location.replace("login.html");
-            } else {
-                console.log("Usuário autenticado. Iniciando aplicação.");
-                // Aqui o código pode continuar a carregar home.js
-                // O unifiedDataManager.init() ainda deve ser chamado em home.js
-            }
-        });
-    });
-  </script>
- <script src="js/Firebaseconfig.js"></script>
-<script type="module" src="js/home.js"></script>
+  });
+
+  // Modal — fechar ESC e clique fora
+  document.getElementById('modal-fechar').addEventListener('click', fecharModal);
+  document.getElementById('modal-editar').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-editar')) fecharModal();
+  });
+  document.getElementById('modal-confirm').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-confirm')) fecharConfirm();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { fecharModal(); fecharConfirm(); }
+  });
+
+  // Logout
+  document.getElementById('btn-logout').addEventListener('click', async e => {
+    e.preventDefault();
+    await window.supabaseClient.auth.signOut();
+    window.location.replace('login.html');
+  });
+});
+
+// ================================================================
+//  STATUS DE CONEXÃO
+// ================================================================
+function setStatus(online) {
+  const chip  = document.getElementById('status-chip');
+  const label = document.getElementById('status-label');
+  chip.className = `status-chip ${online ? 'status-online' : 'status-offline'}`;
+  label.textContent = online ? 'Online' : 'Offline';
+}
+
+// ================================================================
+//  PENDENTES (badge admin)
+// ================================================================
+async function carregarPendentes() {
+  const { count } = await window.supabaseClient
+    .from('usuarios')
+    .select('id', { count: 'exact', head: true })
+    .eq('congregacao_id', app.congregacaoId)
+    .eq('papel', 'pendente');
+
+  if (count > 0) {
+    const alert = document.getElementById('pendentes-alert');
+    const badge = document.getElementById('nav-badge');
+    document.getElementById('pendentes-msg').textContent =
+      `${count} usuário${count > 1 ? 's' : ''} aguardando aprovação de acesso.`;
+    alert.style.display = 'flex';
+    badge.textContent   = count;
+    badge.style.display = 'inline';
+  }
+}
+
+// ================================================================
+//  CARREGAR DESIGNAÇÕES
+// ================================================================
+async function carregarDesignacoes() {
+  document.getElementById('loading-row').style.display = 'block';
+  document.getElementById('tabelaDados').style.display = 'none';
+
+  const { data, error } = await window.supabaseClient
+    .from('designacoes')
+    .select(`
+      id,
+      designado_para,
+      data_inicio,
+      data_conclusao,
+      status,
+      criado_por,
+      territorios ( numero_mapa, bairro )
+    `)
+    .eq('congregacao_id', app.congregacaoId)
+    .order('criado_em', { ascending: false })
+    .limit(100);
+
+  document.getElementById('loading-row').style.display = 'none';
+  document.getElementById('tabelaDados').style.display = 'table';
+
+  if (error) { toast('Erro ao carregar registros.', 'err'); return; }
+
+  app.dados = data || [];
+  renderizarTabela();
+}
+
+// ================================================================
+//  RENDERIZAR TABELA
+// ================================================================
+function renderizarTabela() {
+  const tbody = document.getElementById('lista-designacoes');
+
+  const lista = app.filtro === 'todos'
+    ? app.dados
+    : app.dados.filter(d => d.status === app.filtro);
+
+  if (lista.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="7">
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+          <p>${app.filtro === 'todos' ? 'Nenhum registro ainda.' : 'Nenhum registro com esse filtro.'}</p>
+        </div>
+      </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(d => {
+    const podEditar = app.papel === 'admin' || app.papel === 'auxiliar' || d.criado_por === app.userId;
+    return `
+    <tr>
+      <td><span style="font-family:var(--font-mono);font-weight:700;color:var(--accent)">
+        #${d.territorios?.numero_mapa ?? '—'}
+      </span></td>
+      <td style="color:var(--text-secondary)">${esc(d.territorios?.bairro ?? '—')}</td>
+      <td>${esc(d.designado_para)}</td>
+      <td style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-secondary)">
+        ${formatarData(d.data_inicio)}
+      </td>
+      <td style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-secondary)">
+        ${d.data_conclusao ? formatarData(d.data_conclusao) : '—'}
+      </td>
+      <td>${badgeStatus(d.status)}</td>
+      <td>
+        ${podEditar ? `<button class="tbl-edit" onclick="abrirModal('${d.id}')">
+          <i class="fas fa-pen" style="font-size:0.7em"></i>
+        </button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ================================================================
+//  MODAL — ABRIR
+// ================================================================
+function abrirModal(id) {
+  const d = app.dados.find(r => r.id === id);
+  if (!d) return;
+
+  app.registroId = id;
+
+  document.getElementById('edit-mapa-badge').textContent   = `Mapa #${d.territorios?.numero_mapa ?? '—'}`;
+  document.getElementById('edit-bairro-badge').textContent  = d.territorios?.bairro ?? '';
+  document.getElementById('edit-designado').value           = d.designado_para;
+  document.getElementById('edit-inicio').value              = d.data_inicio || '';
+  document.getElementById('edit-conclusao').value           = d.data_conclusao || '';
+  document.getElementById('edit-erro').style.display        = 'none';
+
+  document.getElementById('modal-editar').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modal-editar').classList.remove('open');
+  app.registroId = null;
+}
+
+// ================================================================
+//  SALVAR EDIÇÃO
+// ================================================================
+async function salvarEdicao() {
+  const inicio    = document.getElementById('edit-inicio').value;
+  const conclusao = document.getElementById('edit-conclusao').value;
+  const erroEl    = document.getElementById('edit-erro');
+
+  // Validação
+  if (!inicio) { erroEl.textContent = 'Data de início é obrigatória.'; erroEl.style.display = 'block'; return; }
+  if (conclusao && conclusao < inicio) {
+    erroEl.textContent = 'A conclusão não pode ser anterior ao início.';
+    erroEl.style.display = 'block'; return;
+  }
+  erroEl.style.display = 'none';
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+  const payload = {
+    data_inicio:    inicio,
+    data_conclusao: conclusao || null,
+  };
+
+  const { error } = await window.supabaseClient
+    .from('designacoes')
+    .update(payload)
+    .eq('id', app.registroId)
+    .eq('congregacao_id', app.congregacaoId);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-save"></i> Salvar';
+
+  if (error) { toast('Erro ao salvar.', 'err'); return; }
+
+  // Atualizar cache local
+  const idx = app.dados.findIndex(r => r.id === app.registroId);
+  if (idx >= 0) {
+    app.dados[idx].data_inicio    = inicio;
+    app.dados[idx].data_conclusao = conclusao || null;
+    app.dados[idx].status         = conclusao ? 'concluido' : 'em_andamento';
+  }
+
+  fecharModal();
+  renderizarTabela();
+  toast('Registro atualizado!', 'ok');
+}
+
+// ================================================================
+//  EXCLUIR
+// ================================================================
+function abrirConfirmDelete() {
+  document.getElementById('modal-confirm').classList.add('open');
+}
+
+function fecharConfirm() {
+  document.getElementById('modal-confirm').classList.remove('open');
+}
+
+async function confirmarDelete() {
+  const btn = document.getElementById('btn-confirm-delete');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  const { error } = await window.supabaseClient
+    .from('designacoes')
+    .delete()
+    .eq('id', app.registroId)
+    .eq('congregacao_id', app.congregacaoId);
+
+  btn.disabled = false;
+  btn.innerHTML = 'Sim, Excluir';
+
+  if (error) { toast('Erro ao excluir.', 'err'); return; }
+
+  app.dados = app.dados.filter(r => r.id !== app.registroId);
+  fecharConfirm();
+  fecharModal();
+  renderizarTabela();
+  toast('Registro excluído.', 'ok');
+}
+
+// ================================================================
+//  HELPERS
+// ================================================================
+function badgeStatus(status) {
+  const map = {
+    em_andamento: ['var(--warning-dim)','var(--warning)','Em andamento'],
+    concluido:    ['var(--success-dim)','var(--success)','Concluído'],
+    devolvido:    ['var(--bg-hover)','var(--text-secondary)','Devolvido'],
+  };
+  const [bg, cor, label] = map[status] || map.devolvido;
+  return `<span class="badge" style="background:${bg};color:${cor}">${label}</span>`;
+}
+
+function formatarData(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, tipo = 'ok') {
+  const wrap = document.getElementById('toasts');
+  const el   = document.createElement('div');
+  el.className = `toast ${tipo}`;
+  el.innerHTML = `<i class="fas ${tipo === 'ok' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'all 0.3s';
+    el.style.opacity    = '0';
+    el.style.transform  = 'translateX(16px)';
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+</script>
 </body>
-
 </html>

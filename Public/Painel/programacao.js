@@ -1,60 +1,28 @@
 /*************************************************
- * 📁 REFERÊNCIA PADRÃO DO ANO
- *************************************************/
-function refAno(db, ano) {
-  return db
-    .collection("programacao")
-    .doc(String(ano))
-    .collection("agendamentos");
-}
-
-/*************************************************
- * 🆔 GERAR ID DO DOCUMENTO
- *************************************************/
-function gerarDocId(tipo, data) {
-  const yyyy = data.getFullYear();
-  const mm = String(data.getMonth() + 1).padStart(2, "0");
-  const dd = String(data.getDate()).padStart(2, "0");
-  return `${tipo}_${yyyy}-${mm}-${dd}`;
-}
-
-/*************************************************
- * 📦 CARREGAR CONFIGURAÇÕES DO FIRESTORE
- * (OBRIGATÓRIA – DEVE FICAR NO TOPO DO ARQUIVO)
+ * 📦 CARREGAR CONFIGURAÇÕES DO SUPABASE
  *************************************************/
 async function carregarConfiguracoes() {
-  const db = firebase.firestore();
-
-  const config = {
-    dirigentes: [],
-    grupos: [],
-    idosos: [],
-    acompanhantes: []
-  };
+  if (!window.supabaseClient || !window.currentCongregacaoId) {
+    throw new Error('Supabase não inicializado ou Congregação não definida');
+  }
+  
+  const config = { dirigentes: [], grupos: [], idosos: [], acompanhantes: [] };
 
   try {
-    const base = db
-      .collection("escala-config")
-      .doc("listas");
+    const { data: docSnap } = await window.supabaseClient.from("congregacoes")
+      .select("config").eq("id", window.currentCongregacaoId).single();
 
-    const mapas = [
-      { col: "dirigentes-sabado", key: "dirigentes" },
-      { col: "grupos-domingo", key: "grupos" },
-      { col: "idosos", key: "idosos" },
-      { col: "acompanhantes", key: "acompanhantes" }
-    ];
-
-    for (const m of mapas) {
-      const snap = await base
-        .collection(m.col)
-        .where("ativo", "==", true)
-        .orderBy("ordem")
-        .get();
-
-      snap.forEach(doc => {
-        config[m.key].push(doc.data().nome);
-      });
+    if (docSnap && docSnap.config) {
+      if (docSnap.config.dirigentes) config.dirigentes = docSnap.config.dirigentes;
+      if (docSnap.config.gruposDesignacao) config.grupos = docSnap.config.gruposDesignacao;
+      if (docSnap.config.idosos) config.idosos = docSnap.config.idosos;
+      if (docSnap.config.acompanhantes) config.acompanhantes = docSnap.config.acompanhantes;
     }
+    
+    // Fallback pra evitar que quebre, embora o ideal seja ter a config completa
+    if (config.dirigentes.length === 0) config.dirigentes = ["Irmão 1", "Irmão 2"];
+    if (config.idosos.length === 0) config.idosos = ["Idoso 1"];
+    if (config.acompanhantes.length === 0) config.acompanhantes = ["Acompanhante 1"];
 
     return config;
   } catch (err) {
@@ -77,58 +45,42 @@ function proximoDiaSemana(diaSemana) {
   return data;
 }
 
-function extrairDataDoId(id) {
-  // ex: sabado_2025-01-04
-  return new Date(id.split("_")[1]);
-}
-
 /*************************************************
  * 📖 CARREGAR ÚLTIMOS AGENDAMENTOS (1 leitura)
  *************************************************/
-async function carregarUltimosAgendamentos(db, ano, dataLimite) {
-  const snap = await db
-    .collection("programacao")
-    .doc(String(ano))
-    .collection("agendamentos")
-    .get();
+async function carregarUltimosAgendamentos(ano, dataLimite) {
+  if (!window.supabaseClient) return { sabado: null, domingo: null, idosos: null };
 
-  const ultimos = {
-    sabado: null,
-    domingo: null,
-    idosos: null
-  };
+  const { data: snap } = await window.supabaseClient.from("programacao")
+    .select("*")
+    .eq("congregacao_id", window.currentCongregacaoId)
+    .gte("data_agendamento", `${ano}-01-01`)
+    .lte("data_agendamento", `${ano}-12-31`);
+
+  const ultimos = { sabado: null, domingo: null, idosos: null };
+
+  if (!snap) return ultimos;
 
   snap.forEach(doc => {
-    const id = doc.id;
-    const data = extrairDataDoId(id);
+    const data = new Date(doc.data_agendamento + 'T00:00:00');
 
     if (data >= dataLimite) return;
 
-    if (id.startsWith("sabado_")) {
+    if (doc.tipo === "sabado") {
       if (!ultimos.sabado || data > ultimos.sabado.data) {
-        ultimos.sabado = {
-          data,
-          dirigente: doc.data().dirigente
-        };
+        ultimos.sabado = { data, dirigente: doc.dirigente };
       }
     }
 
-    if (id.startsWith("domingo_")) {
+    if (doc.tipo === "domingo") {
       if (!ultimos.domingo || data > ultimos.domingo.data) {
-        ultimos.domingo = {
-          data,
-          grupo: doc.data().grupo
-        };
+        ultimos.domingo = { data, grupo: doc.grupo };
       }
     }
 
-    if (id.startsWith("idosos_")) {
+    if (doc.tipo === "idosos") {
       if (!ultimos.idosos || data > ultimos.idosos.data) {
-        ultimos.idosos = {
-          data,
-          idoso: doc.data().idoso,
-          acompanhante: doc.data().acompanhante
-        };
+        ultimos.idosos = { data, idoso: doc.idoso, acompanhante: doc.acompanhante };
       }
     }
   });
@@ -165,7 +117,7 @@ function gerarPreview(ano, dataInicio, config, indices) {
 
       if (dow === 6) {
         preview.push({
-          tipo: "Sábado",
+          tipo: "sabado",
           data,
           dirigente: config.dirigentes[dir],
           idoso: config.idosos[ido],
@@ -179,7 +131,7 @@ function gerarPreview(ano, dataInicio, config, indices) {
 
       if (dow === 0) {
         preview.push({
-          tipo: "Domingo",
+          tipo: "domingo",
           data,
           grupo: config.grupos[grp]
         });
@@ -198,8 +150,6 @@ function gerarPreview(ano, dataInicio, config, indices) {
  * 🚀 FUNÇÃO PRINCIPAL – REGERAR A PARTIR DO PRÓXIMO FIM DE SEMANA
  *************************************************/
 async function regerarAPartirDoProximoFimDeSemana(ano) {
-  const db = firebase.firestore();
-
   try {
     const config = await carregarConfiguracoes();
 
@@ -209,21 +159,13 @@ async function regerarAPartirDoProximoFimDeSemana(ano) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const ultimos = await carregarUltimosAgendamentos(db, ano, hoje);
+    const ultimos = await carregarUltimosAgendamentos(ano, hoje);
 
     const indices = {
-      dir: ultimos.sabado
-        ? proximoIndex(config.dirigentes, ultimos.sabado.dirigente)
-        : 0,
-      grp: ultimos.domingo
-        ? proximoIndex(config.grupos, ultimos.domingo.grupo)
-        : 0,
-      ido: ultimos.idosos
-        ? proximoIndex(config.idosos, ultimos.idosos.idoso)
-        : 0,
-      aco: ultimos.idosos
-        ? proximoIndex(config.acompanhantes, ultimos.idosos.acompanhante)
-        : 0
+      dir: ultimos.sabado ? proximoIndex(config.dirigentes, ultimos.sabado.dirigente) : 0,
+      grp: ultimos.domingo ? proximoIndex(config.grupos, ultimos.domingo.grupo) : 0,
+      ido: ultimos.idosos ? proximoIndex(config.idosos, ultimos.idosos.idoso) : 0,
+      aco: ultimos.idosos ? proximoIndex(config.acompanhantes, ultimos.idosos.acompanhante) : 0
     };
 
     // 👀 PREVIEW
@@ -231,8 +173,8 @@ async function regerarAPartirDoProximoFimDeSemana(ano) {
 
     let texto = "📋 PREVIEW DAS PRÓXIMAS ESCALAS\n\n";
     preview.forEach(p => {
-      texto += `${p.tipo} – ${p.data.toLocaleDateString("pt-BR")}\n`;
-      if (p.tipo === "Sábado") {
+      texto += `${p.tipo.toUpperCase()} – ${p.data.toLocaleDateString("pt-BR")}\n`;
+      if (p.tipo === "sabado") {
         texto += `• Dirigente: ${p.dirigente}\n`;
         texto += `• Idoso: ${p.idoso}\n`;
         texto += `• Acompanhante: ${p.acompanhante}\n\n`;
@@ -243,10 +185,11 @@ async function regerarAPartirDoProximoFimDeSemana(ano) {
 
     if (!confirm(texto + "Deseja aplicar essas mudanças?")) return;
 
-    // 💾 SALVAR NO FIRESTORE
+    // 💾 SALVAR NO SUPABASE
+    const agendamentosParaSalvar = [];
+
     for (let mes = dataInicio.getMonth(); mes < 12; mes++) {
       const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-      const batch = db.batch();
 
       for (let dia = 1; dia <= diasNoMes; dia++) {
         const data = new Date(ano, mes, dia);
@@ -255,24 +198,26 @@ async function regerarAPartirDoProximoFimDeSemana(ano) {
         if (data < dataInicio) continue;
 
         const dow = data.getDay();
+        const dataFormatada = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 
         if (dow === 6) {
           // Salvar dirigente do sábado
-          batch.set(
-            refAno(db, ano).doc(gerarDocId("sabado", data)),
-            { dirigente: config.dirigentes[indices.dir] }
-          );
+          agendamentosParaSalvar.push({
+            congregacao_id: window.currentCongregacaoId,
+            tipo: "sabado",
+            data_agendamento: dataFormatada,
+            dirigente: config.dirigentes[indices.dir]
+          });
 
-          // Salvar idosos
-          batch.set(
-            refAno(db, ano).doc(gerarDocId("idosos", data)),
-            {
-              idoso: config.idosos[indices.ido],
-              acompanhante: config.acompanhantes[indices.aco]
-            }
-          );
+          // Salvar idosos (agrupados como sabado/idosos, usaremos o tipo 'idosos')
+          agendamentosParaSalvar.push({
+            congregacao_id: window.currentCongregacaoId,
+            tipo: "idosos",
+            data_agendamento: dataFormatada,
+            idoso: config.idosos[indices.ido],
+            acompanhante: config.acompanhantes[indices.aco]
+          });
 
-          // Incrementar DEPOIS de salvar
           indices.dir = (indices.dir + 1) % config.dirigentes.length;
           indices.ido = (indices.ido + 1) % config.idosos.length;
           indices.aco = (indices.aco + 1) % config.acompanhantes.length;
@@ -280,17 +225,31 @@ async function regerarAPartirDoProximoFimDeSemana(ano) {
 
         if (dow === 0) {
           // Salvar domingo
-          batch.set(
-            refAno(db, ano).doc(gerarDocId("domingo", data)),
-            { grupo: config.grupos[indices.grp] }
-          );
+          agendamentosParaSalvar.push({
+            congregacao_id: window.currentCongregacaoId,
+            tipo: "domingo",
+            data_agendamento: dataFormatada,
+            grupo: config.grupos[indices.grp]
+          });
 
-          // Incrementar DEPOIS de salvar
           indices.grp = (indices.grp + 1) % config.grupos.length;
         }
       }
+    }
 
-      await batch.commit();
+    if (agendamentosParaSalvar.length > 0) {
+        // Apaga os agendamentos futuros para esse ano para substituí-cols
+        const dtStr = `${ano}-${String(dataInicio.getMonth() + 1).padStart(2, '0')}-${String(dataInicio.getDate()).padStart(2, '0')}`;
+        await window.supabaseClient.from("programacao")
+           .delete()
+           .eq("congregacao_id", window.currentCongregacaoId)
+           .gte("data_agendamento", dtStr);
+
+        // Insere os novos
+        const { error } = await window.supabaseClient.from("programacao")
+           .insert(agendamentosParaSalvar);
+
+        if (error) throw error;
     }
 
     alert("✅ Escala regenerada com sucesso!");

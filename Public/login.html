@@ -1,108 +1,454 @@
 <!DOCTYPE html>
 <html lang="pt">
-
 <head>
-  <title>Login</title>
+  <title>Acesso | Território S-13</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <!-- Firebase compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="css/design-system.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase_config.js"></script>
+  <style>
+    html, body { height: 100%; }
 
-  <script src="js/Firebaseconfig.js"></script>
-  <link rel="stylesheet" href="css/Login.css" />
-  <link rel="stylesheet" href="css/index.css">
+    body {
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      min-height: 100vh;
+    }
+
+    /* ── LADO VISUAL ── */
+    .visual-side {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 3rem;
+    }
+
+    /* Grade decorativa */
+    .visual-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Brilho central */
+    .visual-glow {
+      position: absolute;
+      top: 30%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(232,64,28,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .visual-top {
+      position: absolute;
+      top: 2rem; left: 2.5rem;
+      right: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1;
+    }
+
+    .visual-logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+    .visual-logo-mark img { height: 28px; filter: invert(1) brightness(0.85); }
+    .visual-logo-mark span {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .visual-version {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-disabled);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-full);
+    }
+
+    .visual-content { position: relative; z-index: 1; }
+
+    .visual-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(232,64,28,0.2);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+      margin-bottom: 1rem;
+      letter-spacing: 0.04em;
+    }
+
+    .visual-headline {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .visual-headline .accent-word { color: var(--accent); }
+
+    .visual-sub {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      max-width: 320px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .visual-stats {
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    .stat-item {
+      padding: 0.85rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      min-width: 90px;
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-disabled);
+      margin-top: 0.2rem;
+      font-weight: 500;
+    }
+
+    /* ── LADO DO FORMULÁRIO ── */
+    .form-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem;
+      background: var(--bg-root);
+      overflow-y: auto;
+    }
+
+    .form-box {
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .form-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 0.3rem;
+    }
+
+    .form-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    /* Input group com ícone */
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap input { padding-right: 2.75rem; }
+
+    .input-icon-btn {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-60%);
+      background: none;
+      border: none;
+      width: auto;
+      padding: 0.25rem;
+      color: var(--text-disabled);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: color var(--duration);
+    }
+    .input-icon-btn:hover { color: var(--text-primary); background: none; box-shadow: none; transform: translateY(-60%); }
+
+    #submit-btn { margin-top: 0.25rem; }
+
+    #error-box {
+      background: var(--error-dim);
+      color: var(--error);
+      border: 1px solid rgba(239,68,68,0.2);
+      padding: 0.7rem 0.875rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      display: none;
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .form-footer {
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .form-footer a {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color var(--duration);
+    }
+    .form-footer a:hover { color: var(--text-primary); }
+    .form-footer a i { font-size: 0.75em; }
+
+    @media (max-width: 900px) {
+      body { grid-template-columns: 1fr; }
+      .visual-side { display: none; }
+      .form-side { padding: 2rem 1.5rem; justify-content: flex-start; padding-top: 3.5rem; }
+    }
+  </style>
 </head>
-
 <body>
 
-  <div class="container">
-    <form id="login-form">
-      <h1>Login</h1>
-      <input type="email" id="email" name="email" placeholder="Email" required />
-      <input type="password" id="login-senha" name="login-senha" placeholder="Senha" required />
-      <label class="show-password">Mostrar Senha</label>
-      <span id="toggle-password" style="cursor: pointer;">
-        <i class="fa fa-eye"></i>
-      </span>
-      <button type="submit">Entrar</button>
-      <a href="index.html" class="botao-voltar">Voltar ao Início</a>
-    </form>
-    <p id="error-message"></p>
-    <p>
-      Ainda não tem uma conta? <br><a href="Cadastro.html" class="botao-voltar">Cadastre-se aqui</a>
-    </p>
+<!-- VISUAL -->
+<div class="visual-side">
+  <div class="visual-grid"></div>
+  <div class="visual-glow"></div>
+
+  <div class="visual-top">
+    <a href="index.html" class="visual-logo-mark">
+      <img src="img/logo.png" alt="Logo" />
+      <span>Território S-13</span>
+    </a>
+    <span class="visual-version">v2.0</span>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const form = document.getElementById("login-form");
-      const errorMessageElement = document.getElementById("error-message");
-      const passwordInput = document.getElementById("login-senha");
-      const togglePassword = document.getElementById("toggle-password");
-      const toggleIcon = togglePassword.querySelector("i");
+  <div class="visual-content reveal stagger-1">
+    <span class="visual-kicker">
+      <i class="fas fa-map-marked-alt" style="font-size:0.9em"></i>
+      Sistema de Gestão
+    </span>
+    <h1 class="visual-headline">
+      Gestão de<br><span class="accent-word">Territórios</span>
+    </h1>
+    <p class="visual-sub">
+      Controle completo de designações, mapas e relatórios para seu campo de pregação.
+    </p>
+    <div class="visual-stats">
+      <div class="stat-item">
+        <div class="stat-value">S-13</div>
+        <div class="stat-label">Formulário</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">PWA</div>
+        <div class="stat-label">Offline</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">2.0</div>
+        <div class="stat-label">Versão</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      // Alternar visibilidade da senha
-      togglePassword.addEventListener("click", () => {
-        const isPassword = passwordInput.type === "password";
-        passwordInput.type = isPassword ? "text" : "password";
-        toggleIcon.classList.toggle("fa-eye", !isPassword);
-        toggleIcon.classList.toggle("fa-eye-slash", isPassword);
-      });
+<!-- FORMULÁRIO -->
+<div class="form-side">
+  <div class="form-box">
+    <div class="reveal stagger-1">
+      <div class="form-eyebrow">Acesso restrito</div>
+      <h1 class="form-title">Entrar</h1>
+      <p class="form-desc">Exclusivo para publicadores designados</p>
+    </div>
 
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
+    <form id="login-form" class="reveal stagger-2">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" placeholder="seu@email.com" required />
 
-        const email = form.email.value;
-        const senha = form["login-senha"].value;
+      <label for="login-senha">Senha</label>
+      <div class="input-wrap">
+        <input type="password" id="login-senha" name="login-senha" placeholder="••••••••" required />
+        <button type="button" id="toggle-password" class="input-icon-btn" title="Mostrar/ocultar">
+          <i class="fa fa-eye"></i>
+        </button>
+      </div>
 
-        // Fazer login usando Firebase Authentication
-        firebase
-          .auth()
-          .signInWithEmailAndPassword(email, senha)
-          .then((userCredential) => {
-            const user = userCredential.user;
-            console.log("Usuário logado:", user);
+      <button type="submit" id="submit-btn" class="btn-primary reveal stagger-3">
+        Entrar no Sistema
+        <i class="fas fa-arrow-right" style="font-size:0.8em"></i>
+      </button>
+    </form>
 
-            // Redirecionar para página inicial
-            window.location.href = "index.html";
-          })
-          .catch((error) => {
-            console.error("Erro ao fazer login:", error);
+    <div id="error-box"></div>
 
-            // Exibir mensagem de erro baseada no tipo do erro
-            let errorMessage = "Email ou senha incorretos. Por favor, tente novamente.";
+    <div class="form-footer reveal stagger-4">
+      <a href="Cadastro.html">
+        <i class="fas fa-user-plus"></i> Criar nova conta
+      </a>
+      <a href="index.html">
+        <i class="fas fa-arrow-left"></i> Voltar ao início
+      </a>
+    </div>
+  </div>
+</div>
 
-            switch (error.code) {
-              case 'auth/user-not-found':
-                errorMessage = "Usuário não encontrado.";
-                break;
-              case 'auth/wrong-password':
-                errorMessage = "Senha incorreta.";
-                break;
-              case 'auth/invalid-email':
-                errorMessage = "Email inválido.";
-                break;
-              case 'auth/user-disabled':
-                errorMessage = "Conta desabilitada.";
-                break;
-              case 'auth/too-many-requests':
-                errorMessage = "Muitas tentativas. Tente novamente mais tarde.";
-                break;
-              default:
-                errorMessage = "Erro ao fazer login. Tente novamente.";
-            }
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form      = document.getElementById("login-form");
+    const errorBox  = document.getElementById("error-box");
+    const passInput = document.getElementById("login-senha");
+    const toggleBtn = document.getElementById("toggle-password");
+    const submitBtn = document.getElementById("submit-btn");
 
-            errorMessageElement.textContent = errorMessage;
-          });
-      });
+    // Verificar se já existe sessão ativa (async, não bloqueia os listeners abaixo)
+    (async () => {
+      try {
+        const { data: { session: sessaoAtiva } } = await window.supabaseClient.auth.getSession();
+        if (!sessaoAtiva) return;
+
+        const { data: perfil } = await window.supabaseClient
+          .from('usuarios')
+          .select('papel')
+          .eq('id', sessaoAtiva.user.id)
+          .single();
+
+        if (perfil && !['pendente', 'rejeitado'].includes(perfil.papel)) {
+          window.location.replace('index.html');
+          return;
+        }
+        // Sessão ativa mas perfil pendente/rejeitado ou inexistente — deslogar
+        await window.supabaseClient.auth.signOut();
+        if (perfil?.papel === 'pendente') {
+          errorBox.textContent = 'Sua conta está aguardando aprovação do administrador da congregação.';
+          errorBox.style.display = 'block';
+        } else if (perfil?.papel === 'rejeitado') {
+          errorBox.textContent = 'Seu acesso foi rejeitado. Entre em contato com o administrador.';
+          errorBox.style.display = 'block';
+        }
+      } catch (_) { /* ignora erros silenciosamente */ }
+    })();
+
+    toggleBtn.addEventListener("click", () => {
+      const isPass = passInput.type === "password";
+      passInput.type = isPass ? "text" : "password";
+      toggleBtn.querySelector("i").classList.toggle("fa-eye",       !isPass);
+      toggleBtn.querySelector("i").classList.toggle("fa-eye-slash",  isPass);
     });
-  </script>
-</body>
 
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Autenticando...';
+      errorBox.style.display = "none";
+
+      try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+          email: form.email.value,
+          password: form["login-senha"].value,
+        });
+
+        if (error) {
+          let msg = "Credenciais inválidas. Verifique seus dados.";
+          if (error.message.includes("Email not confirmed"))
+            msg = "E-mail não confirmado. Verifique sua caixa de entrada.";
+          errorBox.textContent = msg;
+          errorBox.style.display = "block";
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Tentar novamente <i class="fas fa-arrow-right"></i>';
+          return;
+        }
+
+        // Login bem-sucedido — verificar perfil antes de redirecionar
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando acesso...';
+
+        const { data: perfil } = await window.supabaseClient
+          .from('usuarios')
+          .select('papel, congregacao_id')
+          .eq('id', data.user.id)
+          .single();
+
+        if (!perfil) {
+          // Autenticado mas sem perfil — cadastro incompleto
+          await window.supabaseClient.auth.signOut();
+          errorBox.innerHTML = 'Cadastro incompleto. <a href="Cadastro.html" style="color:inherit;font-weight:700;text-decoration:underline">Clique aqui</a> para completar seu registro.';
+          errorBox.style.display = "block";
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Entrar no Sistema <i class="fas fa-arrow-right"></i>';
+          return;
+        }
+
+        if (perfil.papel === 'pendente') {
+          await window.supabaseClient.auth.signOut();
+          errorBox.textContent = 'Sua conta está aguardando aprovação do administrador da congregação.';
+          errorBox.style.display = "block";
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Entrar no Sistema <i class="fas fa-arrow-right"></i>';
+          return;
+        }
+
+        if (perfil.papel === 'rejeitado') {
+          await window.supabaseClient.auth.signOut();
+          errorBox.textContent = 'Seu acesso foi rejeitado. Entre em contato com o administrador.';
+          errorBox.style.display = "block";
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Entrar no Sistema <i class="fas fa-arrow-right"></i>';
+          return;
+        }
+
+        // Perfil válido — redirecionar
+        window.location.replace("index.html");
+
+      } catch (err) {
+        errorBox.textContent = "Erro de conexão. Tente novamente mais tarde.";
+        errorBox.style.display = "block";
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Tentar novamente <i class="fas fa-arrow-right"></i>';
+      }
+    });
+  });
+</script>
+</body>
 </html>
