@@ -1,107 +1,151 @@
-window.supabaseClient.auth.onAuthStateChange(function (event, session) {
-  const user = session?.user;
-  const usuarioLogado = !!user;
+// S_13.js — integrado com Supabase (multi-tenant)
 
-  // Verificar se o elemento existe antes de tentar acessá-lo
-  const mensagemAcessoNegado = document.getElementById("mensagemAcessoNegado");
-  const links = document.querySelectorAll("a"); // ou o seletor correto para seus links
-
-  if (!usuarioLogado) {
-    if (mensagemAcessoNegado) {
-      mensagemAcessoNegado.style.display = "none";
-    }
-
-    links.forEach(function (link) {
-      link.addEventListener("click", function (event) {
-        event.preventDefault();
-        if (mensagemAcessoNegado) {
-          mensagemAcessoNegado.style.display = "block";
-        }
-      });
-    });
-  } else {
-    const userGreeting = document.getElementById("user-greeting");
-    if (userGreeting) {
-      userGreeting.style.display = "block";
-    }
-
-    if (user.id) {
-      const userId = user.id;
-
-      window.supabaseClient.from("usuarios")
-        .select("*")
-        .eq("id", userId)
-        .single()
-        .then(function ({ data: userData, error: docError }) {
-          const usernameElement = document.getElementById("username");
-          if (!usernameElement) return;
-
-          if (userData && !docError) {
-            if (userData.usuario) {
-              usernameElement.textContent = userData.usuario;
-            } else {
-              usernameElement.textContent = "Usuário";
-            }
-          } else {
-            console.warn("Documento do usuário não encontrado");
-            usernameElement.textContent = "Usuário";
-          }
-        })
-        .catch(function (error) {
-          console.error("Erro ao recuperar os dados do usuário:", error);
-        });
-    }
-  }
-});
-
-let mapData = {}; // Dados agrupados por número do mapa
+let mapData    = {};
 let currentYear = getCurrentServiceYear();
 
-document.addEventListener("DOMContentLoaded", async function () {
-  if (!window.getTenantQuery) {
-      console.warn("getTenantQuery não carregado, usando query padrão.");
-  }
-  
-  const { data: snapshot, error } = await (window.getTenantQuery ? window.getTenantQuery("designacoes") : window.supabaseClient.from("designacoes").select("*"));
-  
-  if (error) {
-      console.error("Erro ao carregar designações do tenant:", error);
-      return;
-  }
-
-  snapshot.forEach((data) => {
-    const { mapa } = data;
-    if (!mapData[mapa]) mapData[mapa] = [];
-    mapData[mapa].push(data);
-  });
-
-  updateYearDisplay();
-  renderTable(mapData);
-  
-  // Adicionar event listeners para os botões de navegação de ano
-  setupYearNavigation();
+// ── PONTO DE ENTRADA ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  iniciarComAuth();
 });
 
+function mostrarStatus(msg) {
+  const tbody = document.querySelector('table tbody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text-secondary)">' + msg + '</td></tr>';
+  }
+}
+
+async function iniciarComAuth() {
+  mostrarStatus('Verificando sessão...');
+  const supabase = window.supabaseClient;
+
+  // getSession() lê do localStorage — rápido e sem race condition
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.user) {
+    mostrarStatus('Sessão não encontrada. Redirecionando...');
+    window.location.href = '../index.html';
+    return;
+  }
+
+  await configurarUsuario(session.user);
+}
+
+async function configurarUsuario(user) {
+  mostrarStatus('Carregando dados do usuário...');
+  const supabase = window.supabaseClient;
+
+  const { data: userData, error } = await supabase
+    .from('usuarios')
+    .select('congregacao_id')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !userData) {
+    mostrarStatus('Erro: usuário não encontrado. (' + (error?.message || '') + ')');
+    console.error('usuarios query error:', error);
+    return;
+  }
+
+  if (!userData.congregacao_id) {
+    mostrarStatus('Erro: usuário sem congregação associada.');
+    console.error('congregacao_id ausente para user:', user.id);
+    return;
+  }
+
+  window.setCongregacaoId(userData.congregacao_id);
+  await carregarDados();
+}
+
+async function carregarDados() {
+  mostrarStatus('Carregando designações...');
+  const supabase = window.supabaseClient;
+  const tenantId = window.currentCongregacaoId;
+
+  try {
+    // 1. Buscar territórios para montar lookup: territorio_id → numero
+    const { data: territorios, error: terrErr } = await supabase
+      .from('territorios')
+      .select('id, numero_mapa')
+      .eq('congregacao_id', tenantId);
+
+    if (terrErr) {
+      mostrarStatus('Erro ao buscar territórios: ' + terrErr.message);
+      return;
+    }
+
+    const territorioMap = {};
+    (territorios || []).forEach(function (t) {
+      territorioMap[t.id] = t.numero_mapa;
+    });
+
+    // 2. Buscar designações
+    const { data: snapshot, error } = await supabase
+      .from('designacoes')
+      .select('*')
+      .eq('congregacao_id', tenantId);
+
+    if (error) {
+      mostrarStatus('Erro ao buscar designações: ' + error.message);
+      return;
+    }
+
+    if (!snapshot || snapshot.length === 0) {
+      mostrarStatus('Nenhuma designação encontrada para esta congregação.');
+      return;
+    }
+
+    // 3. Agrupar por número do território
+    mapData = {};
+    snapshot.forEach(function (doc) {
+      const numero = territorioMap[doc.territorio_id];
+      if (!numero) return;
+      if (!mapData[numero]) mapData[numero] = [];
+      mapData[numero].push(doc);
+    });
+
+    updateYearDisplay();
+    renderTable(mapData);
+    setupYearNavigation();
+
+  } catch (err) {
+    mostrarStatus('Erro inesperado: ' + err.message);
+    console.error('Erro inesperado ao carregar dados:', err);
+  }
+}
+
+// ── ANO DE SERVIÇO ────────────────────────────────────────────
 function getCurrentServiceYear() {
-  const now = new Date();
+  const now  = new Date();
   const year = now.getFullYear();
   return now.getMonth() < 8 ? year : year + 1;
 }
 
-function setupYearNavigation() {
-  const prevYearBtn = document.getElementById("prevYearBtn");
-  const nextYearBtn = document.getElementById("nextYearBtn");
+function updateYearDisplay() {
+  const yearDisplay = document.getElementById('serviceYear');
+  if (!yearDisplay) return;
 
-  if (prevYearBtn) {
-    prevYearBtn.addEventListener("click", function () {
+  const start = new Date(currentYear - 1, 8, 1);
+  const end   = new Date(currentYear, 7, 31);
+  yearDisplay.innerHTML =
+    'Ano de serviço: ' + currentYear +
+    ' (Período: ' + formatDateFromObject(start) + ' - ' + formatDateFromObject(end) + ')';
+}
+
+function setupYearNavigation() {
+  const prevBtn = document.getElementById('prevYearBtn');
+  const nextBtn = document.getElementById('nextYearBtn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', function () {
       currentYear--;
       updateYearDisplay();
       renderTable(mapData);
     });
   }
 
-  if (nextYearBtn) {
-    nextYearBtn.addEventListener("click", function () {
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function () {
       currentYear++;
       updateYearDisplay();
       renderTable(mapData);
@@ -109,81 +153,76 @@ function setupYearNavigation() {
   }
 }
 
-function updateYearDisplay() {
-  const yearDisplay = document.getElementById("serviceYear");
-  if (!yearDisplay) return;
-
-  const start = new Date(currentYear - 1, 8, 1);
-  const end = new Date(currentYear, 7, 31);
-  yearDisplay.innerHTML = `Ano de serviço: ${currentYear} (Período: ${formatDateFromObject(start)} - ${formatDateFromObject(end)})`;
-}
-
-// Nova função para formatar objetos Date
-function formatDateFromObject(dateObj) {
-  if (!dateObj) return "";
-  
-  return `${String(dateObj.getDate()).padStart(2, "0")}/${String(
-    dateObj.getMonth() + 1
-  ).padStart(2, "0")}/${dateObj.getFullYear()}`;
-}
-
-// Função para formatar strings de data
-function formatDate(dateStr) {
-  if (!dateStr) return "";
-
-  const [year, month, day] = dateStr.split("-");
-  // Usar os valores diretamente sem criar objeto Date para evitar problemas de fuso horário
-  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
-}
-
+// ── RENDERIZAÇÃO ──────────────────────────────────────────────
 function renderTable(data) {
-  const table = document.querySelector("table tbody");
-  if (!table) return;
-  
-  table.innerHTML = "";
+  const tbody = document.querySelector('table tbody');
+  if (!tbody) return;
 
-  const maxMapas = Math.max(...Object.keys(data).map(Number)); // quantidade de mapas automática 
-  const start = new Date(currentYear - 1, 8, 1);
-  const end = new Date(currentYear, 7, 31);
+  tbody.innerHTML = '';
 
-  for (let i = 1; i <= maxMapas; i++) {
-    const registros = (data[i] || []).filter((entry) => {
-      const ini = new Date(entry.dataInicio);
-      const fim = new Date(entry.dataConclusao);
+  const keys = Object.keys(data).map(Number);
+  if (keys.length === 0) return;
+
+  const maxMapa = Math.max(...keys);
+  const start   = new Date(currentYear - 1, 8, 1);
+  const end     = new Date(currentYear, 7, 31);
+
+  for (let i = 1; i <= maxMapa; i++) {
+    const registros = (data[i] || []).filter(function (entry) {
+      const ini = new Date(entry.data_inicio);
+      const fim = new Date(entry.data_conclusao);
       return (ini >= start && ini <= end) || (fim >= start && fim <= end);
     });
 
-    const ultRegistroAnterior = (data[i] || [])
-      .filter((entry) => new Date(entry.dataConclusao) < start)
-      .sort((a, b) => new Date(b.dataConclusao) - new Date(a.dataConclusao))[0];
+    const ultAnterior = (data[i] || [])
+      .filter(function (e) { return new Date(e.data_conclusao) < start; })
+      .sort(function (a, b) { return new Date(b.data_conclusao) - new Date(a.data_conclusao); })[0];
 
-    addRow(table, i, registros, ultRegistroAnterior?.dataConclusao);
+    addRow(tbody, i, registros, ultAnterior?.data_conclusao);
   }
 }
 
-function addRow(table, mapa, registros, ultDataAnterior) {
-  const row1 = table.insertRow();
-  const cellMapa = row1.insertCell(0);
-  const cellUltima = row1.insertCell(1);
+function addRow(tbody, mapa, registros, ultDataAnterior) {
+  const row1 = tbody.insertRow();
 
+  const cellMapa = row1.insertCell(0);
   cellMapa.innerText = mapa;
   cellMapa.rowSpan = 2;
-  cellUltima.innerText = registros[registros.length - 1]?.dataConclusao
-    ? formatDate(registros[registros.length - 1].dataConclusao)
+
+  const cellUltima = row1.insertCell(1);
+  const ultimoRegistro = registros[registros.length - 1];
+  cellUltima.innerText = ultimoRegistro?.data_conclusao
+    ? formatDate(ultimoRegistro.data_conclusao)
     : formatDate(ultDataAnterior);
   cellUltima.rowSpan = 2;
 
   for (let j = 0; j < 4; j++) {
     const cell = row1.insertCell();
     cell.colSpan = 2;
-    cell.innerText = registros[j]?.designadoPara || "";
+    cell.innerText = registros[j]?.designado_para || '';
   }
 
-  const row2 = table.insertRow();
+  const row2 = tbody.insertRow();
   for (let j = 0; j < 4; j++) {
     const cell1 = row2.insertCell();
     const cell2 = row2.insertCell();
-    cell1.innerText = registros[j]?.dataInicio ? formatDate(registros[j].dataInicio) : "";
-    cell2.innerText = registros[j]?.dataConclusao ? formatDate(registros[j].dataConclusao) : "";
+    cell1.innerText = registros[j]?.data_inicio    ? formatDate(registros[j].data_inicio)    : '';
+    cell2.innerText = registros[j]?.data_conclusao ? formatDate(registros[j].data_conclusao) : '';
   }
+}
+
+// ── FORMATAÇÃO DE DATAS ───────────────────────────────────────
+function formatDateFromObject(dateObj) {
+  if (!dateObj) return '';
+  return (
+    String(dateObj.getDate()).padStart(2, '0') + '/' +
+    String(dateObj.getMonth() + 1).padStart(2, '0') + '/' +
+    dateObj.getFullYear()
+  );
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  return String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + year;
 }

@@ -2,655 +2,75 @@
 <html lang="pt-br">
 <head>
   <script>
-  (function(){
-    var t = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', t);
-  })();
-</script>
+    (function(){
+      var t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Relatório S-13 | Território</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/design-system.css" />
+  <link rel="stylesheet" href="css/S_13.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase_config.js"></script>
-  <style>
-    body { min-height: 100vh; display: flex; flex-direction: column; }
-    main { flex: 1; }
-
-    /* ── CONTROLES ── */
-    .report-header {
-      display: flex; align-items: flex-end;
-      justify-content: space-between;
-      flex-wrap: wrap; gap: 1rem;
-      margin-bottom: 1.75rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .year-block {
-      display: flex; align-items: center; gap: 0.4rem;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.3rem 0.4rem;
-    }
-
-    .year-nav {
-      display: flex; align-items: center; justify-content: center;
-      padding: 0.35rem 0.6rem;
-      background: transparent; border: none;
-      border-radius: var(--radius-sm);
-      color: var(--text-secondary); cursor: pointer;
-      font-size: 0.78rem; width: auto;
-      transition: all var(--duration) var(--ease);
-    }
-    .year-nav:hover { background: var(--bg-hover); color: var(--text-primary); box-shadow: none; transform: none; }
-
-    .year-sep { width: 1px; height: 18px; background: var(--border); }
-
-    .year-label {
-      font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;
-      color: var(--text-primary); min-width: 115px; text-align: center; padding: 0 0.25rem;
-    }
-
-    .header-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-
-    .btn-pdf {
-      background: var(--accent); border-color: var(--accent); color: white;
-      width: auto; padding: 0.55rem 1rem; font-size: 0.82rem;
-    }
-    .btn-pdf:hover { background: var(--accent-hover); color: white; box-shadow: 0 4px 14px var(--accent-glow); }
-
-    .btn-back {
-      background: var(--bg-elevated); border-color: var(--border);
-      color: var(--text-secondary); width: auto;
-      padding: 0.55rem 1rem; font-size: 0.82rem;
-      text-decoration: none;
-    }
-    .btn-back:hover { color: var(--text-primary); border-color: var(--border-hover); background: var(--bg-hover); }
-
-    /* ── YEAR INFO CHIP ── */
-    .year-info {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      font-size: 0.72rem; color: var(--text-secondary);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      padding: 0.25rem 0.7rem;
-      border-radius: var(--radius-full);
-      margin-bottom: 1.25rem;
-    }
-
-    /* ── TABELA S-13 ── */
-    .s13-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      background: var(--bg-surface);
-    }
-
-    #territoryTable {
-      width: 100%; border-collapse: collapse;
-      font-size: 0.8rem; min-width: 880px;
-    }
-
-    /* Linha 1 de cabeçalho — títulos principais */
-    #territoryTable thead tr:first-child th {
-      background: var(--bg-elevated);
-      color: var(--text-secondary);
-      padding: 0.75rem 0.875rem;
-      font-size: 0.7rem; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      text-align: center;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    #territoryTable thead tr:first-child th:first-child,
-    #territoryTable thead tr:first-child th:nth-child(2) { text-align: left; }
-
-    /* Separador entre grupos de designação */
-    #territoryTable thead tr:first-child th:nth-child(n+3) {
-      border-left: 1px solid var(--border);
-    }
-
-    /* Linha 2 — sub-cabeçalhos */
-    #territoryTable thead tr:nth-child(2) th {
-      background: var(--bg-root);
-      color: var(--text-disabled);
-      padding: 0.45rem 0.875rem;
-      font-size: 0.65rem; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      text-align: center;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-    }
-    #territoryTable thead tr:nth-child(2) th:last-child { border-right: none; }
-
-    /* Linhas de dados */
-    #territoryTable tbody tr {
-      border-bottom: 1px solid var(--border);
-      transition: background var(--duration) var(--ease);
-    }
-    #territoryTable tbody tr:last-child { border-bottom: none; }
-    #territoryTable tbody tr:hover { background: var(--bg-elevated); }
-
-    #territoryTable tbody td {
-      padding: 0.65rem 0.875rem;
-      vertical-align: middle;
-      text-align: center;
-      border-right: 1px solid var(--border);
-      color: var(--text-primary); font-size: 0.8rem;
-    }
-    #territoryTable tbody td:last-child { border-right: none; }
-
-    /* Número do mapa */
-    #territoryTable tbody td:first-child {
-      text-align: left; font-family: var(--font-mono);
-      font-weight: 700; color: var(--accent);
-      font-size: 0.82rem;
-    }
-
-    /* Última conclusão */
-    #territoryTable tbody td:nth-child(2) {
-      text-align: left; font-size: 0.75rem;
-      color: var(--text-secondary);
-      font-family: var(--font-mono);
-    }
-
-    /* Células de data */
-    .date-cell {
-      font-family: var(--font-mono); font-size: 0.73rem;
-      color: var(--text-secondary);
-    }
-
-    .designado-cell {
-      font-size: 0.78rem; color: var(--text-primary);
-      max-width: 120px; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap;
-    }
-
-    .empty-cell { color: var(--text-disabled); font-size: 0.7rem; }
-
-    /* Loading / empty */
-    .table-msg {
-      padding: 3rem; text-align: center;
-      font-size: 0.82rem; color: var(--text-disabled);
-    }
-
-    /* Resumo do ano */
-    .year-summary {
-      display: flex; gap: 1rem; flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-    }
-
-    .summary-item {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.75rem 1.1rem;
-    }
-
-    .summary-val {
-      font-family: var(--font-display); font-size: 1.5rem;
-      font-weight: 800; color: var(--text-primary); line-height: 1;
-    }
-
-    .summary-lbl {
-      font-size: 0.7rem; color: var(--text-disabled);
-      text-transform: uppercase; letter-spacing: 0.06em;
-      margin-top: 0.2rem;
-    }
-
-    @media (max-width: 768px) {
-      .report-header { flex-direction: column; align-items: flex-start; }
-      .header-actions { width: 100%; }
-    }
-  </style>
 </head>
 <body>
-
-<!-- HEADER -->
-<header class="site-header">
-  <a href="index.html" class="site-logo">
-    <img src="img/logo.png" alt="Logo" />
-    <span class="site-logo-text">S-13</span>
-  </a>
-  <nav class="site-nav">
-    <button class="theme-toggle" id="btn-theme" title="Alternar tema">
-  <i class="fas fa-sun"></i>
-</button>
-    <a href="Painel/painel.html" class="nav-link">Painel</a>
-    <a href="index.html" class="nav-link">Início</a>
-  </nav>
-</header>
-
-<!-- MAIN -->
 <main>
-  <div class="page-wrapper">
-
-    <div class="report-header reveal">
-      <div>
-        <div class="page-eyebrow">Relatório</div>
-        <h1>Designações de Território</h1>
-        <p id="cong-nome" style="margin-top:0.25rem;font-size:0.85rem"></p>
-      </div>
-
-      <div class="header-actions">
-        <!-- Controle de ano -->
-        <div class="year-block">
-          <button id="btn-prev" class="year-nav" title="Ano anterior">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <span class="year-sep"></span>
-          <span id="year-label" class="year-label"></span>
-          <span class="year-sep"></span>
-          <button id="btn-next" class="year-nav" title="Próximo ano">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-
-        <button id="btn-pdf" class="btn-pdf" onclick="gerarPDF()">
-          <i class="fas fa-file-pdf" style="font-size:0.85em"></i> Exportar PDF
-        </button>
-
-        <a href="Painel/painel.html" class="btn btn-back">
-          <i class="fas fa-arrow-left" style="font-size:0.85em"></i> Voltar
-        </a>
-      </div>
+    <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
+    <div id="yearControls">
+      <button id="prevYearBtn">Ano Anterior</button>
+      <span id="serviceYear"></span>
+      <button id="nextYearBtn">Próximo Ano</button>
+      <button><a href="Painel/painel.html" class="button">Voltar</a></button>
+      <button id="generatePdfBtn">Gerar PDF</button>
+   
     </div>
-
-    <!-- Info do período -->
-    <div id="year-info" class="year-info reveal stagger-1">
-      <i class="fas fa-calendar-alt"></i>
-      <span id="year-period"></span>
-    </div>
-
-    <!-- Resumo -->
-    <div class="year-summary reveal stagger-1" id="year-summary" style="display:none">
-      <div class="summary-item">
-        <div class="summary-val" id="sum-territorios">—</div>
-        <div class="summary-lbl">Territórios</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-val" id="sum-designacoes">—</div>
-        <div class="summary-lbl">Designações</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-val" id="sum-concluidos">—</div>
-        <div class="summary-lbl">Concluídas</div>
-      </div>
-    </div>
-
-    <!-- Tabela -->
-    <div class="s13-wrap reveal stagger-2">
-      <table id="territoryTable">
-        <thead>
-          <tr>
-            <th rowspan="2">Terr. N.º</th>
-            <th rowspan="2">Última Conclusão</th>
-            <th colspan="2">1.ª Designação</th>
-            <th colspan="2">2.ª Designação</th>
-            <th colspan="2">3.ª Designação</th>
-            <th colspan="2">4.ª Designação</th>
-          </tr>
-          <tr>
-            <th>Para / Data</th><th>Conclusão</th>
-            <th>Para / Data</th><th>Conclusão</th>
-            <th>Para / Data</th><th>Conclusão</th>
-            <th>Para / Data</th><th>Conclusão</th>
-          </tr>
-        </thead>
-        <tbody id="table-body">
-          <tr><td colspan="10" class="table-msg">
-            <i class="fas fa-spinner fa-spin" style="margin-right:0.5rem"></i> Carregando...
-          </td></tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div>
+    <table id="territoryTable">
+      <thead>
+        <tr>
+          <th rowspan="2">Terr. n.º</th>
+          <th rowspan="2">Última data concluída</th>
+          <th colspan="2">Designado para</th>
+          <th colspan="2">Designado para</th>
+          <th colspan="2">Designado para</th>
+          <th colspan="2">Designado para</th>
+        </tr>
+        <tr>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+          <th>Data da designação</th>
+          <th>Data da conclusão</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data rows will be filled here using JavaScript -->
+      </tbody>
+    </table>
 </main>
-
-<!-- FOOTER -->
-<footer class="site-footer">
-  <p>© 2024 Territórios</p>
-  <p>Desenvolvido por <a href="https://github.com/william-Reis-Silva" target="_blank">William Silva</a></p>
-</footer>
-
-<script>
-// ================================================================
-//  ESTADO
-// ================================================================
-const rel = {
-  congregacaoId:  null,
-  congregacaoNome:'',
-  anoServico:     null,   // ex: 2025 → período set/2024 a ago/2025
-  dados:          [],     // resultado da query
-};
-
-// ================================================================
-//  ANO DE SERVIÇO
-// ================================================================
-
-/**
- * Calcula o ano de serviço atual.
- * Ano de serviço começa em 1 de setembro.
- * Se hoje é antes de setembro → ano atual
- * Se hoje é em setembro ou depois → ano seguinte
- */
-function anoServicoAtual() {
-  const hoje = new Date();
-  return hoje.getMonth() >= 8          // >= agosto (0-indexed: 8 = setembro)
-    ? hoje.getFullYear() + 1
-    : hoje.getFullYear();
-}
-
-/**
- * Retorna as datas de início e fim do ano de serviço.
- * anoServico=2025 → 01/09/2024 a 31/08/2025
- */
-function periodoAno(ano) {
-  return {
-    inicio: `${ano - 1}-09-01`,
-    fim:    `${ano}-08-31`,
-    label:  `${ano - 1}–${ano}`,
-    descricao: `1 set. ${ano - 1} → 31 ago. ${ano}`,
-  };
-}
-
-function atualizarYearUI() {
-  const p = periodoAno(rel.anoServico);
-  document.getElementById('year-label').textContent  = p.label;
-  document.getElementById('year-period').textContent = `Período: ${p.descricao}`;
-  // Não permite avançar além do ano atual+1
-  document.getElementById('btn-next').disabled = rel.anoServico > anoServicoAtual();
-}
-
-// ================================================================
-//  BOOT
-// ================================================================
-document.addEventListener('DOMContentLoaded', async () => {
-  const { data: { session } } = await window.supabaseClient.auth.getSession();
-  if (!session) { window.location.replace('login.html'); return; }
-
-  const { data: perfil } = await window.supabaseClient
-    .from('usuarios')
-    .select('papel, congregacao_id')
-    .eq('id', session.user.id)
-    .single();
-
-  if (!perfil || !['admin','auxiliar'].includes(perfil.papel)) {
-    window.location.replace('index.html'); return;
-  }
-
-  rel.congregacaoId = perfil.congregacao_id;
-  rel.anoServico    = anoServicoAtual();
-
-  // Nome da congregação
-  const { data: cong } = await window.supabaseClient
-    .from('congregacoes').select('nome').eq('id', rel.congregacaoId).single();
-  if (cong) {
-    rel.congregacaoNome = cong.nome;
-    document.getElementById('cong-nome').textContent = cong.nome;
-  }
-
-  atualizarYearUI();
-  await carregarDados();
-
-  // Navegação de ano
-  document.getElementById('btn-prev').addEventListener('click', () => {
-    rel.anoServico--;
-    atualizarYearUI();
-    carregarDados();
-  });
-
-  document.getElementById('btn-next').addEventListener('click', () => {
-    if (rel.anoServico >= anoServicoAtual()) return;
-    rel.anoServico++;
-    atualizarYearUI();
-    carregarDados();
-  });
-});
-
-// ================================================================
-//  CARREGAR DADOS
-// ================================================================
-async function carregarDados() {
-  const tbody = document.getElementById('table-body');
-  tbody.innerHTML = `<tr><td colspan="10" class="table-msg">
-    <i class="fas fa-spinner fa-spin" style="margin-right:0.5rem"></i> Carregando...
-  </td></tr>`;
-  document.getElementById('year-summary').style.display = 'none';
-
-  const p = periodoAno(rel.anoServico);
-
-  // Buscar todos os territórios ativos
-  const { data: territorios } = await window.supabaseClient
-    .from('territorios')
-    .select('id, numero_mapa, bairro')
-    .eq('congregacao_id', rel.congregacaoId)
-    .eq('ativo', true)
-    .order('numero_mapa', { ascending: true });
-
-  if (!territorios || territorios.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="table-msg">Nenhum território cadastrado.</td></tr>`;
-    return;
-  }
-
-  // Buscar designações do período para todos os territórios
-  const ids = territorios.map(t => t.id);
-  const { data: designacoes } = await window.supabaseClient
-    .from('designacoes')
-    .select('territorio_id, designado_para, data_inicio, data_conclusao, status')
-    .eq('congregacao_id', rel.congregacaoId)
-    .in('territorio_id', ids)
-    .gte('data_inicio', p.inicio)
-    .lte('data_inicio', p.fim)
-    .order('data_inicio', { ascending: true });
-
-  // Buscar última conclusão de cada território (histórico completo)
-  const { data: ultimas } = await window.supabaseClient
-    .from('designacoes')
-    .select('territorio_id, data_conclusao')
-    .eq('congregacao_id', rel.congregacaoId)
-    .in('territorio_id', ids)
-    .not('data_conclusao', 'is', null)
-    .order('data_conclusao', { ascending: false });
-
-  // Montar mapa de última conclusão por território
-  const ultimaMap = {};
-  (ultimas || []).forEach(u => {
-    if (!ultimaMap[u.territorio_id]) ultimaMap[u.territorio_id] = u.data_conclusao;
-  });
-
-  // Agrupar designações por território (até 4)
-  const desMap = {};
-  (designacoes || []).forEach(d => {
-    if (!desMap[d.territorio_id]) desMap[d.territorio_id] = [];
-    if (desMap[d.territorio_id].length < 4) desMap[d.territorio_id].push(d);
-  });
-
-  // Estatísticas
-  let totalDes = 0, totalConc = 0;
-  (designacoes || []).forEach(d => {
-    totalDes++;
-    if (d.status === 'concluido') totalConc++;
-  });
-
-  document.getElementById('sum-territorios').textContent  = territorios.length;
-  document.getElementById('sum-designacoes').textContent  = totalDes;
-  document.getElementById('sum-concluidos').textContent   = totalConc;
-  document.getElementById('year-summary').style.display   = 'flex';
-
-  // Salvar para o PDF
-  rel.dados = territorios.map(t => ({
-    ...t,
-    ultimaConclusao: ultimaMap[t.id] || null,
-    designacoes:     desMap[t.id]    || [],
-  }));
-
-  // Renderizar
-  renderizarTabela();
-}
-
-// ================================================================
-//  RENDERIZAR TABELA
-// ================================================================
-function renderizarTabela() {
-  const tbody = document.getElementById('table-body');
-
-  if (rel.dados.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="table-msg">Nenhum dado para este período.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = rel.dados.map(t => {
-    const cols = [];
-    for (let i = 0; i < 4; i++) {
-      const d = t.designacoes[i];
-      if (d) {
-        cols.push(`
-          <td>
-            <div class="designado-cell" title="${esc(d.designado_para)}">${esc(d.designado_para)}</div>
-            <div class="date-cell">${fmtData(d.data_inicio)}</div>
-          </td>
-          <td class="${d.data_conclusao ? 'date-cell' : 'empty-cell'}">
-            ${d.data_conclusao ? fmtData(d.data_conclusao) : '—'}
-          </td>`);
-      } else {
-        cols.push(`<td class="empty-cell">—</td><td class="empty-cell">—</td>`);
-      }
-    }
-
-    return `
-    <tr>
-      <td>${t.numero_mapa}</td>
-      <td>${t.ultimaConclusao ? fmtData(t.ultimaConclusao) : '—'}</td>
-      ${cols.join('')}
-    </tr>`;
-  }).join('');
-}
-
-// ================================================================
-//  GERAR PDF
-// ================================================================
-async function gerarPDF() {
-  const btn = document.getElementById('btn-pdf');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
-
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const p   = periodoAno(rel.anoServico);
-
-    // Cabeçalho
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO', 148, 12, { align: 'center' });
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(rel.congregacaoNome, 148, 18, { align: 'center' });
-    doc.text(`Ano de Serviço: ${p.label}  |  Período: ${p.descricao}`, 148, 23, { align: 'center' });
-
-    // Cabeçalhos da tabela
-    const head = [
-      [
-        { content: 'Terr. N.º', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
-        { content: 'Última Conclusão', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
-        { content: '1.ª Designação', colSpan: 2, styles: { halign: 'center' } },
-        { content: '2.ª Designação', colSpan: 2, styles: { halign: 'center' } },
-        { content: '3.ª Designação', colSpan: 2, styles: { halign: 'center' } },
-        { content: '4.ª Designação', colSpan: 2, styles: { halign: 'center' } },
-      ],
-      [
-        'Para / Data', 'Conclusão',
-        'Para / Data', 'Conclusão',
-        'Para / Data', 'Conclusão',
-        'Para / Data', 'Conclusão',
-      ],
-    ];
-
-    // Linhas de dados
-    const body = rel.dados.map(t => {
-      const row = [
-        t.numero_mapa,
-        t.ultimaConclusao ? fmtData(t.ultimaConclusao) : '',
-      ];
-      for (let i = 0; i < 4; i++) {
-        const d = t.designacoes[i];
-        if (d) {
-          row.push(`${d.designado_para}\n${fmtData(d.data_inicio)}`);
-          row.push(d.data_conclusao ? fmtData(d.data_conclusao) : '');
-        } else {
-          row.push(''); row.push('');
+    <script src="js/S_13.js"></script>
+    <script src="js/generatePdf.js"></script>
+    <script>
+      (function(){
+        var btn  = document.getElementById('themeToggle');
+        var icon = btn.querySelector('i');
+        function sync(t) {
+          icon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
-      }
-      return row;
-    });
-
-    doc.autoTable({
-      head,
-      body,
-      startY: 27,
-      theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
-      headStyles: {
-        fillColor: [22, 24, 32],
-        textColor: [147, 149, 165],
-        fontSize: 7, fontStyle: 'bold',
-      },
-      columnStyles: {
-        0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
-        1: { cellWidth: 22, halign: 'center' },
-        2: { cellWidth: 30 }, 3: { cellWidth: 18, halign: 'center' },
-        4: { cellWidth: 30 }, 5: { cellWidth: 18, halign: 'center' },
-        6: { cellWidth: 30 }, 7: { cellWidth: 18, halign: 'center' },
-        8: { cellWidth: 30 }, 9: { cellWidth: 18, halign: 'center' },
-      },
-      alternateRowStyles: { fillColor: [15, 17, 23] },
-      margin: { top: 27, left: 5, right: 5 },
-    });
-
-    // Rodapé
-    const pCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.setTextColor(100);
-      doc.text(
-        `Território S-13  •  ${rel.congregacaoNome}  •  ${p.label}  •  Pág. ${i}/${pCount}`,
-        148, doc.internal.pageSize.height - 4, { align: 'center' }
-      );
-    }
-
-    doc.save(`S13_${rel.congregacaoNome.replace(/\s+/g,'_')}_${p.label}.pdf`);
-
-  } catch (err) {
-    console.error('PDF erro:', err);
-    alert('Erro ao gerar o PDF. Verifique o console.');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
-}
-
-// ================================================================
-//  HELPERS
-// ================================================================
-function fmtData(iso) {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-</script>
-<script src="js/theme.js"></script>
-</body>
+        sync(document.documentElement.getAttribute('data-theme') || 'dark');
+        btn.addEventListener('click', function(){
+          var t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          localStorage.setItem('theme', t);
+          sync(t);
+        });
+      })();
+    </script>
+  </body>
 </html>
