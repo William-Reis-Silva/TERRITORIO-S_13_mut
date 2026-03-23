@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <script>
+  (function(){
+    var t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Relatório S-13 | Território</title>
@@ -212,6 +218,9 @@
     <span class="site-logo-text">S-13</span>
   </a>
   <nav class="site-nav">
+    <button class="theme-toggle" id="btn-theme" title="Alternar tema">
+  <i class="fas fa-sun"></i>
+</button>
     <a href="Painel/painel.html" class="nav-link">Painel</a>
     <a href="index.html" class="nav-link">Início</a>
   </nav>
@@ -642,5 +651,6 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
+<script src="js/theme.js"></script>
 </body>
 </html>
