@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <script>
+  (function(){
+    var t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
   <meta name="theme-color" content="#080A0F">
@@ -195,6 +201,12 @@
     <span class="site-logo-badge">Beta</span>
   </a>
   <nav class="site-nav">
+    <button class="theme-toggle" id="btn-theme" title="Alternar tema">
+  <i class="fas fa-sun"></i>
+</button>
+<a href="admin-master.html" id="nav-master" class="nav-link" style="display:none">
+  <i class="fas fa-shield-alt" style="font-size:0.8em"></i> Master
+</a>
     <div id="user-chip" class="user-chip" style="display:none">
       <span class="user-dot"></span>
       <span id="username-chip"></span>
@@ -428,6 +440,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('username-chip').textContent = perfil.nome.split(' ')[0];
 
   // Mostrar link Admin para gestores
+  if (perfil.papel === 'master') {
+    document.getElementById('nav-master').style.display = 'inline-flex';
+  }
   if (['admin','auxiliar'].includes(perfil.papel)) {
     document.getElementById('nav-admin').style.display = 'inline-flex';
     carregarPendentes();
@@ -718,5 +733,6 @@ function toast(msg, tipo = 'ok') {
   }, 3200);
 }
 </script>
+<script src="js/theme.js"></script>
 </body>
 </html>
