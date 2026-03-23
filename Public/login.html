@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+  <script>
+  (function(){
+    var t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
   <title>Acesso | Território S-13</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -253,6 +259,10 @@
   </style>
 </head>
 <body>
+<button class="theme-toggle" id="btn-theme" title="Alternar tema"
+  style="position:fixed;top:1rem;right:1rem;z-index:200">
+  <i class="fas fa-sun"></i>
+</button>
 
 <!-- VISUAL -->
 <div class="visual-side">
@@ -450,5 +460,6 @@
     });
   });
 </script>
+<script src="js/theme.js"></script>
 </body>
 </html>
