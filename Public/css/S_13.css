@@ -6,19 +6,18 @@
 
 /* ── LAYOUT GERAL ────────────────────────────────────────────── */
 body {
-  width: 21cm;
   margin: 0 auto;
-  padding: 24px 20px;
+  padding: 0;
   box-sizing: border-box;
   font-family: var(--font-body, Arial, sans-serif);
-  background-color: var(--bg-root, #f0f0f0);
+  background-color: #cccc;
   color: var(--text-primary, #1A1D2E);
   min-height: 100vh;
 }
 main{
-   width: 100%;  
+  width: 100%;  
   margin: 0 auto;
-  padding: 20px;  
+  background-color: var(--bg-root, #cf2a2a);
 }
 /* ── TÍTULO ──────────────────────────────────────────────────── */
 h2 {
@@ -35,13 +34,23 @@ h2 {
 }
 
 /* ── CONTROLES DE ANO ────────────────────────────────────────── */
+.ano {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* Espaço entre ícone e texto que você pediu antes */
+  padding: 8px 16px;
+  cursor: pointer;
+ background-color:var(--accent);
+ color: white ;
+} 
+
 #yearControls {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 24px;
+  padding: 0.35rem 0.75rem;
 }
 
 #yearControls span#serviceYear {
@@ -70,12 +79,7 @@ h2 {
   gap: 6px;
 }
 
-/* Navegação de ano — estilo ghost */
-#yearControls #prevYearBtn,
-#yearControls #nextYearBtn {
-  background: var(--bg-elevated, #F1F3F8);
-  color: var(--text-secondary, #6B7280);
-}
+
 #yearControls #prevYearBtn:hover,
 #yearControls #nextYearBtn:hover {
   background: var(--bg-hover, #E8EBF2);
@@ -122,12 +126,26 @@ h2 {
   background: var(--bg-hover, #E8EBF2);
   color: var(--text-primary, #1A1D2E);
 }
+.user-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-dark);
+  color: var(--accent); 
+  padding: 0 1.5rem;
+  height: 45px;
+  border-radius: 8px;
+  font-size: 0.80rem;
+  font-weight: bold;
+  text-decoration: none;
+}
 
 /* ── TABELA ──────────────────────────────────────────────────── */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
+  margin : 20px;
   background-color: var(--bg-surface, #fff);
   box-shadow: var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.08));
   border-radius: var(--radius, 10px);

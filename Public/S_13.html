@@ -14,20 +14,56 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <link rel="stylesheet" href="css/S_13.css" />
+  <link rel="stylesheet" href="css/design-system.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase_config.js"></script>
 </head>
 <body>
 <main>
-    <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
-    <div id="yearControls">
-      <button id="prevYearBtn">Ano Anterior</button>
-      <span id="serviceYear"></span>
-      <button id="nextYearBtn">Próximo Ano</button>
-      <button><a href="Painel/painel.html" class="button">Voltar</a></button>
-      <button id="generatePdfBtn">Gerar PDF</button>
+  
+  <!-- HEADER -->
+
+  <header class="site-header" style="padding: 10px 0;">
+    <div class="user-badge">
+      <a href="index.html" class="site-logo">
+        <img src="img/logo.png" alt="Logo" />
+        <span class="site-logo-text">S-13</span>
+      </a>
    
+      <button class="nav-link" id="btn-theme" title="Alternar tema">
+        <i class="fas fa-sun"></i>
+      </button>
+</div>
+
+<div id="yearControls">
+      <button id="prevYearBtn" class="nav-link"><i class="fa-solid fa-circle-left"style="font-size: 15px;"></i>Ano Anterior</button>
+      <span id="serviceYear"  class="site-logo-text"style="color: var(--text-primary);"></span>
+      <button id="nextYearBtn" class="nav-link">Próximo Ano<i class="fa-solid fa-circle-right"style="font-size: 15px;"></i></button>
     </div>
+
+    <nav class="site-nav">
+
+      <div class="nav-divider"></div>
+
+      <button id="generatePdfBtn" class="nav-link">
+        <i class="fa-sharp fa-solid fa-file-pdf"></i>
+        Gerar PDF
+      </button>
+
+      <div class="nav-divider"></div>
+
+      <button class="nav-link" onclick="window.location.href='Painel/painel.html'">
+        <i class="fa-solid fa-home"></i>
+        Início
+      </button>
+    </nav>
+  </header>
+
+    <h2 style="padding:  20px 0;">REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
+    
+    
+    <div class="site-nav">
+  
     <table id="territoryTable">
       <thead>
         <tr>
@@ -52,10 +88,12 @@
       <tbody>
         <!-- Data rows will be filled here using JavaScript -->
       </tbody>
-    </table>
+    </table> 
+   </div>
 </main>
     <script src="js/S_13.js"></script>
     <script src="js/generatePdf.js"></script>
+    <script src="js/theme.js"></script>
     <script>
       (function(){
         var btn  = document.getElementById('themeToggle');

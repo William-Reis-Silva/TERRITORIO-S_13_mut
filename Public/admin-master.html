@@ -1,911 +1,956 @@
 <!DOCTYPE html>
 <html lang="pt">
-<head>
-  <title>Admin Master | Território S-13</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>
-    (function(){
-      var t = localStorage.getItem('theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-    })();
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/design-system.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase_config.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background-color: var(--bg-paper);
-      color: var(--text-main);
-      min-height: 100vh;
-    }
-
-    /* Header */
-    .header {
-      background: var(--bg-dark);
-      color: white;
-      padding: 1.5rem 2rem;
-      border-bottom: var(--border-main);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header h1 {
-      font-size: 1.5rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .user-badge {
-      background: rgba(240, 71, 33, 0.1);
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      border: 1px solid var(--accent);
-    }
-
-    .logout-btn {
-      background: var(--accent);
-      color: var(--bg-dark);
-      border: none;
-      padding: 0.75rem 1.5rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-    }
-
-    .logout-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 4px 4px 0px var(--text-main);
-    }
-
-    /* Main Container */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: white;
-      border: var(--border-main);
-      padding: 1.5rem;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 8px 8px 0px var(--text-main);
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: var(--accent);
-    }
-
-    .stat-card.success::before { background: var(--success); }
-    .stat-card.warning::before { background: var(--warning); }
-    .stat-card.info::before { background: var(--info); }
-
-    .stat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .stat-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      background: var(--bg-paper);
-    }
-
-    .stat-value {
-      font-size: 2.5rem;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      opacity: 0.7;
-      font-weight: 600;
-    }
-
-    .stat-trend {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-      margin-top: 0.5rem;
-      font-weight: 600;
-    }
-
-    .trend-up { color: var(--success); }
-    .trend-down { color: var(--error); }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-      border-bottom: var(--border-main);
-      overflow-x: auto;
-    }
-
-    .tab {
-      background: transparent;
-      border: none;
-      padding: 1rem 1.5rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      cursor: pointer;
-      position: relative;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-
-    .tab:hover {
-      color: var(--accent);
-    }
-
-    .tab.active {
-      color: var(--accent);
-    }
-
-    .tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--accent);
-    }
-
-    /* Tab Content */
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-      animation: fadeIn 0.3s;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Data Table */
-    .data-section {
-      background: white;
-      border: var(--border-main);
-      overflow: hidden;
-    }
-
-    .section-header {
-      background: var(--bg-dark);
-      color: white;
-      padding: 1rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .section-title {
-      font-weight: 800;
-      text-transform: uppercase;
-      font-size: 1rem;
-    }
-
-    .search-box {
-      position: relative;
-      max-width: 300px;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 0.5rem 2.5rem 0.5rem 1rem;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1);
-      color: white;
-      font-size: 0.9rem;
-    }
-
-    .search-box input::placeholder {
-      color: rgba(255,255,255,0.5);
-    }
-
-    .search-box i {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      opacity: 0.5;
-    }
-
-    .table-container {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    thead {
-      background: var(--bg-paper);
-      border-bottom: var(--border-main);
-    }
-
-    th {
-      padding: 1rem;
-      text-align: left;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    td {
-      padding: 1rem;
-      border-bottom: 1px solid #e5e5e5;
-    }
-
-    tr:hover {
-      background: var(--bg-paper);
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      text-transform: uppercase;
-    }
-
-    .badge.active {
-      background: var(--success);
-      color: white;
-    }
-
-    .badge.inactive {
-      background: #e5e5e5;
-      color: var(--text-main);
-    }
-
-    .badge.admin {
-      background: var(--accent);
-      color: white;
-    }
-
-    /* Action Buttons */
-    .action-btn {
-      background: transparent;
-      border: 1px solid var(--text-main);
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: all 0.2s;
-      margin-right: 0.5rem;
-    }
-
-    .action-btn:hover {
-      background: var(--text-main);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    .action-btn.danger {
-      border-color: var(--error);
-      color: var(--error);
-    }
-
-    .action-btn.danger:hover {
-      background: var(--error);
-      color: white;
-    }
-
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 3rem;
-      font-family: var(--font-mono);
-      color: var(--accent);
-    }
-
-    .loading i {
-      font-size: 2rem;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      opacity: 0.6;
-    }
-
-    .empty-state i {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      opacity: 0.3;
-    }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: white;
-      border: var(--border-main);
-      box-shadow: 12px 12px 0px var(--text-main);
-      max-width: 600px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .modal-header {
-      background: var(--bg-dark);
-      color: white;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-header h2 {
-      font-size: 1.2rem;
-      text-transform: uppercase;
-    }
-
-    .close-modal {
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-    }
-
-    .modal-body {
-      padding: 2rem;
-    }
-
-    .detail-row {
-      display: grid;
-      grid-template-columns: 150px 1fr;
-      gap: 1rem;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #e5e5e5;
-    }
-
-    .detail-label {
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      opacity: 0.7;
-    }
-
-    .detail-value {
-      font-weight: 500;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        padding: 1rem;
+  <head>
+    <title>Admin Master | Território S-13</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        var t = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/design-system.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase_config.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
 
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: var(--bg-paper);
+        color: var(--text-main);
+        min-height: 100vh;
+      }
+
+      /* Header */
       .header {
-        flex-direction: column;
+        background: var(--bg-dark);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-bottom: var(--border-main);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .header-actions {
+        display: flex;
         gap: 1rem;
+        align-items: center;
       }
 
+      .user-badge,
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 0 1.5rem;
+        height: 45px;
+        border-radius: 8px;
+        font-size: 0.80rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+
+      .logout-btn {
+        background: var(--accent);
+        color: var(--bg-dark);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+      }
+
+      .logout-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 4px 4px 0px var(--text-main);
+      }
+
+      /* Main Container */
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      /* Stats Grid */
       .stats-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
       }
 
+      .stat-card {
+        background: white;
+        border: var(--border-main);
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 8px 8px 0px var(--text-main);
+      }
+
+      .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--accent);
+      }
+
+      .stat-card.success::before {
+        background: var(--success);
+      }
+
+      .stat-card.warning::before {
+        background: var(--warning);
+      }
+
+      .stat-card.info::before {
+        background: var(--info);
+      }
+
+      .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: var(--bg-paper);
+      }
+
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-label {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        opacity: 0.7;
+        font-weight: 600;
+      }
+
+      .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        font-weight: 600;
+      }
+
+      .trend-up {
+        color: var(--success);
+      }
+
+      .trend-down {
+        color: var(--error);
+      }
+
+      /* Tabs */
       .tabs {
-        flex-wrap: nowrap;
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border-bottom: var(--border-main);
+        overflow-x: auto;
+      }
+
+      .tab {
+        background: transparent;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+
+      .tab:hover {
+        color: var(--accent);
+      }
+
+      .tab.active {
+        color: var(--accent);
+      }
+
+      .tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--accent);
+      }
+
+      /* Tab Content */
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Data Table */
+      .data-section {
+        background: white;
+        border: var(--border-main);
+        overflow: hidden;
+      }
+
+      .section-header {
+        background: var(--bg-dark);
+        color: white;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .section-title {
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 1rem;
       }
 
       .search-box {
-        max-width: 100%;
-        margin-top: 1rem;
+        position: relative;
+        max-width: 300px;
       }
-    }
 
-    /* Alert */
-    .alert {
-      padding: 1rem 1.5rem;
-      margin-bottom: 1rem;
-      border: var(--border-main);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
+      .search-box input {
+        width: 100%;
+        padding: 0.5rem 2.5rem 0.5rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 0.9rem;
+      }
 
-    .alert.error {
-      background: #fee;
-      border-color: var(--error);
-    }
+      .search-box input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
 
-    .alert.success {
-      background: #efe;
-      border-color: var(--success);
-    }
+      .search-box i {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.5;
+      }
 
-    .alert.info {
-      background: #eef;
-      border-color: var(--info);
-    }
-  </style>
-</head>
-<body>
+      .table-container {
+        overflow-x: auto;
+      }
 
-  <!-- Header -->
-  <div class="header">
-    <h1>
-      <i class="fas fa-shield-alt"></i>
-      Admin Master
-    </h1>
-    <div class="header-actions">
-      <button class="theme-toggle" id="btn-theme" title="Alternar tema">
-        <i class="fas fa-sun"></i>
-      </button>
-      <div class="user-badge">
-        <i class="fas fa-user-shield"></i>
-        <span id="admin-name">Administrador</span>
-      </div>
-      <button class="logout-btn" onclick="handleLogout()">
-        <i class="fas fa-sign-out-alt"></i>
-        Sair
-      </button>
-    </div>
-  </div>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
 
-  <!-- Main Container -->
-  <div class="container">
-    
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon" style="color: var(--accent);">
-            <i class="fas fa-users"></i>
-          </div>
-        </div>
-        <div class="stat-value" id="total-users">0</div>
-        <div class="stat-label">Total de Usuários</div>
-        <div class="stat-trend trend-up">
-          <i class="fas fa-arrow-up"></i>
-          <span id="users-trend">Carregando...</span>
-        </div>
-      </div>
+      thead {
+        background: var(--bg-paper);
+        border-bottom: var(--border-main);
+      }
 
-      <div class="stat-card success">
-        <div class="stat-header">
-          <div class="stat-icon" style="color: var(--success);">
-            <i class="fas fa-church"></i>
-          </div>
-        </div>
-        <div class="stat-value" id="total-congregacoes">0</div>
-        <div class="stat-label">Congregações</div>
-        <div class="stat-trend">
-          <i class="fas fa-info-circle"></i>
-          <span id="congregacoes-info">Ativas</span>
-        </div>
-      </div>
+      th {
+        padding: 1rem;
+        text-align: left;
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
 
-      <div class="stat-card warning">
-        <div class="stat-header">
-          <div class="stat-icon" style="color: var(--warning);">
-            <i class="fas fa-map-marked-alt"></i>
-          </div>
-        </div>
-        <div class="stat-value" id="total-territorios">0</div>
-        <div class="stat-label">Territórios Ativos</div>
-        <div class="stat-trend">
-          <i class="fas fa-chart-line"></i>
-          <span id="territorios-info">Designados</span>
-        </div>
-      </div>
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e5e5;
+      }
 
-      <div class="stat-card info">
-        <div class="stat-header">
-          <div class="stat-icon" style="color: var(--info);">
-            <i class="fas fa-clipboard-check"></i>
-          </div>
-        </div>
-        <div class="stat-value" id="total-registros">0</div>
-        <div class="stat-label">Registros S-13</div>
-        <div class="stat-trend">
-          <i class="fas fa-calendar"></i>
-          <span id="registros-info">Este mês</span>
-        </div>
-      </div>
-    </div>
+      tr:hover {
+        background: var(--bg-paper);
+      }
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('users')">
-        <i class="fas fa-users"></i> Usuários
-      </button>
-      <button class="tab" onclick="switchTab('congregacoes')">
-        <i class="fas fa-church"></i> Congregações
-      </button>
-      <button class="tab" onclick="switchTab('territorios')">
-        <i class="fas fa-map-marked-alt"></i> Territórios
-      </button>
-      <button class="tab" onclick="switchTab('logs')">
-        <i class="fas fa-history"></i> Atividades
-      </button>
-    </div>
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+      }
 
-    <!-- Tab: Users -->
-    <div id="tab-users" class="tab-content active">
-      <div class="data-section">
-        <div class="section-header">
-          <div class="section-title">
-            <i class="fas fa-users"></i> Gerenciar Usuários
-          </div>
-          <div class="search-box">
-            <input type="text" id="search-users" placeholder="Buscar usuário..." onkeyup="filterTable('users-table', this.value)" />
-            <i class="fas fa-search"></i>
-          </div>
-        </div>
-        <div class="table-container">
-          <div id="users-loading" class="loading">
-            <i class="fas fa-spinner"></i>
-            <p>Carregando usuários...</p>
-          </div>
-          <table id="users-table" style="display: none;">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Congregação</th>
-                <th>Criado em</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="users-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      .badge.active {
+        background: var(--success);
+        color: white;
+      }
 
-    <!-- Tab: Congregações -->
-    <div id="tab-congregacoes" class="tab-content">
-      <div class="data-section">
-        <div class="section-header">
-          <div class="section-title">
-            <i class="fas fa-church"></i> Gerenciar Congregações
-          </div>
-          <div class="search-box">
-            <input type="text" id="search-congregacoes" placeholder="Buscar congregação..." onkeyup="filterTable('congregacoes-table', this.value)" />
-            <i class="fas fa-search"></i>
-          </div>
-        </div>
-        <div class="table-container">
-          <div id="congregacoes-loading" class="loading">
-            <i class="fas fa-spinner"></i>
-            <p>Carregando congregações...</p>
-          </div>
-          <table id="congregacoes-table" style="display: none;">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Nº Congregação</th>
-                <th>Total Usuários</th>
-                <th>Total Territórios</th>
-                <th>Criada em</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="congregacoes-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      .badge.inactive {
+        background: #e5e5e5;
+        color: var(--text-main);
+      }
 
-    <!-- Tab: Territórios -->
-    <div id="tab-territorios" class="tab-content">
-      <div class="data-section">
-        <div class="section-header">
-          <div class="section-title">
-            <i class="fas fa-map-marked-alt"></i> Visão Geral dos Territórios
-          </div>
-          <div class="search-box">
-            <input type="text" id="search-territorios" placeholder="Buscar território..." onkeyup="filterTable('territorios-table', this.value)" />
-            <i class="fas fa-search"></i>
-          </div>
-        </div>
-        <div class="table-container">
-          <div id="territorios-loading" class="loading">
-            <i class="fas fa-spinner"></i>
-            <p>Carregando territórios...</p>
-          </div>
-          <table id="territorios-table" style="display: none;">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Número</th>
-                <th>Bairro</th>
-                <th>Congregação</th>
-                <th>Designado Para</th>
-                <th>Data Início</th>
-                <th>Data Conclusão</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="territorios-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      .badge.admin {
+        background: var(--accent);
+        color: white;
+      }
 
-    <!-- Tab: Logs -->
-    <div id="tab-logs" class="tab-content">
-      <div class="data-section">
-        <div class="section-header">
-          <div class="section-title">
-            <i class="fas fa-history"></i> Registro de Atividades
-          </div>
-        </div>
-        <div class="table-container">
-          <div id="logs-loading" class="loading">
-            <i class="fas fa-spinner"></i>
-            <p>Carregando atividades...</p>
-          </div>
-          <table id="logs-table" style="display: none;">
-            <thead>
-              <tr>
-                <th>Data/Hora</th>
-                <th>Usuário</th>
-                <th>Ação</th>
-                <th>Detalhes</th>
-              </tr>
-            </thead>
-            <tbody id="logs-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      /* Action Buttons */
+      .action-btn {
+        background: transparent;
+        border: 1px solid var(--text-main);
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        margin-right: 0.5rem;
+      }
 
-  </div>
+      .action-btn:hover {
+        background: var(--text-main);
+        color: white;
+        transform: translateY(-2px);
+      }
 
-  <!-- Detail Modal -->
-  <div id="detail-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modal-title">Detalhes</h2>
-        <button class="close-modal" onclick="closeModal()">
-          <i class="fas fa-times"></i>
+      .action-btn.danger {
+        border-color: var(--error);
+        color: var(--error);
+      }
+
+      .action-btn.danger:hover {
+        background: var(--error);
+        color: white;
+      }
+
+      /* Loading */
+      .loading {
+        text-align: center;
+        padding: 3rem;
+        font-family: var(--font-mono);
+        color: var(--accent);
+      }
+
+      .loading i {
+        font-size: 2rem;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Empty State */
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        opacity: 0.6;
+      }
+
+      .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+
+      /* Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border: var(--border-main);
+        box-shadow: 12px 12px 0px var(--text-main);
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        background: var(--bg-dark);
+        color: white;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        font-size: 1.2rem;
+        text-transform: uppercase;
+      }
+
+      .close-modal {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+      }
+
+      .modal-body {
+        padding: 2rem;
+      }
+
+      .detail-row {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .detail-label {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        opacity: 0.7;
+      }
+
+      .detail-value {
+        font-weight: 500;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .header {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .tabs {
+          flex-wrap: nowrap;
+        }
+
+        .search-box {
+          max-width: 100%;
+          margin-top: 1rem;
+        }
+      }
+
+      /* Alert */
+      .alert {
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+        border: var(--border-main);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .alert.error {
+        background: #fee;
+        border-color: var(--error);
+      }
+
+      .alert.success {
+        background: #efe;
+        border-color: var(--success);
+      }
+
+      .alert.info {
+        background: #eef;
+        border-color: var(--info);
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="header">
+      <h1>
+        <i class="fas fa-shield-alt"></i>
+        Admin Master
+      </h1>
+      <div class="header-actions">
+        <button class="theme-toggle" id="btn-theme" title="Alternar tema">
+          <i class="fas fa-sun"></i>
+        </button>
+        <div class="user-badge">
+          <i class="fas fa-user-shield"></i>
+          <span id="admin-name">Administrador</span>
+        </div>
+        <button class="logout-btn" onclick="window.location.href='admin-analytics.html'">
+          <i class="fa-solid fa-chart-line"></i>
+          Analytics
+        </button>
+
+        <button class="logout-btn" onclick="handleLogout()">
+          <i class="fas fa-sign-out-alt"></i>
+          Sair
         </button>
       </div>
-      <div class="modal-body" id="modal-body">
-        <!-- Content will be dynamically inserted -->
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon" style="color: var(--accent);">
+              <i class="fas fa-users"></i>
+            </div>
+          </div>
+          <div class="stat-value" id="total-users">0</div>
+          <div class="stat-label">Total de Usuários</div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            <span id="users-trend">Carregando...</span>
+          </div>
+        </div>
+
+        <div class="stat-card success">
+          <div class="stat-header">
+            <div class="stat-icon" style="color: var(--success);">
+              <i class="fas fa-building-columns"></i>
+            </div>
+          </div>
+          <div class="stat-value" id="total-congregacoes">0</div>
+          <div class="stat-label">Congregações</div>
+          <div class="stat-trend">
+            <i class="fas fa-info-circle"></i>
+            <span id="congregacoes-info">Ativas</span>
+          </div>
+        </div>
+
+        <div class="stat-card warning">
+          <div class="stat-header">
+            <div class="stat-icon" style="color: var(--warning);">
+              <i class="fas fa-map-marked-alt"></i>
+            </div>
+          </div>
+          <div class="stat-value" id="total-territorios">0</div>
+          <div class="stat-label">Territórios Ativos</div>
+          <div class="stat-trend">
+            <i class="fas fa-chart-line"></i>
+            <span id="territorios-info">Designados</span>
+          </div>
+        </div>
+
+        <div class="stat-card info">
+          <div class="stat-header">
+            <div class="stat-icon" style="color: var(--info);">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+          </div>
+          <div class="stat-value" id="total-registros">0</div>
+          <div class="stat-label">Registros S-13</div>
+          <div class="stat-trend">
+            <i class="fas fa-calendar"></i>
+            <span id="registros-info">Este mês</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('users')">
+          <i class="fas fa-users"></i> Usuários
+        </button>
+        <button class="tab" onclick="switchTab('congregacoes')">
+          <i class="fas fa-building-columns"></i> Congregações
+        </button>
+        <button class="tab" onclick="switchTab('territorios')">
+          <i class="fas fa-map-marked-alt"></i> Territórios
+        </button>
+        <button class="tab" onclick="switchTab('logs')">
+          <i class="fas fa-history"></i> Atividades
+        </button>
+      </div>
+
+      <!-- Tab: Users -->
+      <div id="tab-users" class="tab-content active">
+        <div class="data-section">
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-users"></i> Gerenciar Usuários
+            </div>
+            <div class="search-box">
+              <input type="text" id="search-users" placeholder="Buscar usuário..."
+                onkeyup="filterTable('users-table', this.value)" />
+              <i class="fas fa-search"></i>
+            </div>
+          </div>
+          <div class="table-container">
+            <div id="users-loading" class="loading">
+              <i class="fas fa-spinner"></i>
+              <p>Carregando usuários...</p>
+            </div>
+            <table id="users-table" style="display: none;">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Congregação</th>
+                  <th>Criado em</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Congregações -->
+      <div id="tab-congregacoes" class="tab-content">
+        <div class="data-section">
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-church"></i> Gerenciar Congregações
+            </div>
+            <div class="search-box">
+              <input type="text" id="search-congregacoes" placeholder="Buscar congregação..."
+                onkeyup="filterTable('congregacoes-table', this.value)" />
+              <i class="fas fa-search"></i>
+            </div>
+          </div>
+          <div class="table-container">
+            <div id="congregacoes-loading" class="loading">
+              <i class="fas fa-spinner"></i>
+              <p>Carregando congregações...</p>
+            </div>
+            <table id="congregacoes-table" style="display: none;">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Nº Congregação</th>
+                  <th>Total Usuários</th>
+                  <th>Total Territórios</th>
+                  <th>Criada em</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="congregacoes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Territórios -->
+      <div id="tab-territorios" class="tab-content">
+        <div class="data-section">
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-map-marked-alt"></i> Visão Geral dos Territórios
+            </div>
+            <div class="search-box">
+              <input type="text" id="search-territorios" placeholder="Buscar território..."
+                onkeyup="filterTable('territorios-table', this.value)" />
+              <i class="fas fa-search"></i>
+            </div>
+          </div>
+          <div class="table-container">
+            <div id="territorios-loading" class="loading">
+              <i class="fas fa-spinner"></i>
+              <p>Carregando territórios...</p>
+            </div>
+            <table id="territorios-table" style="display: none;">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Número</th>
+                  <th>Bairro</th>
+                  <th>Congregação</th>
+                  <th>Designado Para</th>
+                  <th>Data Início</th>
+                  <th>Data Conclusão</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="territorios-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Logs -->
+      <div id="tab-logs" class="tab-content">
+        <div class="data-section">
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-history"></i> Registro de Atividades
+            </div>
+          </div>
+          <div class="table-container">
+            <div id="logs-loading" class="loading">
+              <i class="fas fa-spinner"></i>
+              <p>Carregando atividades...</p>
+            </div>
+            <table id="logs-table" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Usuário</th>
+                  <th>Ação</th>
+                  <th>Detalhes</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Detalhes</h2>
+          <button class="close-modal" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body" id="modal-body">
+          <!-- Content will be dynamically inserted -->
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    let currentTab = 'users';
-    let allData = {
-      users: [],
-      congregacoes: [],
-      territorios: [],
-      logs: []
-    };
+    <script>
+      let currentTab = 'users';
+      let allData = {
+        users: [],
+        congregacoes: [],
+        territorios: [],
+        logs: []
+      };
 
-    // Tab Switching
-    function switchTab(tabName) {
-      // Update tab buttons
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      event.target.closest('.tab').classList.add('active');
+      // Tab Switching
+      function switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        event.target.closest('.tab').classList.add('active');
 
-      // Update tab content
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-      });
-      document.getElementById(`tab-${tabName}`).classList.add('active');
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(`tab-${tabName}`).classList.add('active');
 
-      currentTab = tabName;
+        currentTab = tabName;
 
-      // Load data if not already loaded
-      if (allData[tabName].length === 0) {
-        loadTabData(tabName);
+        // Load data if not already loaded
+        if (allData[tabName].length === 0) {
+          loadTabData(tabName);
+        }
       }
-    }
 
-    // Filter Table
-    function filterTable(tableId, searchValue) {
-      const table = document.getElementById(tableId);
-      const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-      const search = searchValue.toLowerCase();
+      // Filter Table
+      function filterTable(tableId, searchValue) {
+        const table = document.getElementById(tableId);
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        const search = searchValue.toLowerCase();
 
-      for (let row of rows) {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(search) ? '' : 'none';
+        for (let row of rows) {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(search) ? '' : 'none';
+        }
       }
-    }
 
-    // Modal
-    function showModal(title, content) {
-      document.getElementById('modal-title').textContent = title;
-      document.getElementById('modal-body').innerHTML = content;
-      document.getElementById('detail-modal').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('detail-modal').classList.remove('active');
-    }
-
-    // Format Date
-    function formatDate(dateString) {
-      if (!dateString) return '-';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function formatDateOnly(dateString) {
-      if (!dateString) return '-';
-      return new Date(dateString).toLocaleDateString('pt-BR');
-    }
-
-    // Load Statistics
-    async function loadStatistics() {
-      try {
-        // Total Users
-        const { count: usersCount } = await window.supabaseClient
-          .from('usuarios')
-          .select('*', { count: 'exact', head: true });
-        document.getElementById('total-users').textContent = usersCount || 0;
-
-        // Total Congregações
-        const { count: congregacoesCount } = await window.supabaseClient
-          .from('congregacoes')
-          .select('*', { count: 'exact', head: true });
-        document.getElementById('total-congregacoes').textContent = congregacoesCount || 0;
-
-        // Total Territórios (designações)
-        const { count: territoriosCount } = await window.supabaseClient
-          .from('designacoes')
-          .select('*', { count: 'exact', head: true })
-          .is('data_conclusao', null);
-        document.getElementById('total-territorios').textContent = territoriosCount || 0;
-
-        // Total Registros (este mês)
-        const firstDayOfMonth = new Date();
-        firstDayOfMonth.setDate(1);
-        const firstDayStr = firstDayOfMonth.toISOString().split('T')[0];
-
-        const { count: registrosCount } = await window.supabaseClient
-          .from('designacoes')
-          .select('*', { count: 'exact', head: true })
-          .gte('data_inicio', firstDayStr);
-        document.getElementById('total-registros').textContent = registrosCount || 0;
-
-        // Trends
-        document.getElementById('users-trend').textContent = `${usersCount} total`;
-        document.getElementById('congregacoes-info').textContent = `${congregacoesCount} cadastradas`;
-        document.getElementById('territorios-info').textContent = `${territoriosCount} em andamento`;
-        document.getElementById('registros-info').textContent = `${registrosCount} novos`;
-
-      } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
+      // Modal
+      function showModal(title, content) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').innerHTML = content;
+        document.getElementById('detail-modal').classList.add('active');
       }
-    }
 
-    // Load Users
-    async function loadUsers() {
-      try {
-        const { data: users, error } = await window.supabaseClient
-          .from('usuarios')
-          .select(`
+      function closeModal() {
+        document.getElementById('detail-modal').classList.remove('active');
+      }
+
+      // Format Date
+      function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString('pt-BR');
+      }
+
+      // Load Statistics
+      async function loadStatistics() {
+        try {
+          // Total Users
+          const { count: usersCount } = await window.supabaseClient
+            .from('usuarios')
+            .select('*', { count: 'exact', head: true });
+          document.getElementById('total-users').textContent = usersCount || 0;
+
+          // Total Congregações
+          const { count: congregacoesCount } = await window.supabaseClient
+            .from('congregacoes')
+            .select('*', { count: 'exact', head: true });
+          document.getElementById('total-congregacoes').textContent = congregacoesCount || 0;
+
+          // Total Territórios (designações)
+          const { count: territoriosCount } = await window.supabaseClient
+            .from('designacoes')
+            .select('*', { count: 'exact', head: true })
+            .is('data_conclusao', null);
+          document.getElementById('total-territorios').textContent = territoriosCount || 0;
+
+          // Total Registros (este mês)
+          const firstDayOfMonth = new Date();
+          firstDayOfMonth.setDate(1);
+          const firstDayStr = firstDayOfMonth.toISOString().split('T')[0];
+
+          const { count: registrosCount } = await window.supabaseClient
+            .from('designacoes')
+            .select('*', { count: 'exact', head: true })
+            .gte('data_inicio', firstDayStr);
+          document.getElementById('total-registros').textContent = registrosCount || 0;
+
+          // Trends
+          document.getElementById('users-trend').textContent = `${usersCount} total`;
+          document.getElementById('congregacoes-info').textContent = `${congregacoesCount} cadastradas`;
+          document.getElementById('territorios-info').textContent = `${territoriosCount} em andamento`;
+          document.getElementById('registros-info').textContent = `${registrosCount} novos`;
+
+        } catch (error) {
+          console.error('Erro ao carregar estatísticas:', error);
+        }
+      }
+
+      // Load Users
+      async function loadUsers() {
+        try {
+          const { data: users, error } = await window.supabaseClient
+            .from('usuarios')
+            .select(`
             *,
             congregacoes (
               id,
               nome
             )
           `)
-          .order('criado_em', { ascending: false });
+            .order('criado_em', { ascending: false });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        allData.users = users;
+          allData.users = users;
 
-        const tbody = document.getElementById('users-tbody');
-        tbody.innerHTML = '';
+          const tbody = document.getElementById('users-tbody');
+          tbody.innerHTML = '';
 
-        const papelLabel = { admin: 'Admin', auxiliar: 'Auxiliar', membro: 'Membro', pendente: 'Pendente', rejeitado: 'Rejeitado' };
-        const papelClass = { admin: 'admin', auxiliar: 'active', membro: 'active', pendente: 'inactive', rejeitado: 'inactive' };
+          const papelLabel = { admin: 'Admin', auxiliar: 'Auxiliar', membro: 'Membro', pendente: 'Pendente', rejeitado: 'Rejeitado' };
+          const papelClass = { admin: 'admin', auxiliar: 'active', membro: 'active', pendente: 'inactive', rejeitado: 'inactive' };
 
-        if (users && users.length > 0) {
-          users.forEach(user => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+          if (users && users.length > 0) {
+            users.forEach(user => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
               <td style="font-size:0.75rem;opacity:0.6">${user.id}</td>
               <td><strong>${user.nome || 'N/A'}</strong></td>
               <td>${user.email}</td>
@@ -922,62 +967,62 @@
                 </button>
               </td>
             `;
-            tbody.appendChild(row);
-          });
+              tbody.appendChild(row);
+            });
 
-          document.getElementById('users-table').style.display = 'table';
-        } else {
-          tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum usuário encontrado</p></td></tr>';
-          document.getElementById('users-table').style.display = 'table';
+            document.getElementById('users-table').style.display = 'table';
+          } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum usuário encontrado</p></td></tr>';
+            document.getElementById('users-table').style.display = 'table';
+          }
+
+          document.getElementById('users-loading').style.display = 'none';
+        } catch (error) {
+          console.error('Erro ao carregar usuários:', error);
+          document.getElementById('users-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar dados</p>';
         }
-
-        document.getElementById('users-loading').style.display = 'none';
-      } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
-        document.getElementById('users-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar dados</p>';
       }
-    }
 
-    // Load Congregações
-    async function loadCongregacoes() {
-      try {
-        const { data: congregacoes, error } = await window.supabaseClient
-          .from('congregacoes')
-          .select('*')
-          .order('nome', { ascending: true });
+      // Load Congregações
+      async function loadCongregacoes() {
+        try {
+          const { data: congregacoes, error } = await window.supabaseClient
+            .from('congregacoes')
+            .select('*')
+            .order('nome', { ascending: true });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        // Get user and territory counts for each congregação
-        const congregacoesWithCounts = await Promise.all(
-          congregacoes.map(async (cong) => {
-            const { count: userCount } = await window.supabaseClient
-              .from('usuarios')
-              .select('*', { count: 'exact', head: true })
-              .eq('congregacao_id', cong.id);
+          // Get user and territory counts for each congregação
+          const congregacoesWithCounts = await Promise.all(
+            congregacoes.map(async (cong) => {
+              const { count: userCount } = await window.supabaseClient
+                .from('usuarios')
+                .select('*', { count: 'exact', head: true })
+                .eq('congregacao_id', cong.id);
 
-            const { count: territorioCount } = await window.supabaseClient
-              .from('territorios')
-              .select('*', { count: 'exact', head: true })
-              .eq('congregacao_id', cong.id);
+              const { count: territorioCount } = await window.supabaseClient
+                .from('territorios')
+                .select('*', { count: 'exact', head: true })
+                .eq('congregacao_id', cong.id);
 
-            return {
-              ...cong,
-              userCount: userCount || 0,
-              territorioCount: territorioCount || 0
-            };
-          })
-        );
+              return {
+                ...cong,
+                userCount: userCount || 0,
+                territorioCount: territorioCount || 0
+              };
+            })
+          );
 
-        allData.congregacoes = congregacoesWithCounts;
+          allData.congregacoes = congregacoesWithCounts;
 
-        const tbody = document.getElementById('congregacoes-tbody');
-        tbody.innerHTML = '';
+          const tbody = document.getElementById('congregacoes-tbody');
+          tbody.innerHTML = '';
 
-        if (congregacoesWithCounts && congregacoesWithCounts.length > 0) {
-          congregacoesWithCounts.forEach(cong => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+          if (congregacoesWithCounts && congregacoesWithCounts.length > 0) {
+            congregacoesWithCounts.forEach(cong => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
               <td>${cong.id}</td>
               <td><strong>${cong.nome}</strong></td>
               <td>${cong.id}</td>
@@ -990,28 +1035,28 @@
                 </button>
               </td>
             `;
-            tbody.appendChild(row);
-          });
+              tbody.appendChild(row);
+            });
 
-          document.getElementById('congregacoes-table').style.display = 'table';
-        } else {
-          tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>Nenhuma congregação encontrada</p></td></tr>';
-          document.getElementById('congregacoes-table').style.display = 'table';
+            document.getElementById('congregacoes-table').style.display = 'table';
+          } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>Nenhuma congregação encontrada</p></td></tr>';
+            document.getElementById('congregacoes-table').style.display = 'table';
+          }
+
+          document.getElementById('congregacoes-loading').style.display = 'none';
+        } catch (error) {
+          console.error('Erro ao carregar congregações:', error);
+          document.getElementById('congregacoes-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar dados</p>';
         }
-
-        document.getElementById('congregacoes-loading').style.display = 'none';
-      } catch (error) {
-        console.error('Erro ao carregar congregações:', error);
-        document.getElementById('congregacoes-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar dados</p>';
       }
-    }
 
-    // Load Territórios
-    async function loadTerritorios() {
-      try {
-        const { data: territorios, error } = await window.supabaseClient
-          .from('designacoes')
-          .select(`
+      // Load Territórios
+      async function loadTerritorios() {
+        try {
+          const { data: territorios, error } = await window.supabaseClient
+            .from('designacoes')
+            .select(`
             *,
             territorios (
               numero_mapa,
@@ -1021,23 +1066,23 @@
               nome
             )
           `)
-          .order('data_inicio', { ascending: false })
-          .limit(100);
+            .order('data_inicio', { ascending: false })
+            .limit(100);
 
-        if (error) throw error;
+          if (error) throw error;
 
-        allData.territorios = territorios;
+          allData.territorios = territorios;
 
-        const tbody = document.getElementById('territorios-tbody');
-        tbody.innerHTML = '';
+          const tbody = document.getElementById('territorios-tbody');
+          tbody.innerHTML = '';
 
-        if (territorios && territorios.length > 0) {
-          territorios.forEach(terr => {
-            const status = terr.data_conclusao ? 'Concluído' : 'Em andamento';
-            const statusClass = terr.data_conclusao ? 'inactive' : 'active';
+          if (territorios && territorios.length > 0) {
+            territorios.forEach(terr => {
+              const status = terr.data_conclusao ? 'Concluído' : 'Em andamento';
+              const statusClass = terr.data_conclusao ? 'inactive' : 'active';
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
+              const row = document.createElement('tr');
+              row.innerHTML = `
               <td style="font-size:0.75rem;opacity:0.6">${terr.id}</td>
               <td><strong>${terr.territorios?.numero_mapa ?? 'N/A'}</strong></td>
               <td>${terr.territorios?.bairro || 'N/A'}</td>
@@ -1049,92 +1094,92 @@
                 <span class="badge ${statusClass}">${status}</span>
               </td>
             `;
-            tbody.appendChild(row);
-          });
+              tbody.appendChild(row);
+            });
 
-          document.getElementById('territorios-table').style.display = 'table';
-        } else {
-          tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum território encontrado</p></td></tr>';
-          document.getElementById('territorios-table').style.display = 'table';
+            document.getElementById('territorios-table').style.display = 'table';
+          } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum território encontrado</p></td></tr>';
+            document.getElementById('territorios-table').style.display = 'table';
+          }
+
+          document.getElementById('territorios-loading').style.display = 'none';
+        } catch (error) {
+          console.error('Erro ao carregar territórios:', error);
+          document.getElementById('territorios-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar dados</p>';
         }
-
-        document.getElementById('territorios-loading').style.display = 'none';
-      } catch (error) {
-        console.error('Erro ao carregar territórios:', error);
-        document.getElementById('territorios-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar dados</p>';
       }
-    }
 
-    // Load Logs
-    async function loadLogs() {
-      try {
-        const { data: logs, error } = await window.supabaseClient
-          .from('logs_atividade')
-          .select(`
+      // Load Logs
+      async function loadLogs() {
+        try {
+          const { data: logs, error } = await window.supabaseClient
+            .from('logs_atividade')
+            .select(`
             *,
             usuarios (
               nome,
               email
             )
           `)
-          .order('criado_em', { ascending: false })
-          .limit(50);
+            .order('criado_em', { ascending: false })
+            .limit(50);
 
-        if (error) throw error;
+          if (error) throw error;
 
-        allData.logs = logs || [];
+          allData.logs = logs || [];
 
-        const tbody = document.getElementById('logs-tbody');
-        tbody.innerHTML = '';
+          const tbody = document.getElementById('logs-tbody');
+          tbody.innerHTML = '';
 
-        if (logs && logs.length > 0) {
-          logs.forEach(log => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+          if (logs && logs.length > 0) {
+            logs.forEach(log => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
               <td>${formatDate(log.criado_em)}</td>
               <td>${log.usuarios?.nome || log.usuarios?.email || '-'}</td>
               <td><span class="badge inactive">${log.acao}</span></td>
               <td style="font-size:0.85rem">${log.entidade ? `${log.entidade}` : ''}${log.entidade_id ? ` #${log.entidade_id}` : ''}${log.detalhes ? ` — ${JSON.stringify(log.detalhes)}` : ''}</td>
             `;
-            tbody.appendChild(row);
-          });
-        } else {
-          tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-info-circle"></i><p>Nenhuma atividade registrada</p></td></tr>';
+              tbody.appendChild(row);
+            });
+          } else {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-info-circle"></i><p>Nenhuma atividade registrada</p></td></tr>';
+          }
+
+          document.getElementById('logs-table').style.display = 'table';
+          document.getElementById('logs-loading').style.display = 'none';
+        } catch (error) {
+          console.error('Erro ao carregar logs:', error);
+          document.getElementById('logs-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar logs</p>';
         }
-
-        document.getElementById('logs-table').style.display = 'table';
-        document.getElementById('logs-loading').style.display = 'none';
-      } catch (error) {
-        console.error('Erro ao carregar logs:', error);
-        document.getElementById('logs-loading').innerHTML = '<p style="color: var(--error);">Erro ao carregar logs</p>';
       }
-    }
 
-    // Load Tab Data
-    function loadTabData(tabName) {
-      switch(tabName) {
-        case 'users':
-          loadUsers();
-          break;
-        case 'congregacoes':
-          loadCongregacoes();
-          break;
-        case 'territorios':
-          loadTerritorios();
-          break;
-        case 'logs':
-          loadLogs();
-          break;
+      // Load Tab Data
+      function loadTabData(tabName) {
+        switch (tabName) {
+          case 'users':
+            loadUsers();
+            break;
+          case 'congregacoes':
+            loadCongregacoes();
+            break;
+          case 'territorios':
+            loadTerritorios();
+            break;
+          case 'logs':
+            loadLogs();
+            break;
+        }
       }
-    }
 
-    // View User Details
-    function viewUserDetails(userId) {
-      const user = allData.users.find(u => u.id === userId);
-      if (!user) return;
+      // View User Details
+      function viewUserDetails(userId) {
+        const user = allData.users.find(u => u.id === userId);
+        if (!user) return;
 
-      const papelLabel = { admin: 'Admin', auxiliar: 'Auxiliar', membro: 'Membro', pendente: 'Pendente', rejeitado: 'Rejeitado' };
-      const content = `
+        const papelLabel = { admin: 'Admin', auxiliar: 'Auxiliar', membro: 'Membro', pendente: 'Pendente', rejeitado: 'Rejeitado' };
+        const content = `
         <div class="detail-row">
           <div class="detail-label">ID</div>
           <div class="detail-value" style="font-size:0.85rem">${user.id}</div>
@@ -1177,15 +1222,15 @@
         ` : ''}
       `;
 
-      showModal('Detalhes do Usuário', content);
-    }
+        showModal('Detalhes do Usuário', content);
+      }
 
-    // View Congregação Details
-    function viewCongregacaoDetails(congId) {
-      const cong = allData.congregacoes.find(c => c.id == congId);
-      if (!cong) return;
+      // View Congregação Details
+      function viewCongregacaoDetails(congId) {
+        const cong = allData.congregacoes.find(c => c.id == congId);
+        if (!cong) return;
 
-      const content = `
+        const content = `
         <div class="detail-row">
           <div class="detail-label">Nº Oficial</div>
           <div class="detail-value">${cong.id}</div>
@@ -1224,54 +1269,55 @@
         ` : ''}
       `;
 
-      showModal('Detalhes da Congregação', content);
-    }
-
-    // Logout
-    async function handleLogout() {
-      if (confirm('Tem certeza que deseja sair?')) {
-        await window.supabaseClient.auth.signOut();
-        window.location.href = 'login.html';
-      }
-    }
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Check if user is authenticated
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
-      
-      if (!session) {
-        window.location.href = 'login.html';
-        return;
+        showModal('Detalhes da Congregação', content);
       }
 
-      // Load admin name
-      const { data: userData } = await window.supabaseClient
-        .from('usuarios')
-        .select('nome, papel')
-        .eq('id', session.user.id)
-        .single();
-
-      if (!userData || userData.papel !== 'master') {
-        window.location.replace('login.html');
-        return;
+      // Logout
+      async function handleLogout() {
+        if (confirm('Tem certeza que deseja sair?')) {
+          await window.supabaseClient.auth.signOut();
+          window.location.href = 'login.html';
+        }
       }
 
-      document.getElementById('admin-name').textContent = userData.nome || session.user.email;
+      // Initialize
+      document.addEventListener('DOMContentLoaded', async () => {
+        // Check if user is authenticated
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
 
-      // Load initial data
-      loadStatistics();
-      loadUsers();
-    });
+        if (!session) {
+          window.location.href = 'login.html';
+          return;
+        }
 
-    // Close modal when clicking outside
-    document.getElementById('detail-modal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeModal();
-      }
-    });
-  </script>
-  <script src="js/theme.js"></script>
+        // Load admin name
+        const { data: userData } = await window.supabaseClient
+          .from('usuarios')
+          .select('nome, papel')
+          .eq('id', session.user.id)
+          .single();
 
-</body>
+        if (!userData || userData.papel !== 'master') {
+          window.location.replace('login.html');
+          return;
+        }
+
+        document.getElementById('admin-name').textContent = userData.nome || session.user.email;
+
+        // Load initial data
+        loadStatistics();
+        loadUsers();
+      });
+
+      // Close modal when clicking outside
+      document.getElementById('detail-modal').addEventListener('click', function (e) {
+        if (e.target === this) {
+          closeModal();
+        }
+      });
+    </script>
+    <script src="js/theme.js"></script>
+
+  </body>
+
 </html>

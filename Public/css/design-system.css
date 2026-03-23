@@ -1,8 +1,3 @@
-/* ================================================================
-   TERRITÓRIO S-13 — DESIGN SYSTEM v3
-   Estética: Dark SaaS / Premium Modern
-   Fontes: Outfit (display) + Plus Jakarta Sans (corpo)
-   ================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -22,7 +17,7 @@
 
   /* Texto */
   --text-primary:  #ECEEF5;
-  --text-secondary:#9395A5;
+  --text-secondary:#c3c5d4;
   --text-disabled: #4A4C5E;
 
   /* Acento */
@@ -417,7 +412,7 @@ tbody td {
 
 .site-logo img {
   height: 26px;
-  filter: invert(1) brightness(0.9);
+ 
 }
 
 .site-logo-text {
@@ -445,9 +440,10 @@ tbody td {
 }
 
 .nav-link {
+  background-color: var(--accent);
   font-size: 0.82rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: white;
   text-decoration: none;
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -487,6 +483,20 @@ tbody td {
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--success);
+}
+.user-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-dark);
+  color: var(--accent); 
+  padding: 0 1.5rem;
+  height: 45px;
+  border-radius: 8px;
+  font-size: 0.80rem;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 /* ── LAYOUT ──────────────────────────────────────────────── */

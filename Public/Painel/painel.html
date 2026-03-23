@@ -1,997 +1,1225 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <script>
-    (function(){
-      var t = localStorage.getItem('theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-    })();
-  </script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Admin | Território S-13</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link rel="stylesheet" href="../css/design-system.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase_config.js"></script>
-  <style>
-    /* ── LAYOUT GERAL ─────────────────────────────────────── */
-    body { min-height: 100vh; display: flex; flex-direction: column; }
 
-    .admin-layout {
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      flex: 1;
-      min-height: 0;
-    }
-
-    /* ── SIDEBAR ──────────────────────────────────────────── */
-    .sidebar {
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 1.25rem 0;
-      position: sticky;
-      top: 56px;
-      height: calc(100vh - 56px);
-      overflow-y: auto;
-    }
-
-    .sidebar-section-label {
-      font-size: 0.65rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-disabled);
-      padding: 0.75rem 1.25rem 0.4rem;
-    }
-
-    .sidebar-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.55rem 1.25rem;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-      border-radius: 0;
-      transition: color var(--duration) var(--ease),
-                  background var(--duration) var(--ease);
-      position: relative;
-    }
-
-    .sidebar-item i {
-      width: 16px;
-      text-align: center;
-      font-size: 0.85rem;
-      flex-shrink: 0;
-    }
-
-    .sidebar-item:hover {
-      color: var(--text-primary);
-      background: var(--bg-elevated);
-      box-shadow: none;
-      transform: none;
-    }
-
-    .sidebar-item.active {
-      color: var(--accent);
-      background: var(--accent-dim);
-    }
-
-    .sidebar-item.active i { color: var(--accent); }
-
-    .sidebar-badge {
-      margin-left: auto;
-      background: var(--accent);
-      color: white;
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 0.1rem 0.45rem;
-      border-radius: var(--radius-full);
-      min-width: 18px;
-      text-align: center;
-      line-height: 1.4;
-    }
-
-    .sidebar-divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 0.75rem 0;
-    }
-
-    /* ── CONTEÚDO PRINCIPAL ───────────────────────────────── */
-    .admin-content {
-      padding: 2rem 2rem 3rem;
-      overflow-y: auto;
-    }
-
-    /* Seções — visibilidade controlada por JS */
-    .admin-section { display: none; }
-    .admin-section.active { display: block; animation: revealUp 0.35s var(--ease); }
-
-    /* ── CARDS DE ESTATÍSTICAS ────────────────────────────── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      transition: border-color var(--duration) var(--ease);
-    }
-
-    .stat-card:hover { border-color: var(--border-hover); }
-
-    .stat-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--text-disabled);
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-      font-family: var(--font-display);
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-
-    .stat-sub {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      margin-top: 0.35rem;
-    }
-
-    .stat-card.accent-card { border-color: rgba(232, 64, 28, 0.25); background: var(--accent-dim); }
-    .stat-card.accent-card .stat-value { color: var(--accent); }
-
-    /* ── SECTION HEADER ───────────────────────────────────── */
-    .section-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .section-header h2 { font-size: 1.3rem; }
-    .section-header-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-
-    /* ── TABELA DE USUÁRIOS ───────────────────────────────── */
-    .user-table-wrap {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      background: var(--bg-surface);
-    }
-
-    .user-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-
-    .user-table thead th {
-      background: var(--bg-elevated);
-      color: var(--text-secondary);
-      padding: 0.7rem 1rem;
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-
-    .user-table tbody tr {
-      border-bottom: 1px solid var(--border);
-      transition: background var(--duration) var(--ease);
-    }
-    .user-table tbody tr:last-child { border-bottom: none; }
-    .user-table tbody tr:hover { background: var(--bg-elevated); }
-
-    .user-table tbody td {
-      padding: 0.85rem 1rem;
-      vertical-align: middle;
-      color: var(--text-primary);
-    }
-
-    .user-avatar {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: var(--bg-hover);
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      flex-shrink: 0;
-    }
-
-    .user-info { display: flex; align-items: center; gap: 0.75rem; }
-    .user-name { font-weight: 600; font-size: 0.875rem; }
-    .user-email { font-size: 0.75rem; color: var(--text-secondary); }
-
-    .action-btns { display: flex; gap: 0.4rem; flex-wrap: nowrap; }
-
-    .tbl-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0.3rem 0.65rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      border: 1px solid transparent;
-      width: auto;
-      white-space: nowrap;
-      transition: all var(--duration) var(--ease);
-    }
-    .tbl-action:hover { box-shadow: none; transform: none; }
-
-    .tbl-approve {
-      background: var(--success-dim);
-      border-color: rgba(34,197,94,0.2);
-      color: var(--success);
-    }
-    .tbl-approve:hover { background: var(--success); color: white; border-color: var(--success); }
-
-    .tbl-promote {
-      background: var(--info-dim);
-      border-color: rgba(59,130,246,0.2);
-      color: var(--info);
-    }
-    .tbl-promote:hover { background: var(--info); color: white; border-color: var(--info); }
-
-    .tbl-reject {
-      background: var(--error-dim);
-      border-color: rgba(239,68,68,0.2);
-      color: var(--error);
-    }
-    .tbl-reject:hover { background: var(--error); color: white; border-color: var(--error); }
-
-    .tbl-remove {
-      background: var(--bg-hover);
-      border-color: var(--border);
-      color: var(--text-secondary);
-    }
-    .tbl-remove:hover { background: var(--error-dim); color: var(--error); border-color: rgba(239,68,68,0.2); }
-
-    /* Dias aguardando */
-    .days-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 0.15rem 0.5rem;
-      border-radius: var(--radius-full);
-      background: var(--warning-dim);
-      color: var(--warning);
-    }
-    .days-chip.urgent { background: var(--error-dim); color: var(--error); }
-
-    /* ── CONVITES ─────────────────────────────────────────── */
-    .invite-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1rem;
-      margin-top: 1.25rem;
-    }
-
-    .invite-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      position: relative;
-    }
-
-    .invite-card.expired { opacity: 0.5; }
-    .invite-card.used { border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.03); }
-
-    .invite-token {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      background: var(--bg-root);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.4rem 0.75rem;
-      margin: 0.75rem 0;
-      word-break: break-all;
-      cursor: pointer;
-      transition: border-color var(--duration);
-    }
-    .invite-token:hover { border-color: var(--border-hover); }
-
-    .invite-meta {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-
-    .invite-actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-
-    .copy-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      background: var(--bg-hover);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-secondary);
-      cursor: pointer;
-      width: auto;
-      transition: all var(--duration);
-    }
-    .copy-btn:hover { color: var(--text-primary); border-color: var(--border-hover); background: var(--bg-hover); box-shadow: none; transform: none; }
-    .copy-btn.copied { color: var(--success); background: var(--success-dim); border-color: rgba(34,197,94,0.2); }
-
-    /* ── CONFIGURAÇÕES ────────────────────────────────────── */
-    .config-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-bottom: 1.25rem;
-    }
-
-    .config-card-header {
-      padding: 1rem 1.25rem;
-      background: var(--bg-elevated);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-    }
-
-    .config-card-header h3 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .config-card-header h3 i { color: var(--accent); font-size: 0.85rem; }
-
-    .config-card-body { padding: 1.25rem; }
-
-    /* Lista de grupos dinâmica */
-    .grupos-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .grupo-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-    }
-
-    .grupo-item span {
-      flex: 1;
-      font-size: 0.85rem;
-      color: var(--text-primary);
-    }
-
-    .grupo-remove {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px; height: 22px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-disabled);
-      border-radius: var(--radius-sm);
-      font-size: 0.75rem;
-      width: auto; padding: 0.2rem 0.4rem;
-      transition: all var(--duration);
-    }
-    .grupo-remove:hover { color: var(--error); background: var(--error-dim); box-shadow: none; transform: none; }
-
-    .add-grupo-row {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .add-grupo-row input { margin-bottom: 0; flex: 1; }
-
-    .add-grupo-row button {
-      width: auto;
-      padding: 0.65rem 1rem;
-      flex-shrink: 0;
-      font-size: 0.8rem;
-    }
-
-    /* Transfer admin */
-    .danger-zone {
-      border-color: rgba(239, 68, 68, 0.2);
-      background: rgba(239, 68, 68, 0.02);
-    }
-
-    .danger-zone .config-card-header {
-      background: rgba(239, 68, 68, 0.06);
-      border-color: rgba(239, 68, 68, 0.15);
-    }
-
-    .danger-zone .config-card-header h3 i { color: var(--error); }
-
-    /* ── LOGS ─────────────────────────────────────────────── */
-    .log-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .log-item {
-      display: grid;
-      grid-template-columns: 110px 1fr auto;
-      gap: 0.75rem;
-      align-items: start;
-      padding: 0.85rem 1rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 0.82rem;
-      transition: border-color var(--duration);
-    }
-    .log-item:hover { border-color: var(--border-hover); }
-
-    .log-time {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--text-disabled);
-      padding-top: 0.1rem;
-    }
-
-    .log-acao {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.15rem 0.5rem;
-      border-radius: var(--radius-full);
-      font-family: var(--font-mono);
-    }
-
-    .log-desc { color: var(--text-secondary); }
-    .log-actor { font-weight: 600; color: var(--text-primary); }
-
-    /* ── MODAL GENÉRICO ───────────────────────────────────── */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: var(--bg-overlay);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      z-index: 400;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-    .modal-overlay.open { display: flex; }
-
-    .modal-box {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-hover);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      width: 100%;
-      max-width: 460px;
-      padding: 1.75rem;
-      animation: modalIn 0.25s var(--ease);
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-    }
-
-    .modal-title { font-size: 1.05rem; font-weight: 700; }
-
-    .modal-close {
-      width: 28px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--bg-hover);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      flex-shrink: 0;
-    }
-    .modal-close:hover { color: var(--text-primary); box-shadow: none; transform: none; }
-
-    .modal-body { margin-bottom: 1.25rem; }
-    .modal-body p { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; }
-
-    .modal-actions-row {
-      display: flex;
-      gap: 0.6rem;
-      justify-content: flex-end;
-    }
-
-    .modal-actions-row button { width: auto; padding: 0.6rem 1.25rem; }
-
-    /* ── TOAST NOTIFICAÇÃO ────────────────────────────────── */
-    .toast-container {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      z-index: 500;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      pointer-events: none;
-    }
-
-    .toast {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-hover);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      min-width: 260px;
-      pointer-events: all;
-      animation: toastIn 0.3s var(--ease);
-    }
-
-    .toast.success { border-color: rgba(34,197,94,0.3); }
-    .toast.success i { color: var(--success); }
-    .toast.error   { border-color: rgba(239,68,68,0.3); }
-    .toast.error   i { color: var(--error); }
-    .toast i { font-size: 0.9rem; flex-shrink: 0; }
-
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(20px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    /* ── EMPTY STATE ──────────────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: 3.5rem 2rem;
-      color: var(--text-disabled);
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-    }
-    .empty-state i { font-size: 2rem; opacity: 0.25; display: block; margin-bottom: 0.75rem; }
-    .empty-state p { font-size: 0.85rem; }
-
-    /* ── RESPONSIVO ───────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .admin-layout { grid-template-columns: 1fr; }
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Admin | Território S-13</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="../css/design-system.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase_config.js"></script>
+    <style>
+      /* ── LAYOUT GERAL ─────────────────────────────────────── */
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .admin-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* ── SIDEBAR ──────────────────────────────────────────── */
       .sidebar {
-        position: static;
-        height: auto;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 0.5rem 0;
-        border-right: none;
+        background: var(--bg-surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 1.25rem 0;
+        position: sticky;
+        top: 56px;
+        height: calc(100vh - 56px);
+        overflow-y: auto;
+      }
+
+      .sidebar-section-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-disabled);
+        padding: 0.75rem 1.25rem 0.4rem;
+      }
+
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.55rem 1.25rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        border-radius: 0;
+        transition: color var(--duration) var(--ease),
+          background var(--duration) var(--ease);
+        position: relative;
+      }
+
+      .sidebar-item i {
+        width: 16px;
+        text-align: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+
+      .sidebar-item:hover {
+        color: var(--text-primary);
+        background: var(--bg-elevated);
+        box-shadow: none;
+        transform: none;
+      }
+
+      .sidebar-item.active {
+        color: var(--accent);
+        background: var(--accent-dim);
+      }
+
+      .sidebar-item.active i {
+        color: var(--accent);
+      }
+
+      .sidebar-badge {
+        margin-left: auto;
+        background: var(--accent);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.45rem;
+        border-radius: var(--radius-full);
+        min-width: 18px;
+        text-align: center;
+        line-height: 1.4;
+      }
+
+      .sidebar-divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 0.75rem 0;
+      }
+
+      /* ── CONTEÚDO PRINCIPAL ───────────────────────────────── */
+      .admin-content {
+        padding: 2rem 2rem 3rem;
+        overflow-y: auto;
+      }
+
+      /* Seções — visibilidade controlada por JS */
+      .admin-section {
+        display: none;
+      }
+
+      .admin-section.active {
+        display: block;
+        animation: revealUp 0.35s var(--ease);
+      }
+
+      /* ── CARDS DE ESTATÍSTICAS ────────────────────────────── */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        transition: border-color var(--duration) var(--ease);
+      }
+
+      .stat-card:hover {
+        border-color: var(--border-hover);
+      }
+
+      .stat-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--text-disabled);
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-value {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1;
+      }
+
+      .stat-sub {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.35rem;
+      }
+
+      .stat-card.accent-card {
+        border-color: rgba(232, 64, 28, 0.25);
+        background: var(--accent-dim);
+      }
+
+      .stat-card.accent-card .stat-value {
+        color: var(--accent);
+      }
+
+      /* ── SECTION HEADER ───────────────────────────────────── */
+      .section-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.25rem;
         border-bottom: 1px solid var(--border);
       }
-      .sidebar-section-label { display: none; }
-      .sidebar-divider { display: none; }
-      .sidebar-item {
-        flex-direction: column;
-        gap: 0.25rem;
-        padding: 0.5rem 0.85rem;
-        font-size: 0.68rem;
+
+      .section-header h2 {
+        font-size: 1.3rem;
+      }
+
+      .section-header-actions {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      /* ── TABELA DE USUÁRIOS ───────────────────────────────── */
+      .user-table-wrap {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background: var(--bg-surface);
+      }
+
+      .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      .user-table thead th {
+        background: var(--bg-elevated);
+        color: var(--text-secondary);
+        padding: 0.7rem 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
         white-space: nowrap;
+      }
+
+      .user-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background var(--duration) var(--ease);
+      }
+
+      .user-table tbody tr:last-child {
+        border-bottom: none;
+      }
+
+      .user-table tbody tr:hover {
+        background: var(--bg-elevated);
+      }
+
+      .user-table tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        color: var(--text-primary);
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-hover);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        flex-shrink: 0;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .user-name {
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+
+      .user-email {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .action-btns {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: nowrap;
+      }
+
+      .tbl-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 600;
         border-radius: var(--radius-sm);
-        min-width: 64px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        width: auto;
+        white-space: nowrap;
+        transition: all var(--duration) var(--ease);
+      }
+
+      .tbl-action:hover {
+        box-shadow: none;
+        transform: none;
+      }
+
+      .tbl-approve {
+        background: var(--success-dim);
+        border-color: rgba(34, 197, 94, 0.2);
+        color: var(--success);
+      }
+
+      .tbl-approve:hover {
+        background: var(--success);
+        color: white;
+        border-color: var(--success);
+      }
+
+      .tbl-promote {
+        background: var(--info-dim);
+        border-color: rgba(59, 130, 246, 0.2);
+        color: var(--info);
+      }
+
+      .tbl-promote:hover {
+        background: var(--info);
+        color: white;
+        border-color: var(--info);
+      }
+
+      .tbl-reject {
+        background: var(--error-dim);
+        border-color: rgba(239, 68, 68, 0.2);
+        color: var(--error);
+      }
+
+      .tbl-reject:hover {
+        background: var(--error);
+        color: white;
+        border-color: var(--error);
+      }
+
+      .tbl-remove {
+        background: var(--bg-hover);
+        border-color: var(--border);
+        color: var(--text-secondary);
+      }
+
+      .tbl-remove:hover {
+        background: var(--error-dim);
+        color: var(--error);
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      /* Dias aguardando */
+      .days-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-full);
+        background: var(--warning-dim);
+        color: var(--warning);
+      }
+
+      .days-chip.urgent {
+        background: var(--error-dim);
+        color: var(--error);
+      }
+
+      /* ── CONVITES ─────────────────────────────────────────── */
+      .invite-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-top: 1.25rem;
+      }
+
+      .invite-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        position: relative;
+      }
+
+      .invite-card.expired {
+        opacity: 0.5;
+      }
+
+      .invite-card.used {
+        border-color: rgba(34, 197, 94, 0.2);
+        background: rgba(34, 197, 94, 0.03);
+      }
+
+      .invite-token {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-secondary);
+        background: var(--bg-root);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.4rem 0.75rem;
+        margin: 0.75rem 0;
+        word-break: break-all;
+        cursor: pointer;
+        transition: border-color var(--duration);
+      }
+
+      .invite-token:hover {
+        border-color: var(--border-hover);
+      }
+
+      .invite-meta {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .invite-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--bg-hover);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        cursor: pointer;
+        width: auto;
+        transition: all var(--duration);
+      }
+
+      .copy-btn:hover {
+        color: var(--text-primary);
+        border-color: var(--border-hover);
+        background: var(--bg-hover);
+        box-shadow: none;
+        transform: none;
+      }
+
+      .copy-btn.copied {
+        color: var(--success);
+        background: var(--success-dim);
+        border-color: rgba(34, 197, 94, 0.2);
+      }
+
+      /* ── CONFIGURAÇÕES ────────────────────────────────────── */
+      .config-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+      }
+
+      .config-card-header {
+        padding: 1rem 1.25rem;
+        background: var(--bg-elevated);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .config-card-header h3 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .config-card-header h3 i {
+        color: var(--accent);
+        font-size: 0.85rem;
+      }
+
+      .config-card-body {
+        padding: 1.25rem;
+      }
+
+      /* Lista de grupos dinâmica */
+      .grupos-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .grupo-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+
+      .grupo-item span {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+      }
+
+      .grupo-remove {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-disabled);
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        width: auto;
+        padding: 0.2rem 0.4rem;
+        transition: all var(--duration);
+      }
+
+      .grupo-remove:hover {
+        color: var(--error);
+        background: var(--error-dim);
+        box-shadow: none;
+        transform: none;
+      }
+
+      .add-grupo-row {
+        display: flex;
+        gap: 0.5rem;
         align-items: center;
       }
-      .sidebar-badge { display: none; }
-      .admin-content { padding: 1.25rem 1rem 2rem; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .invite-grid { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
 
-<!-- ── HEADER ── -->
-<header class="site-header">
-  <a href="../index.html" class="site-logo">
-    <img src="../img/logo.png" alt="Logo" />
-    <span class="site-logo-text">S-13</span>
-    <span class="site-logo-badge">Admin</span>
-  </a>
-  <nav class="site-nav">
-    <button class="theme-toggle" id="btn-theme" title="Alternar tema">
-      <i class="fas fa-sun"></i>
-    </button>
-    <a href="../admin-master.html" id="nav-master" class="nav-link" style="display:none">
-      <i class="fas fa-shield-alt" style="font-size:0.8em"></i> Master
-    </a>
-    <div class="user-chip">
-      <span class="user-dot"></span>
-      <span id="admin-nome">Admin</span>
-    </div>
-    <div class="nav-divider"></div>
-    <a href="../index.html" class="nav-link">
-      <i class="fas fa-home" style="font-size:0.85em"></i> Início
-    </a>
-    <a href="../S_13.html" class="nav-link">Relatório S-13</a>
-    <a href="#" id="logout-btn" class="nav-link" style="color:var(--text-disabled)">
-      <i class="fas fa-sign-out-alt" style="font-size:0.85em"></i>
-    </a>
-  </nav>
-</header>
+      .add-grupo-row input {
+        margin-bottom: 0;
+        flex: 1;
+      }
 
-<!-- ── ADMIN LAYOUT ── -->
-<div class="admin-layout">
+      .add-grupo-row button {
+        width: auto;
+        padding: 0.65rem 1rem;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+      }
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <span class="sidebar-section-label">Gestão</span>
+      /* Transfer admin */
+      .danger-zone {
+        border-color: rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.02);
+      }
 
-    <button class="sidebar-item active" data-section="visao-geral">
-      <i class="fas fa-chart-line"></i>
-      <span>Visão Geral</span>
-    </button>
+      .danger-zone .config-card-header {
+        background: rgba(239, 68, 68, 0.06);
+        border-color: rgba(239, 68, 68, 0.15);
+      }
 
-    <button class="sidebar-item" data-section="pendentes">
-      <i class="fas fa-user-clock"></i>
-      <span>Pendentes</span>
-      <span class="sidebar-badge" id="badge-pendentes" style="display:none">0</span>
-    </button>
+      .danger-zone .config-card-header h3 i {
+        color: var(--error);
+      }
 
-    <button class="sidebar-item" data-section="membros">
-      <i class="fas fa-users"></i>
-      <span>Membros</span>
-    </button>
+      /* ── LOGS ─────────────────────────────────────────────── */
+      .log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
 
-    <button class="sidebar-item" data-section="territorios">
-      <i class="fas fa-map"></i>
-      <span>Territórios</span>
-    </button>
+      .log-item {
+        display: grid;
+        grid-template-columns: 110px 1fr auto;
+        gap: 0.75rem;
+        align-items: start;
+        padding: 0.85rem 1rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 0.82rem;
+        transition: border-color var(--duration);
+      }
 
-    <button class="sidebar-item" data-section="convites">
-      <i class="fas fa-link"></i>
-      <span>Convites</span>
-    </button>
+      .log-item:hover {
+        border-color: var(--border-hover);
+      }
 
-    <hr class="sidebar-divider" />
+      .log-time {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: var(--text-disabled);
+        padding-top: 0.1rem;
+      }
 
-    <span class="sidebar-section-label">Configurações</span>
+      .log-acao {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-full);
+        font-family: var(--font-mono);
+      }
 
-    <button class="sidebar-item" data-section="config">
-      <i class="fas fa-sliders-h"></i>
-      <span>Congregação</span>
-    </button>
+      .log-desc {
+        color: var(--text-secondary);
+      }
 
-    <hr class="sidebar-divider" />
+      .log-actor {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
 
-    <span class="sidebar-section-label">Sistema</span>
+      /* ── MODAL GENÉRICO ───────────────────────────────────── */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: var(--bg-overlay);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 400;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
 
-    <button class="sidebar-item" data-section="logs">
-      <i class="fas fa-history"></i>
-      <span>Auditoria</span>
-    </button>
-  </aside>
+      .modal-overlay.open {
+        display: flex;
+      }
 
-  <!-- CONTEÚDO -->
-  <main class="admin-content">
+      .modal-box {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-hover);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        width: 100%;
+        max-width: 460px;
+        padding: 1.75rem;
+        animation: modalIn 0.25s var(--ease);
+      }
 
-    <!-- ── VISÃO GERAL ── -->
-    <section id="section-visao-geral" class="admin-section active">
-      <div class="section-header">
-        <div>
-          <div class="page-eyebrow">Painel</div>
-          <h2 id="cong-nome-header">Carregando...</h2>
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+
+      .modal-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .modal-close {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-hover);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+
+      .modal-close:hover {
+        color: var(--text-primary);
+        box-shadow: none;
+        transform: none;
+      }
+
+      .modal-body {
+        margin-bottom: 1.25rem;
+      }
+
+      .modal-body p {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+      }
+
+      .modal-actions-row {
+        display: flex;
+        gap: 0.6rem;
+        justify-content: flex-end;
+      }
+
+      .modal-actions-row button {
+        width: auto;
+        padding: 0.6rem 1.25rem;
+      }
+
+      /* ── TOAST NOTIFICAÇÃO ────────────────────────────────── */
+      .toast-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 500;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        pointer-events: none;
+      }
+
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-hover);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        min-width: 260px;
+        pointer-events: all;
+        animation: toastIn 0.3s var(--ease);
+      }
+
+      .toast.success {
+        border-color: rgba(34, 197, 94, 0.3);
+      }
+
+      .toast.success i {
+        color: var(--success);
+      }
+
+      .toast.error {
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+
+      .toast.error i {
+        color: var(--error);
+      }
+
+      .toast i {
+        font-size: 0.9rem;
+        flex-shrink: 0;
+      }
+
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ── EMPTY STATE ──────────────────────────────────────── */
+      .empty-state {
+        text-align: center;
+        padding: 3.5rem 2rem;
+        color: var(--text-disabled);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+      }
+
+      .empty-state i {
+        font-size: 2rem;
+        opacity: 0.25;
+        display: block;
+        margin-bottom: 0.75rem;
+      }
+
+      .empty-state p {
+        font-size: 0.85rem;
+      }
+
+      /* ── RESPONSIVO ───────────────────────────────────────── */
+      @media (max-width: 900px) {
+        .admin-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: static;
+          height: auto;
+          flex-direction: row;
+          overflow-x: auto;
+          padding: 0.5rem 0;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section-label {
+          display: none;
+        }
+
+        .sidebar-divider {
+          display: none;
+        }
+
+        .sidebar-item {
+          flex-direction: column;
+          gap: 0.25rem;
+          padding: 0.5rem 0.85rem;
+          font-size: 0.68rem;
+          white-space: nowrap;
+          border-radius: var(--radius-sm);
+          min-width: 64px;
+          align-items: center;
+        }
+
+        .sidebar-badge {
+          display: none;
+        }
+
+        .admin-content {
+          padding: 1.25rem 1rem 2rem;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .invite-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ── HEADER ── -->
+    <header class="site-header">
+      <div class="user-badge">
+        <a href="../index.html" class="site-logo">
+          <img src="../img/logo.png" alt="Logo" />
+          <span class="site-logo-text">S-13</span>
+        <div id="user-chip" class="site-logo-badge">
+          <span class="user-dot"></span>
+          <i class="fa-solid fa-user"></i>
+          <span id="admin-nome"style="padding-left: 5px;">Admin</span>
         </div>
-        <div class="section-header-actions">
-          <button class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
-                  onclick="navegarPara('pendentes')">
-            <i class="fas fa-user-clock" style="font-size:0.8em"></i>
-            Gerenciar Pendentes
-          </button>
-        </div>
+      </a>
+      <button class="nav-link" id="btn-theme" title="Alternar tema">
+          <i class="fas fa-sun"></i>
+        </button>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card" id="stat-membros">
-          <div class="stat-label">Membros Ativos</div>
-          <div class="stat-value">—</div>
-          <div class="stat-sub">admin + auxiliar + membro</div>
-        </div>
-        <div class="stat-card accent-card" id="stat-pendentes">
-          <div class="stat-label">Aguardando Aprovação</div>
-          <div class="stat-value">—</div>
-          <div class="stat-sub">solicitações pendentes</div>
-        </div>
-        <div class="stat-card" id="stat-territorios">
-          <div class="stat-label">Territórios</div>
-          <div class="stat-value">—</div>
-          <div class="stat-sub">mapas cadastrados</div>
-        </div>
-        <div class="stat-card" id="stat-designacoes">
-          <div class="stat-label">Em Andamento</div>
-          <div class="stat-value">—</div>
-          <div class="stat-sub">designações ativas</div>
-        </div>
-      </div>
+      <nav class="site-nav">   
+        
+        <button class="nav-link" onclick="window.location.href='../index.html'">
+          <i class="fa-solid fa-home"></i>
+          Início
+        </button>
 
-      <!-- Atividade recente -->
-      <div class="section-header" style="margin-top:0.5rem">
-        <h3 style="font-size:1rem;font-weight:700">Atividade Recente</h3>
-      </div>
-      <div id="log-preview" class="log-list">
-        <div class="empty-state">
-          <i class="fas fa-history"></i>
-          <p>Carregando atividades...</p>
-        </div>
-      </div>
-    </section>
+        <div class="nav-divider"></div>
+     
+        <button id="nav-master" class="nav-link" style="display:none; padding-left: 15px;" onclick="window.location.href='../admin-master.html'">
+          <i class="fa-solid fa-chart-line"></i>
+          Master
+        </button>
 
-    <!-- ── PENDENTES ── -->
-    <section id="section-pendentes" class="admin-section">
-      <div class="section-header">
-        <div>
-          <div class="page-eyebrow">Aprovação</div>
-          <h2>Usuários Pendentes</h2>
-        </div>
-      </div>
+        <div class="nav-divider"></div>
+     
+        <button class="nav-link" onclick="window.location.href='../S_13.html'">
+         <i class="fa-solid fa-clipboard-list"></i>
+          Relatório S-13
+        </button>
 
-      <div id="pendentes-wrap">
-        <div class="empty-state">
-          <i class="fas fa-check-circle"></i>
-          <p>Nenhum usuário aguardando aprovação.</p>
-        </div>
-      </div>
-    </section>
+        <div class="nav-divider"></div>
+        <button class="nav-link" onclick="handleLogout()">
+          <i class="fas fa-sign-out-alt"></i>
+          Sair
+        </button>
+      </nav>
+    </header>
 
-    <!-- ── MEMBROS ── -->
-    <section id="section-membros" class="admin-section">
-      <div class="section-header">
-        <div>
-          <div class="page-eyebrow">Equipe</div>
-          <h2>Membros da Congregação</h2>
-        </div>
-        <div class="section-header-actions">
-          <button class="btn" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
-                  onclick="navegarPara('convites')">
-            <i class="fas fa-link" style="font-size:0.8em"></i> Gerar Convite
-          </button>
-        </div>
-      </div>
+    <!-- ── ADMIN LAYOUT ── -->
+    <div class="admin-layout">
 
-      <div class="user-table-wrap">
-        <table class="user-table">
-          <thead>
-            <tr>
-              <th>Usuário</th>
-              <th>Papel</th>
-              <th>Membro desde</th>
-              <th>Último acesso</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="membros-tbody">
-            <tr><td colspan="5" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">
-              Carregando...
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <span class="sidebar-section-label">Gestão</span>
 
-    <!-- ── TERRITÓRIOS ── -->
-    <section id="section-territorios" class="admin-section">
-      <div class="section-header">
-        <div>
-          <div class="page-eyebrow">Mapas</div>
-          <h2>Territórios</h2>
-        </div>
-        <div class="section-header-actions">
-          <input type="search" id="search-territorios" class="form-input"
-                 placeholder="Buscar por número ou bairro…"
-                 style="width:220px;font-size:0.82rem;padding:0.45rem 0.75rem">
-          <button class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
-                  onclick="abrirModalTerritorio(null)">
-            <i class="fas fa-plus" style="font-size:0.8em"></i> Novo Território
-          </button>
-        </div>
-      </div>
+        <button class="sidebar-item active" data-section="visao-geral">
+          <i class="fas fa-chart-line"></i>
+          <span>Visão Geral</span>
+        </button>
 
-      <div class="user-table-wrap">
-        <table class="user-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Bairro</th>
-              <th>Tipo</th>
-              <th>Descrição</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="tbody-territorios">
-            <tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">
-              Carregando...
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <button class="sidebar-item" data-section="pendentes">
+          <i class="fas fa-user-clock"></i>
+          <span>Pendentes</span>
+          <span class="sidebar-badge" id="badge-pendentes" style="display:none">0</span>
+        </button>
 
-    <!-- ── CONVITES ── -->
-    <section id="section-convites" class="admin-section">
-      <div class="section-header">
-        <div>
-          <div class="page-eyebrow">Acesso</div>
-          <h2>Convites</h2>
-        </div>
-        <div class="section-header-actions">
-          <button class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
-                  onclick="abrirModalNovoConvite()">
-            <i class="fas fa-plus" style="font-size:0.8em"></i> Novo Convite
-          </button>
-        </div>
-      </div>
+        <button class="sidebar-item" data-section="membros">
+          <i class="fas fa-users"></i>
+          <span>Membros</span>
+        </button>
 
-      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.25rem">
-        Gere links de convite para que novos membros entrem diretamente sem aguardar aprovação manual.
-        Os convites expiram em <strong style="color:var(--text-primary)">7 dias</strong>.
-      </p>
+        <button class="sidebar-item" data-section="territorios">
+          <i class="fas fa-map"></i>
+          <span>Territórios</span>
+        </button>
 
-      <div id="convites-grid" class="invite-grid">
-        <div class="empty-state" style="grid-column:1/-1">
+        <button class="sidebar-item" data-section="convites">
           <i class="fas fa-link"></i>
-          <p>Nenhum convite ativo.</p>
-        </div>
-      </div>
-    </section>
+          <span>Convites</span>
+        </button>
 
-    <!-- ── CONFIGURAÇÕES ── -->
-    <section id="section-config" class="admin-section">
-      <div class="section-header">
-        <div>
-          <div class="page-eyebrow">Configurações</div>
-          <h2>Congregação</h2>
-        </div>
-        <div class="section-header-actions">
-          <button class="btn btn-primary" id="btn-salvar-config"
-                  style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
-                  onclick="salvarConfig()">
-            <i class="fas fa-save" style="font-size:0.8em"></i> Salvar Alterações
+        <hr class="sidebar-divider" />
+
+        <span class="sidebar-section-label">Configurações</span>
+
+        <button class="sidebar-item" data-section="config">
+          <i class="fas fa-sliders-h"></i>
+          <span>Congregação</span>
+        </button>
+
+        <hr class="sidebar-divider" />
+
+        <span class="sidebar-section-label">Sistema</span>
+
+        <button class="sidebar-item" data-section="logs">
+          <i class="fas fa-history"></i>
+          <span>Auditoria</span>
+        </button>
+      </aside>
+
+      <!-- CONTEÚDO -->
+      <main class="admin-content">
+
+        <!-- ── VISÃO GERAL ── -->
+        <section id="section-visao-geral" class="admin-section active">
+          <div class="section-header">
+            <div>
+              <div class="page-eyebrow">Painel</div>
+              <h2 id="cong-nome-header">Carregando...</h2>
+            </div>
+            <div class="section-header-actions">
+              <button class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
+                onclick="navegarPara('pendentes')">
+                <i class="fas fa-user-clock" style="font-size:0.8em"></i>
+                Gerenciar Pendentes
+              </button>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card" id="stat-membros">
+              <div class="stat-label">Membros Ativos</div>
+              <div class="stat-value">—</div>
+              <div class="stat-sub">admin + auxiliar + membro</div>
+            </div>
+            <div class="stat-card accent-card" id="stat-pendentes">
+              <div class="stat-label">Aguardando Aprovação</div>
+              <div class="stat-value">—</div>
+              <div class="stat-sub">solicitações pendentes</div>
+            </div>
+            <div class="stat-card" id="stat-territorios">
+              <div class="stat-label">Territórios</div>
+              <div class="stat-value">—</div>
+              <div class="stat-sub">mapas cadastrados</div>
+            </div>
+            <div class="stat-card" id="stat-designacoes">
+              <div class="stat-label">Em Andamento</div>
+              <div class="stat-value">—</div>
+              <div class="stat-sub">designações ativas</div>
+            </div>
+          </div>
+
+          <!-- Atividade recente -->
+          <div class="section-header" style="margin-top:0.5rem">
+            <h3 style="font-size:1rem;font-weight:700">Atividade Recente</h3>
+          </div>
+          <div id="log-preview" class="log-list">
+            <div class="empty-state">
+              <i class="fas fa-history"></i>
+              <p>Carregando atividades...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── PENDENTES ── -->
+        <section id="section-pendentes" class="admin-section">
+          <div class="section-header">
+            <div>
+              <div class="page-eyebrow">Aprovação</div>
+              <h2>Usuários Pendentes</h2>
+            </div>
+          </div>
+
+          <div id="pendentes-wrap">
+            <div class="empty-state">
+              <i class="fas fa-check-circle"></i>
+              <p>Nenhum usuário aguardando aprovação.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── MEMBROS ── -->
+        <section id="section-membros" class="admin-section">
+          <div class="section-header">
+            <div>
+              <div class="page-eyebrow">Equipe</div>
+              <h2>Membros da Congregação</h2>
+            </div>
+            <div class="section-header-actions">
+              <button class="btn" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
+                onclick="navegarPara('convites')">
+                <i class="fas fa-link" style="font-size:0.8em"></i> Gerar Convite
+              </button>
+            </div>
+          </div>
+
+          <div class="user-table-wrap">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>Papel</th>
+                  <th>Membro desde</th>
+                  <th>Último acesso</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="membros-tbody">
+                <tr>
+                  <td colspan="5" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">
+                    Carregando...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ── TERRITÓRIOS ── -->
+        <section id="section-territorios" class="admin-section">
+          <div class="section-header">
+            <div>
+              <div class="page-eyebrow">Mapas</div>
+              <h2>Territórios</h2>
+            </div>
+            <div class="section-header-actions">
+              <input type="search" id="search-territorios" class="form-input" placeholder="Buscar por número ou bairro…"
+                style="width:220px;font-size:0.82rem;padding:0.45rem 0.75rem">
+              <button class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
+                onclick="abrirModalTerritorio(null)">
+                <i class="fas fa-plus" style="font-size:0.8em"></i> Novo Território
+              </button>
+            </div>
+          </div>
+
+          <div class="user-table-wrap">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Bairro</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-territorios">
+                <tr>
+                  <td colspan="6" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">
+                    Carregando...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ── CONVITES ── -->
+        <section id="section-convites" class="admin-section">
+          <div class="section-header">
+            <div>
+              <div class="page-eyebrow">Acesso</div>
+              <h2>Convites</h2>
+            </div>
+            <div class="section-header-actions">
+              <button class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
+                onclick="abrirModalNovoConvite()">
+                <i class="fas fa-plus" style="font-size:0.8em"></i> Novo Convite
+              </button>
+            </div>
+          </div>
+
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.25rem">
+            Gere links de convite para que novos membros entrem diretamente sem aguardar aprovação manual.
+            Os convites expiram em <strong style="color:var(--text-primary)">7 dias</strong>.
+          </p>
+
+          <div id="convites-grid" class="invite-grid">
+            <div class="empty-state" style="grid-column:1/-1">
+              <i class="fas fa-link"></i>
+              <p>Nenhum convite ativo.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── CONFIGURAÇÕES ── -->
+        <section id="section-config" class="admin-section">
+          <div class="section-header">
+            <div>
+              <div class="page-eyebrow">Configurações</div>
+              <h2>Congregação</h2>
+            </div>
+            <div class="section-header-actions">
+              <button class="btn btn-primary" id="btn-salvar-config"
+                style="width:auto;padding:0.55rem 1rem;font-size:0.82rem" onclick="salvarConfig()">
+                <i class="fas fa-save" style="font-size:0.8em"></i> Salvar Alterações
+              </button>
+            </div>
+          </div>
+
+          <!-- Dados da congregação -->
+          <div class="config-card">
+            <div class="config-card-header">
+              <option>AC</option>
+              <option>AL</option>
+              <option>AP</option>
+              <option>AM</option>
+              <option>BA</option>
+              <option>CE</option>
+              <option>DF</option>
+              <option>ES</option>
+              <option>GO</option>
+              <option>MA</option>
+              <option>MT</option>
+              <option>MS</option>
+              <option>MG</option>
+              <option>PA</option>
+              <option>PB</option>
+              <option>PR</option>
+              <option>PE</option>
+              <option>PI</option>
+              <option>RJ</option>
+              <option>RN</option>
+              <option>RS</option>
+              <option>RO</option>
+              <option>RR</option>
+              <option>SC</option>
+              <option>SP</option>
+              <option>SE</option>
+              <option>TO</option>
+              </select>
+            </div>
+          </div>
+    </div>
+    </div>
+
+    <!-- Grupos de designação -->
+    <div class="config-card">
+      <div class="config-card-header">
+        <h3><i class="fas fa-tags"></i> Grupos de Designação</h3>
+        <span style="font-size:0.75rem;color:var(--text-secondary)">Opções do campo "Designado Para"</span>
+      </div>
+      <div class="config-card-body">
+        <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1rem">
+          Esses grupos aparecem no formulário de registro. Arraste para reordenar.
+        </p>
+        <div class="grupos-list" id="grupos-list"></div>
+        <div class="add-grupo-row">
+          <input type="text" id="novo-grupo-input" placeholder="Nome do grupo..." />
+          <button class="btn" onclick="adicionarGrupo()" style="background:var(--bg-hover)">
+            <i class="fas fa-plus" style="font-size:0.8em"></i> Adicionar
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- Dados da congregação -->
-      <div class="config-card">
-        <div class="config-card-header">
-          <h3><i class="fas fa-church"></i> Dados da Congregação</h3>
-        </div>
-        <div class="config-card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem">
-            <div>
-              <label for="cfg-nome">Nome</label>
-              <input type="text" id="cfg-nome" placeholder="Nome da congregação" />
-            </div>
-            <div>
-              <label for="cfg-circuito">Circuito <span style="color:var(--text-disabled);font-weight:400">(opcional)</span></label>
-              <input type="text" id="cfg-circuito" placeholder="Ex: Circuito 10-B" />
-            </div>
-            <div>
-              <label for="cfg-cidade">Cidade</label>
-              <input type="text" id="cfg-cidade" placeholder="Cidade" />
-            </div>
-            <div>
-              <label for="cfg-estado">Estado (UF)</label>
-              <select id="cfg-estado">
-                <option value="">Selecione</option>
-                <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
-                <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
-                <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
-                <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
-                <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
-                <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
-                <option>SP</option><option>SE</option><option>TO</option>
-              </select>
-            </div>
+    <!-- Zona de perigo -->
+    <div class="config-card danger-zone" id="zona-perigo" style="display:none">
+      <div class="config-card-header">
+        <h3><i class="fas fa-exclamation-triangle"></i> Zona de Perigo</h3>
+      </div>
+      <div class="config-card-body">
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">
+          Transferir a administração concede controle total da congregação ao usuário selecionado.
+          Você será rebaixado para <strong style="color:var(--text-primary)">auxiliar</strong>.
+          Esta ação não pode ser desfeita sem a cooperação do novo admin.
+        </p>
+        <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label for="select-novo-admin">Transferir para</label>
+            <select id="select-novo-admin">
+              <option value="">Selecione um membro ativo...</option>
+            </select>
           </div>
+          <button class="btn btn-danger" style="width:auto;padding:0.65rem 1.1rem;margin-bottom:1.1rem"
+            onclick="abrirModalTransferencia()">
+            <i class="fas fa-exchange-alt" style="font-size:0.8em"></i> Transferir Admin
+          </button>
         </div>
       </div>
-
-      <!-- Grupos de designação -->
-      <div class="config-card">
-        <div class="config-card-header">
-          <h3><i class="fas fa-tags"></i> Grupos de Designação</h3>
-          <span style="font-size:0.75rem;color:var(--text-secondary)">Opções do campo "Designado Para"</span>
-        </div>
-        <div class="config-card-body">
-          <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1rem">
-            Esses grupos aparecem no formulário de registro. Arraste para reordenar.
-          </p>
-          <div class="grupos-list" id="grupos-list"></div>
-          <div class="add-grupo-row">
-            <input type="text" id="novo-grupo-input" placeholder="Nome do grupo..." />
-            <button class="btn" onclick="adicionarGrupo()" style="background:var(--bg-hover)">
-              <i class="fas fa-plus" style="font-size:0.8em"></i> Adicionar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Zona de perigo -->
-      <div class="config-card danger-zone" id="zona-perigo" style="display:none">
-        <div class="config-card-header">
-          <h3><i class="fas fa-exclamation-triangle"></i> Zona de Perigo</h3>
-        </div>
-        <div class="config-card-body">
-          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">
-            Transferir a administração concede controle total da congregação ao usuário selecionado.
-            Você será rebaixado para <strong style="color:var(--text-primary)">auxiliar</strong>.
-            Esta ação não pode ser desfeita sem a cooperação do novo admin.
-          </p>
-          <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap">
-            <div style="flex:1;min-width:200px">
-              <label for="select-novo-admin">Transferir para</label>
-              <select id="select-novo-admin">
-                <option value="">Selecione um membro ativo...</option>
-              </select>
-            </div>
-            <button class="btn btn-danger" style="width:auto;padding:0.65rem 1.1rem;margin-bottom:1.1rem"
-                    onclick="abrirModalTransferencia()">
-              <i class="fas fa-exchange-alt" style="font-size:0.8em"></i> Transferir Admin
-            </button>
-          </div>
-        </div>
-      </div>
+    </div>
     </section>
 
     <!-- ── LOGS ── -->
@@ -1002,8 +1230,7 @@
           <h2>Auditoria</h2>
         </div>
         <div class="section-header-actions">
-          <button class="btn" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem"
-                  onclick="carregarLogs()">
+          <button class="btn" style="width:auto;padding:0.55rem 1rem;font-size:0.82rem" onclick="carregarLogs()">
             <i class="fas fa-sync-alt" style="font-size:0.8em"></i> Atualizar
           </button>
         </div>
@@ -1016,369 +1243,376 @@
       </div>
     </section>
 
-  </main>
-</div>
-
-<!-- ── MODAIS ── -->
-
-<!-- Modal território -->
-<div id="modal-territorio" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-territorio-title">Novo Território</span>
-      <button class="modal-close" onclick="fecharModal('modal-territorio')">
-        <i class="fas fa-times"></i>
-      </button>
+    </main>
     </div>
-    <div class="modal-body">
-      <input type="hidden" id="m-ter-id">
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem;margin-bottom:1rem">
-        <div>
-          <label for="m-ter-numero" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">
-            Número <span style="color:var(--error)">*</span>
-          </label>
-          <input type="number" id="m-ter-numero" class="form-input" min="1" placeholder="Ex: 1" required>
+
+    <!-- ── MODAIS ── -->
+
+    <!-- Modal território -->
+    <div id="modal-territorio" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title" id="modal-territorio-title">Novo Território</span>
+          <button class="modal-close" onclick="fecharModal('modal-territorio')">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <div>
-          <label for="m-ter-bairro" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">
-            Bairro <span style="color:var(--error)">*</span>
-          </label>
-          <input type="text" id="m-ter-bairro" class="form-input" placeholder="Ex: Centro" required>
+        <div class="modal-body">
+          <input type="hidden" id="m-ter-id">
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem;margin-bottom:1rem">
+            <div>
+              <label for="m-ter-numero" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">
+                Número <span style="color:var(--error)">*</span>
+              </label>
+              <input type="number" id="m-ter-numero" class="form-input" min="1" placeholder="Ex: 1" required>
+            </div>
+            <div>
+              <label for="m-ter-bairro" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">
+                Bairro <span style="color:var(--error)">*</span>
+              </label>
+              <input type="text" id="m-ter-bairro" class="form-input" placeholder="Ex: Centro" required>
+            </div>
+          </div>
+          <div style="margin-bottom:1rem">
+            <label for="m-ter-tipo"
+              style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">Tipo</label>
+            <select id="m-ter-tipo" class="form-input">
+              <option value="residencial">Residencial</option>
+              <option value="comercial">Comercial</option>
+              <option value="rural">Rural</option>
+              <option value="especial">Especial</option>
+            </select>
+          </div>
+          <div style="margin-bottom:1rem">
+            <label for="m-ter-descricao"
+              style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">Descrição</label>
+            <textarea id="m-ter-descricao" class="form-input" rows="2" placeholder="Observações sobre o território…"
+              style="resize:vertical"></textarea>
+          </div>
+          <div>
+            <label for="m-ter-imagem" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">URL
+              da Imagem do Mapa</label>
+            <input type="url" id="m-ter-imagem" class="form-input" placeholder="https://…">
+          </div>
+        </div>
+        <div class="modal-actions-row">
+          <button class="btn" onclick="fecharModal('modal-territorio')" style="width:auto">Cancelar</button>
+          <button class="btn btn-primary" id="btn-salvar-territorio" style="width:auto" onclick="salvarTerritorio()">
+            <i class="fas fa-save"></i> Salvar
+          </button>
         </div>
       </div>
-      <div style="margin-bottom:1rem">
-        <label for="m-ter-tipo" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">Tipo</label>
-        <select id="m-ter-tipo" class="form-input">
-          <option value="residencial">Residencial</option>
-          <option value="comercial">Comercial</option>
-          <option value="rural">Rural</option>
-          <option value="especial">Especial</option>
-        </select>
-      </div>
-      <div style="margin-bottom:1rem">
-        <label for="m-ter-descricao" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">Descrição</label>
-        <textarea id="m-ter-descricao" class="form-input" rows="2" placeholder="Observações sobre o território…" style="resize:vertical"></textarea>
-      </div>
-      <div>
-        <label for="m-ter-imagem" style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.35rem">URL da Imagem do Mapa</label>
-        <input type="url" id="m-ter-imagem" class="form-input" placeholder="https://…">
-      </div>
     </div>
-    <div class="modal-actions-row">
-      <button class="btn" onclick="fecharModal('modal-territorio')" style="width:auto">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar-territorio" style="width:auto" onclick="salvarTerritorio()">
-        <i class="fas fa-save"></i> Salvar
-      </button>
-    </div>
-  </div>
-</div>
 
-<!-- Modal rejeitar -->
-<div id="modal-rejeitar" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title">Rejeitar Usuário</span>
-      <button class="modal-close" onclick="fecharModal('modal-rejeitar')">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p>Informe o motivo da rejeição. O usuário poderá visualizar este texto.</p>
-      <label for="motivo-input">Motivo <span style="color:var(--error)">*</span></label>
-      <textarea id="motivo-input" rows="3"
-                placeholder="Ex: Não identificamos este publicador em nossa congregação."
-                style="resize:vertical"></textarea>
-      <div id="motivo-erro" style="display:none;font-size:0.78rem;color:var(--error);margin-top:0.25rem">
-        O motivo é obrigatório (mínimo 10 caracteres).
+    <!-- Modal rejeitar -->
+    <div id="modal-rejeitar" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title">Rejeitar Usuário</span>
+          <button class="modal-close" onclick="fecharModal('modal-rejeitar')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Informe o motivo da rejeição. O usuário poderá visualizar este texto.</p>
+          <label for="motivo-input">Motivo <span style="color:var(--error)">*</span></label>
+          <textarea id="motivo-input" rows="3" placeholder="Ex: Não identificamos este publicador em nossa congregação."
+            style="resize:vertical"></textarea>
+          <div id="motivo-erro" style="display:none;font-size:0.78rem;color:var(--error);margin-top:0.25rem">
+            O motivo é obrigatório (mínimo 10 caracteres).
+          </div>
+        </div>
+        <div class="modal-actions-row">
+          <button class="btn" onclick="fecharModal('modal-rejeitar')" style="width:auto">Cancelar</button>
+          <button class="btn btn-danger" id="btn-confirmar-rejeitar" style="width:auto" onclick="confirmarRejeicao()">
+            Confirmar Rejeição
+          </button>
+        </div>
       </div>
     </div>
-    <div class="modal-actions-row">
-      <button class="btn" onclick="fecharModal('modal-rejeitar')" style="width:auto">Cancelar</button>
-      <button class="btn btn-danger" id="btn-confirmar-rejeitar" style="width:auto" onclick="confirmarRejeicao()">
-        Confirmar Rejeição
-      </button>
-    </div>
-  </div>
-</div>
 
-<!-- Modal novo convite -->
-<div id="modal-convite" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title">Novo Convite</span>
-      <button class="modal-close" onclick="fecharModal('modal-convite')">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p>Gere um link de acesso direto. O convidado entra sem precisar de aprovação manual.</p>
+    <!-- Modal novo convite -->
+    <div id="modal-convite" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title">Novo Convite</span>
+          <button class="modal-close" onclick="fecharModal('modal-convite')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Gere um link de acesso direto. O convidado entra sem precisar de aprovação manual.</p>
 
-      <label for="convite-papel">Papel concedido</label>
-      <select id="convite-papel">
-        <option value="membro">Membro</option>
-        <option value="auxiliar">Auxiliar</option>
-      </select>
+          <label for="convite-papel">Papel concedido</label>
+          <select id="convite-papel">
+            <option value="membro">Membro</option>
+            <option value="auxiliar">Auxiliar</option>
+          </select>
 
-      <label for="convite-email">
-        E-mail específico
-        <span style="color:var(--text-disabled);font-weight:400">(opcional — restringe o link a um e-mail)</span>
-      </label>
-      <input type="email" id="convite-email" placeholder="opcional@email.com" />
-    </div>
-    <div class="modal-actions-row">
-      <button class="btn" onclick="fecharModal('modal-convite')" style="width:auto">Cancelar</button>
-      <button class="btn btn-primary" style="width:auto" onclick="criarConvite()">
-        <i class="fas fa-link" style="font-size:0.8em"></i> Gerar Convite
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal transferir admin -->
-<div id="modal-transferir" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title" style="color:var(--error)">
-        <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;font-size:0.9em"></i>
-        Confirmar Transferência
-      </span>
-      <button class="modal-close" onclick="fecharModal('modal-transferir')">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p>Você está prestes a transferir a administração para <strong id="nome-novo-admin" style="color:var(--text-primary)"></strong>.</p>
-      <p>Você será rebaixado para <strong style="color:var(--text-primary)">auxiliar</strong> e perderá acesso às configurações da congregação.</p>
-      <div style="background:var(--error-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:0.75rem;margin-top:0.5rem">
-        <p style="color:var(--error);font-size:0.8rem;font-weight:500">
-          <i class="fas fa-exclamation-circle" style="margin-right:0.35rem"></i>
-          Esta ação não pode ser desfeita sem a cooperação do novo admin.
-        </p>
+          <label for="convite-email">
+            E-mail específico
+            <span style="color:var(--text-disabled);font-weight:400">(opcional — restringe o link a um e-mail)</span>
+          </label>
+          <input type="email" id="convite-email" placeholder="opcional@email.com" />
+        </div>
+        <div class="modal-actions-row">
+          <button class="btn" onclick="fecharModal('modal-convite')" style="width:auto">Cancelar</button>
+          <button class="btn btn-primary" style="width:auto" onclick="criarConvite()">
+            <i class="fas fa-link" style="font-size:0.8em"></i> Gerar Convite
+          </button>
+        </div>
       </div>
     </div>
-    <div class="modal-actions-row">
-      <button class="btn" onclick="fecharModal('modal-transferir')" style="width:auto">Cancelar</button>
-      <button class="btn btn-danger" style="width:auto" onclick="confirmarTransferencia()">
-        Sim, Transferir Admin
-      </button>
+
+    <!-- Modal transferir admin -->
+    <div id="modal-transferir" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title" style="color:var(--error)">
+            <i class="fas fa-exclamation-triangle" style="margin-right:0.4rem;font-size:0.9em"></i>
+            Confirmar Transferência
+          </span>
+          <button class="modal-close" onclick="fecharModal('modal-transferir')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Você está prestes a transferir a administração para <strong id="nome-novo-admin"
+              style="color:var(--text-primary)"></strong>.</p>
+          <p>Você será rebaixado para <strong style="color:var(--text-primary)">auxiliar</strong> e perderá acesso às
+            configurações da congregação.</p>
+          <div
+            style="background:var(--error-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:0.75rem;margin-top:0.5rem">
+            <p style="color:var(--error);font-size:0.8rem;font-weight:500">
+              <i class="fas fa-exclamation-circle" style="margin-right:0.35rem"></i>
+              Esta ação não pode ser desfeita sem a cooperação do novo admin.
+            </p>
+          </div>
+        </div>
+        <div class="modal-actions-row">
+          <button class="btn" onclick="fecharModal('modal-transferir')" style="width:auto">Cancelar</button>
+          <button class="btn btn-danger" style="width:auto" onclick="confirmarTransferencia()">
+            Sim, Transferir Admin
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- Modal alterar papel -->
-<div id="modal-papel" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-header">
-      <span class="modal-title">Alterar Papel</span>
-      <button class="modal-close" onclick="fecharModal('modal-papel')">
-        <i class="fas fa-times"></i>
-      </button>
+    <!-- Modal alterar papel -->
+    <div id="modal-papel" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title">Alterar Papel</span>
+          <button class="modal-close" onclick="fecharModal('modal-papel')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Selecione o novo papel para <strong id="nome-papel-usuario" style="color:var(--text-primary)"></strong>.
+          </p>
+          <label for="select-novo-papel">Novo Papel</label>
+          <select id="select-novo-papel">
+            <option value="membro">Membro</option>
+            <option value="auxiliar">Auxiliar</option>
+          </select>
+        </div>
+        <div class="modal-actions-row">
+          <button class="btn" onclick="fecharModal('modal-papel')" style="width:auto">Cancelar</button>
+          <button class="btn btn-primary" style="width:auto" onclick="confirmarAlteracaoPapel()">
+            Salvar
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="modal-body">
-      <p>Selecione o novo papel para <strong id="nome-papel-usuario" style="color:var(--text-primary)"></strong>.</p>
-      <label for="select-novo-papel">Novo Papel</label>
-      <select id="select-novo-papel">
-        <option value="membro">Membro</option>
-        <option value="auxiliar">Auxiliar</option>
-      </select>
-    </div>
-    <div class="modal-actions-row">
-      <button class="btn" onclick="fecharModal('modal-papel')" style="width:auto">Cancelar</button>
-      <button class="btn btn-primary" style="width:auto" onclick="confirmarAlteracaoPapel()">
-        Salvar
-      </button>
-    </div>
-  </div>
-</div>
 
-<!-- Container de toasts -->
-<div class="toast-container" id="toast-container"></div>
+    <!-- Container de toasts -->
+    <div class="toast-container" id="toast-container"></div>
 
-<script>
-// ================================================================
-//  ESTADO GLOBAL
-// ================================================================
-const state = {
-    congregacaoId: null,
-    adminId: null,
-    adminPapel: null,
-    usuarioAlvoId: null,   // para modais de decisão
-    usuarioAlvoNome: null,
-    grupos: [],
-};
+    <script>
+      // ================================================================
+      //  ESTADO GLOBAL
+      // ================================================================
+      const state = {
+        congregacaoId: null,
+        adminId: null,
+        adminPapel: null,
+        usuarioAlvoId: null,   // para modais de decisão
+        usuarioAlvoNome: null,
+        grupos: [],
+      };
 
-// ================================================================
-//  INICIALIZAÇÃO
-// ================================================================
-document.addEventListener('DOMContentLoaded', async () => {
-    // Verificar autenticação
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
-    if (!session) { window.location.replace('../login.html'); return; }
+      // ================================================================
+      //  INICIALIZAÇÃO
+      // ================================================================
+      document.addEventListener('DOMContentLoaded', async () => {
+        // Verificar autenticação
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) { window.location.replace('../login.html'); return; }
 
-    state.adminId = session.user.id;
+        state.adminId = session.user.id;
 
-    // Carregar perfil do admin
-    const { data: perfil } = await window.supabaseClient
-        .from('usuarios')
-        .select('nome, papel, congregacao_id')
-        .eq('id', state.adminId)
-        .single();
+        // Carregar perfil do admin
+        const { data: perfil } = await window.supabaseClient
+          .from('usuarios')
+          .select('nome, papel, congregacao_id')
+          .eq('id', state.adminId)
+          .single();
 
-    if (!perfil || !['admin', 'auxiliar'].includes(perfil.papel)) {
-        window.location.replace('../index.html');
-        return;
-    }
+        if (!perfil || !['admin', 'auxiliar', 'master'].includes(perfil.papel)) {
+          window.location.replace('../index.html');
+          return;
+        }
 
-    if (perfil.papel === 'master') {
-      document.getElementById('nav-master').style.display = 'inline-flex';
-    }
+        if (perfil.papel === 'master') {
+          document.getElementById('nav-master').style.display = 'inline-flex';
+        }
 
-    state.congregacaoId = perfil.congregacao_id;
-    state.adminPapel    = perfil.papel;
+        state.congregacaoId = perfil.congregacao_id;
+        state.adminPapel = perfil.papel;
 
-    document.getElementById('admin-nome').textContent = perfil.nome;
+        document.getElementById('admin-nome').textContent = perfil.nome;
 
-    // Zona de perigo só para admin
-    if (perfil.papel === 'admin') {
-        document.getElementById('zona-perigo').style.display = 'block';
-    }
+        // Zona de perigo só para admin
+        if (perfil.papel === 'admin') {
+          document.getElementById('zona-perigo').style.display = 'block';
+        }
 
-    // Carregar dados iniciais
-    await Promise.all([
-        carregarEstatisticas(),
-        carregarLogPreview(),
-        carregarPendentes(),
-        carregarMembros(),
-        carregarConvites(),
-        carregarConfig(),
-    ]);
+        // Carregar dados iniciais
+        await Promise.all([
+          carregarEstatisticas(),
+          carregarLogPreview(),
+          carregarPendentes(),
+          carregarMembros(),
+          carregarConvites(),
+          carregarConfig(),
+        ]);
 
-    // Realtime — novos pendentes
-    window.supabaseClient
-        .channel('admin-pendentes')
-        .on('postgres_changes', {
+        // Realtime — novos pendentes
+        window.supabaseClient
+          .channel('admin-pendentes')
+          .on('postgres_changes', {
             event: 'INSERT', schema: 'public', table: 'usuarios',
             filter: `congregacao_id=eq.${state.congregacaoId}`
-        }, (payload) => {
+          }, (payload) => {
             if (payload.new.papel === 'pendente') {
-                mostrarToast('Nova solicitação de acesso recebida.', 'info');
-                carregarEstatisticas();
-                carregarPendentes();
+              mostrarToast('Nova solicitação de acesso recebida.', 'info');
+              carregarEstatisticas();
+              carregarPendentes();
             }
-        })
-        .subscribe();
+          })
+          .subscribe();
 
-    // Navegação sidebar
-    document.querySelectorAll('.sidebar-item[data-section]').forEach(btn => {
-        btn.addEventListener('click', () => navegarPara(btn.dataset.section));
-    });
+        // Navegação sidebar
+        document.querySelectorAll('.sidebar-item[data-section]').forEach(btn => {
+          btn.addEventListener('click', () => navegarPara(btn.dataset.section));
+        });
 
-    // Logout
-    document.getElementById('logout-btn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await window.supabaseClient.auth.signOut();
-        window.location.replace('../login.html');
-    });
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async (e) => {
+          e.preventDefault();
+          await window.supabaseClient.auth.signOut();
+          window.location.replace('../login.html');
+        });
 
-    // Fechar modais com ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape')
+        // Fechar modais com ESC
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape')
             document.querySelectorAll('.modal-overlay.open')
-                    .forEach(m => m.classList.remove('open'));
-    });
+              .forEach(m => m.classList.remove('open'));
+        });
 
-    // Enter no input de grupo
-    document.getElementById('novo-grupo-input').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); adicionarGrupo(); }
-    });
-});
+        // Enter no input de grupo
+        document.getElementById('novo-grupo-input').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); adicionarGrupo(); }
+        });
+      });
 
-// ================================================================
-//  NAVEGAÇÃO
-// ================================================================
-function navegarPara(section) {
-    document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      // ================================================================
+      //  NAVEGAÇÃO
+      // ================================================================
+      function navegarPara(section) {
+        document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
 
-    document.querySelector(`.sidebar-item[data-section="${section}"]`)?.classList.add('active');
-    document.getElementById(`section-${section}`)?.classList.add('active');
+        document.querySelector(`.sidebar-item[data-section="${section}"]`)?.classList.add('active');
+        document.getElementById(`section-${section}`)?.classList.add('active');
 
-    // Carregar logs ao abrir a aba
-    if (section === 'logs') carregarLogs();
-    if (section === 'territorios') carregarTerritorios();
-}
+        // Carregar logs ao abrir a aba
+        if (section === 'logs') carregarLogs();
+        if (section === 'territorios') carregarTerritorios();
+      }
 
-// ================================================================
-//  ESTATÍSTICAS
-// ================================================================
-async function carregarEstatisticas() {
-    const cid = state.congregacaoId;
+      // ================================================================
+      //  ESTATÍSTICAS
+      // ================================================================
+      async function carregarEstatisticas() {
+        const cid = state.congregacaoId;
 
-    const [membros, pendentes, territorios, designacoes, congData] = await Promise.all([
-        window.supabaseClient.from('usuarios')
+        const [membros, pendentes, territorios, designacoes, congData] = await Promise.all([
+          window.supabaseClient.from('usuarios')
             .select('id', { count: 'exact', head: true })
-            .eq('congregacao_id', cid).in('papel', ['admin','auxiliar','membro']),
-        window.supabaseClient.from('usuarios')
+            .eq('congregacao_id', cid).in('papel', ['admin', 'auxiliar', 'membro']),
+          window.supabaseClient.from('usuarios')
             .select('id', { count: 'exact', head: true })
             .eq('congregacao_id', cid).eq('papel', 'pendente'),
-        window.supabaseClient.from('territorios')
+          window.supabaseClient.from('territorios')
             .select('id', { count: 'exact', head: true })
             .eq('congregacao_id', cid).eq('ativo', true),
-        window.supabaseClient.from('designacoes')
+          window.supabaseClient.from('designacoes')
             .select('id', { count: 'exact', head: true })
             .eq('congregacao_id', cid).eq('status', 'em_andamento'),
-        window.supabaseClient.from('congregacoes')
+          window.supabaseClient.from('congregacoes')
             .select('nome').eq('id', cid).single(),
-    ]);
+        ]);
 
-    // Cabeçalho
-    if (congData.data) {
-        document.getElementById('cong-nome-header').textContent = congData.data.nome;
-    }
+        // Cabeçalho
+        if (congData.data) {
+          document.getElementById('cong-nome-header').textContent = congData.data.nome;
+        }
 
-    // Stats
-    setStatValue('stat-membros', membros.count ?? 0);
-    setStatValue('stat-pendentes', pendentes.count ?? 0);
-    setStatValue('stat-territorios', territorios.count ?? 0);
-    setStatValue('stat-designacoes', designacoes.count ?? 0);
+        // Stats
+        setStatValue('stat-membros', membros.count ?? 0);
+        setStatValue('stat-pendentes', pendentes.count ?? 0);
+        setStatValue('stat-territorios', territorios.count ?? 0);
+        setStatValue('stat-designacoes', designacoes.count ?? 0);
 
-    // Badge sidebar
-    const total = pendentes.count ?? 0;
-    const badge = document.getElementById('badge-pendentes');
-    badge.textContent = total;
-    badge.style.display = total > 0 ? 'flex' : 'none';
-}
+        // Badge sidebar
+        const total = pendentes.count ?? 0;
+        const badge = document.getElementById('badge-pendentes');
+        badge.textContent = total;
+        badge.style.display = total > 0 ? 'flex' : 'none';
+      }
 
-function setStatValue(cardId, value) {
-    document.querySelector(`#${cardId} .stat-value`).textContent = value;
-}
+      function setStatValue(cardId, value) {
+        document.querySelector(`#${cardId} .stat-value`).textContent = value;
+      }
 
-// ================================================================
-//  PENDENTES
-// ================================================================
-async function carregarPendentes() {
-    const { data, error } = await window.supabaseClient
-        .from('usuarios')
-        .select('id, nome, email, criado_em')
-        .eq('congregacao_id', state.congregacaoId)
-        .eq('papel', 'pendente')
-        .order('criado_em', { ascending: true });
+      // ================================================================
+      //  PENDENTES
+      // ================================================================
+      async function carregarPendentes() {
+        const { data, error } = await window.supabaseClient
+          .from('usuarios')
+          .select('id, nome, email, criado_em')
+          .eq('congregacao_id', state.congregacaoId)
+          .eq('papel', 'pendente')
+          .order('criado_em', { ascending: true });
 
-    const wrap = document.getElementById('pendentes-wrap');
+        const wrap = document.getElementById('pendentes-wrap');
 
-    if (!data || data.length === 0) {
-        wrap.innerHTML = `
+        if (!data || data.length === 0) {
+          wrap.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-check-circle" style="color:var(--success);opacity:0.4"></i>
                 <p>Nenhum usuário aguardando aprovação. Tudo em ordem!</p>
             </div>`;
-        return;
-    }
+          return;
+        }
 
-    const rows = data.map(u => {
-        const dias = Math.floor((Date.now() - new Date(u.criado_em)) / 86400000);
-        const urgente = dias >= 3;
-        return `
+        const rows = data.map(u => {
+          const dias = Math.floor((Date.now() - new Date(u.criado_em)) / 86400000);
+          const urgente = dias >= 3;
+          return `
         <div class="user-table-wrap" style="margin-bottom:0.75rem;border-radius:var(--radius-lg)">
         <table class="user-table" style="min-width:0">
           <tbody>
@@ -1418,47 +1652,47 @@ async function carregarPendentes() {
           </tbody>
         </table>
         </div>`;
-    }).join('');
+        }).join('');
 
-    wrap.innerHTML = rows;
-}
+        wrap.innerHTML = rows;
+      }
 
-// ================================================================
-//  MEMBROS
-// ================================================================
-async function carregarMembros() {
-    const { data } = await window.supabaseClient
-        .from('usuarios')
-        .select('id, nome, email, papel, criado_em, ultimo_acesso')
-        .eq('congregacao_id', state.congregacaoId)
-        .in('papel', ['admin','auxiliar','membro'])
-        .order('criado_em', { ascending: true });
+      // ================================================================
+      //  MEMBROS
+      // ================================================================
+      async function carregarMembros() {
+        const { data } = await window.supabaseClient
+          .from('usuarios')
+          .select('id, nome, email, papel, criado_em, ultimo_acesso')
+          .eq('congregacao_id', state.congregacaoId)
+          .in('papel', ['admin', 'auxiliar', 'membro'])
+          .order('criado_em', { ascending: true });
 
-    const tbody = document.getElementById('membros-tbody');
+        const tbody = document.getElementById('membros-tbody');
 
-    if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">Nenhum membro encontrado.</td></tr>`;
-        return;
-    }
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">Nenhum membro encontrado.</td></tr>`;
+          return;
+        }
 
-    // Preencher select de novo admin
-    const selectAdmin = document.getElementById('select-novo-admin');
-    selectAdmin.innerHTML = '<option value="">Selecione um membro ativo...</option>';
+        // Preencher select de novo admin
+        const selectAdmin = document.getElementById('select-novo-admin');
+        selectAdmin.innerHTML = '<option value="">Selecione um membro ativo...</option>';
 
-    tbody.innerHTML = data.map(u => {
-        const ehProprioAdmin = u.id === state.adminId;
-        const podeAlterar    = state.adminPapel === 'admin' && !ehProprioAdmin && u.papel !== 'admin';
-        const podeRemover    = state.adminPapel === 'admin' && !ehProprioAdmin;
+        tbody.innerHTML = data.map(u => {
+          const ehProprioAdmin = u.id === state.adminId;
+          const podeAlterar = state.adminPapel === 'admin' && !ehProprioAdmin && u.papel !== 'admin';
+          const podeRemover = state.adminPapel === 'admin' && !ehProprioAdmin;
 
-        // Adicionar ao select de transferência
-        if (!ehProprioAdmin && ['membro','auxiliar'].includes(u.papel)) {
+          // Adicionar ao select de transferência
+          if (!ehProprioAdmin && ['membro', 'auxiliar'].includes(u.papel)) {
             const opt = document.createElement('option');
             opt.value = u.id;
             opt.textContent = `${u.nome} (${u.papel})`;
             selectAdmin.appendChild(opt);
-        }
+          }
 
-        return `
+          return `
         <tr>
           <td>
             <div class="user-info">
@@ -1483,42 +1717,42 @@ async function carregarMembros() {
             </div>
           </td>
         </tr>`;
-    }).join('');
-}
+        }).join('');
+      }
 
-// ================================================================
-//  CONVITES
-// ================================================================
-async function carregarConvites() {
-    const { data } = await window.supabaseClient
-        .from('convites')
-        .select('id, token, papel_destino, email_destino, usado, expira_em, criado_em')
-        .eq('congregacao_id', state.congregacaoId)
-        .order('criado_em', { ascending: false })
-        .limit(20);
+      // ================================================================
+      //  CONVITES
+      // ================================================================
+      async function carregarConvites() {
+        const { data } = await window.supabaseClient
+          .from('convites')
+          .select('id, token, papel_destino, email_destino, usado, expira_em, criado_em')
+          .eq('congregacao_id', state.congregacaoId)
+          .order('criado_em', { ascending: false })
+          .limit(20);
 
-    const grid = document.getElementById('convites-grid');
+        const grid = document.getElementById('convites-grid');
 
-    if (!data || data.length === 0) {
-        grid.innerHTML = `
+        if (!data || data.length === 0) {
+          grid.innerHTML = `
             <div class="empty-state" style="grid-column:1/-1">
                 <i class="fas fa-link"></i>
                 <p>Nenhum convite ainda. Crie o primeiro!</p>
             </div>`;
-        return;
-    }
+          return;
+        }
 
-    const baseUrl = window.location.origin;
+        const baseUrl = window.location.origin;
 
-    grid.innerHTML = data.map(c => {
-        const expirado = new Date(c.expira_em) < new Date();
-        const link = `${baseUrl}/Cadastro.html?convite=${encodeURIComponent(c.token)}`;
-        const statusClass = c.usado ? 'used' : expirado ? 'expired' : '';
-        const statusLabel = c.usado ? `<span class="badge badge-done">Usado</span>` :
-                            expirado ? `<span class="badge" style="background:var(--error-dim);color:var(--error)">Expirado</span>` :
-                            `<span class="badge badge-active">Ativo</span>`;
+        grid.innerHTML = data.map(c => {
+          const expirado = new Date(c.expira_em) < new Date();
+          const link = `${baseUrl}/Cadastro.html?convite=${encodeURIComponent(c.token)}`;
+          const statusClass = c.usado ? 'used' : expirado ? 'expired' : '';
+          const statusLabel = c.usado ? `<span class="badge badge-done">Usado</span>` :
+            expirado ? `<span class="badge" style="background:var(--error-dim);color:var(--error)">Expirado</span>` :
+              `<span class="badge badge-active">Ativo</span>`;
 
-        return `
+          return `
         <div class="invite-card ${statusClass}">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
             ${badgePapel(c.papel_destino)}
@@ -1542,187 +1776,187 @@ async function carregarConvites() {
               </button>` : ''}
           </div>
         </div>`;
-    }).join('');
-}
+        }).join('');
+      }
 
-async function criarConvite() {
-    const papel = document.getElementById('convite-papel').value;
-    const email = document.getElementById('convite-email').value.trim() || null;
+      async function criarConvite() {
+        const papel = document.getElementById('convite-papel').value;
+        const email = document.getElementById('convite-email').value.trim() || null;
 
-    const { error } = await window.supabaseClient
-        .from('convites')
-        .insert({
+        const { error } = await window.supabaseClient
+          .from('convites')
+          .insert({
             congregacao_id: state.congregacaoId,
-            criado_por:     state.adminId,
-            papel_destino:  papel,
-            email_destino:  email,
-        });
+            criado_por: state.adminId,
+            papel_destino: papel,
+            email_destino: email,
+          });
 
-    if (error) { mostrarToast('Erro ao criar convite.', 'error'); return; }
+        if (error) { mostrarToast('Erro ao criar convite.', 'error'); return; }
 
-    fecharModal('modal-convite');
-    document.getElementById('convite-email').value = '';
-    mostrarToast('Convite criado com sucesso!', 'success');
-    carregarConvites();
-    navegarPara('convites');
-}
+        fecharModal('modal-convite');
+        document.getElementById('convite-email').value = '';
+        mostrarToast('Convite criado com sucesso!', 'success');
+        carregarConvites();
+        navegarPara('convites');
+      }
 
-async function cancelarConvite(id) {
-    const { error } = await window.supabaseClient
-        .from('convites').delete().eq('id', id);
-    if (!error) { mostrarToast('Convite cancelado.', 'success'); carregarConvites(); }
-}
+      async function cancelarConvite(id) {
+        const { error } = await window.supabaseClient
+          .from('convites').delete().eq('id', id);
+        if (!error) { mostrarToast('Convite cancelado.', 'success'); carregarConvites(); }
+      }
 
-// ================================================================
-//  DECISÕES DE USUÁRIO
-// ================================================================
-async function aprovarUsuario(usuarioId, papel) {
-    const { data, error } = await window.supabaseClient
-        .rpc('fn_decidir_usuario', {
+      // ================================================================
+      //  DECISÕES DE USUÁRIO
+      // ================================================================
+      async function aprovarUsuario(usuarioId, papel) {
+        const { data, error } = await window.supabaseClient
+          .rpc('fn_decidir_usuario', {
             p_usuario_id: usuarioId,
             p_decisao: 'aprovar',
             p_papel: papel,
             p_motivo: null,
-        });
+          });
 
-    if (error || data?.erro) {
-        mostrarToast(data?.erro || 'Erro ao aprovar usuário.', 'error');
-        return;
-    }
+        if (error || data?.erro) {
+          mostrarToast(data?.erro || 'Erro ao aprovar usuário.', 'error');
+          return;
+        }
 
-    mostrarToast(`Usuário aprovado como ${papel}!`, 'success');
-    await Promise.all([carregarPendentes(), carregarMembros(), carregarEstatisticas()]);
-}
+        mostrarToast(`Usuário aprovado como ${papel}!`, 'success');
+        await Promise.all([carregarPendentes(), carregarMembros(), carregarEstatisticas()]);
+      }
 
-function abrirModalRejeitar(id, nome) {
-    state.usuarioAlvoId   = id;
-    state.usuarioAlvoNome = nome;
-    document.getElementById('motivo-input').value = '';
-    document.getElementById('motivo-erro').style.display = 'none';
-    abrirModal('modal-rejeitar');
-}
+      function abrirModalRejeitar(id, nome) {
+        state.usuarioAlvoId = id;
+        state.usuarioAlvoNome = nome;
+        document.getElementById('motivo-input').value = '';
+        document.getElementById('motivo-erro').style.display = 'none';
+        abrirModal('modal-rejeitar');
+      }
 
-async function confirmarRejeicao() {
-    const motivo = document.getElementById('motivo-input').value.trim();
-    if (motivo.length < 10) {
-        document.getElementById('motivo-erro').style.display = 'block';
-        return;
-    }
+      async function confirmarRejeicao() {
+        const motivo = document.getElementById('motivo-input').value.trim();
+        if (motivo.length < 10) {
+          document.getElementById('motivo-erro').style.display = 'block';
+          return;
+        }
 
-    const { data, error } = await window.supabaseClient
-        .rpc('fn_decidir_usuario', {
+        const { data, error } = await window.supabaseClient
+          .rpc('fn_decidir_usuario', {
             p_usuario_id: state.usuarioAlvoId,
             p_decisao: 'rejeitar',
             p_papel: null,
             p_motivo: motivo,
-        });
+          });
 
-    if (error || data?.erro) {
-        mostrarToast(data?.erro || 'Erro ao rejeitar.', 'error');
-        return;
-    }
+        if (error || data?.erro) {
+          mostrarToast(data?.erro || 'Erro ao rejeitar.', 'error');
+          return;
+        }
 
-    fecharModal('modal-rejeitar');
-    mostrarToast('Usuário rejeitado.', 'success');
-    await Promise.all([carregarPendentes(), carregarMembros(), carregarEstatisticas()]);
-}
+        fecharModal('modal-rejeitar');
+        mostrarToast('Usuário rejeitado.', 'success');
+        await Promise.all([carregarPendentes(), carregarMembros(), carregarEstatisticas()]);
+      }
 
-// ================================================================
-//  PAPEL DE MEMBRO
-// ================================================================
-function abrirModalPapel(id, nome, papelAtual) {
-    state.usuarioAlvoId   = id;
-    state.usuarioAlvoNome = nome;
-    document.getElementById('nome-papel-usuario').textContent = nome;
-    document.getElementById('select-novo-papel').value = papelAtual !== 'membro' ? papelAtual : 'membro';
-    abrirModal('modal-papel');
-}
+      // ================================================================
+      //  PAPEL DE MEMBRO
+      // ================================================================
+      function abrirModalPapel(id, nome, papelAtual) {
+        state.usuarioAlvoId = id;
+        state.usuarioAlvoNome = nome;
+        document.getElementById('nome-papel-usuario').textContent = nome;
+        document.getElementById('select-novo-papel').value = papelAtual !== 'membro' ? papelAtual : 'membro';
+        abrirModal('modal-papel');
+      }
 
-async function confirmarAlteracaoPapel() {
-    const novoPapel = document.getElementById('select-novo-papel').value;
+      async function confirmarAlteracaoPapel() {
+        const novoPapel = document.getElementById('select-novo-papel').value;
 
-    const { error } = await window.supabaseClient
-        .from('usuarios')
-        .update({ papel: novoPapel })
-        .eq('id', state.usuarioAlvoId)
-        .eq('congregacao_id', state.congregacaoId);
+        const { error } = await window.supabaseClient
+          .from('usuarios')
+          .update({ papel: novoPapel })
+          .eq('id', state.usuarioAlvoId)
+          .eq('congregacao_id', state.congregacaoId);
 
-    if (error) { mostrarToast('Erro ao alterar papel.', 'error'); return; }
+        if (error) { mostrarToast('Erro ao alterar papel.', 'error'); return; }
 
-    fecharModal('modal-papel');
-    mostrarToast(`Papel atualizado para ${novoPapel}.`, 'success');
-    carregarMembros();
-}
+        fecharModal('modal-papel');
+        mostrarToast(`Papel atualizado para ${novoPapel}.`, 'success');
+        carregarMembros();
+      }
 
-// ================================================================
-//  REMOVER MEMBRO
-// ================================================================
-async function removerMembro(id, nome) {
-    if (!confirm(`Remover ${nome} da congregação? Esta ação não pode ser desfeita.`)) return;
+      // ================================================================
+      //  REMOVER MEMBRO
+      // ================================================================
+      async function removerMembro(id, nome) {
+        if (!confirm(`Remover ${nome} da congregação? Esta ação não pode ser desfeita.`)) return;
 
-    const { error } = await window.supabaseClient
-        .from('usuarios').delete()
-        .eq('id', id).eq('congregacao_id', state.congregacaoId);
+        const { error } = await window.supabaseClient
+          .from('usuarios').delete()
+          .eq('id', id).eq('congregacao_id', state.congregacaoId);
 
-    if (error) { mostrarToast('Erro ao remover membro.', 'error'); return; }
+        if (error) { mostrarToast('Erro ao remover membro.', 'error'); return; }
 
-    mostrarToast(`${nome} foi removido.`, 'success');
-    carregarMembros();
-    carregarEstatisticas();
-}
+        mostrarToast(`${nome} foi removido.`, 'success');
+        carregarMembros();
+        carregarEstatisticas();
+      }
 
-// ================================================================
-//  CONFIGURAÇÕES
-// ================================================================
-async function carregarConfig() {
-    const { data } = await window.supabaseClient
-        .from('congregacoes')
-        .select('nome, cidade, estado, circuito, config')
-        .eq('id', state.congregacaoId)
-        .single();
+      // ================================================================
+      //  CONFIGURAÇÕES
+      // ================================================================
+      async function carregarConfig() {
+        const { data } = await window.supabaseClient
+          .from('congregacoes')
+          .select('nome, cidade, estado, circuito, config')
+          .eq('id', state.congregacaoId)
+          .single();
 
-    if (!data) return;
+        if (!data) return;
 
-    document.getElementById('cfg-nome').value     = data.nome    || '';
-    document.getElementById('cfg-cidade').value   = data.cidade  || '';
-    document.getElementById('cfg-estado').value   = data.estado  || '';
-    document.getElementById('cfg-circuito').value = data.circuito || '';
+        document.getElementById('cfg-nome').value = data.nome || '';
+        document.getElementById('cfg-cidade').value = data.cidade || '';
+        document.getElementById('cfg-estado').value = data.estado || '';
+        document.getElementById('cfg-circuito').value = data.circuito || '';
 
-    state.grupos = data.config?.grupos || [];
-    renderizarGrupos();
-}
+        state.grupos = data.config?.grupos || [];
+        renderizarGrupos();
+      }
 
-async function salvarConfig() {
-    const btn = document.getElementById('btn-salvar-config');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+      async function salvarConfig() {
+        const btn = document.getElementById('btn-salvar-config');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
 
-    const { error } = await window.supabaseClient
-        .from('congregacoes')
-        .update({
-            nome:     document.getElementById('cfg-nome').value.trim(),
-            cidade:   document.getElementById('cfg-cidade').value.trim(),
-            estado:   document.getElementById('cfg-estado').value,
+        const { error } = await window.supabaseClient
+          .from('congregacoes')
+          .update({
+            nome: document.getElementById('cfg-nome').value.trim(),
+            cidade: document.getElementById('cfg-cidade').value.trim(),
+            estado: document.getElementById('cfg-estado').value,
             circuito: document.getElementById('cfg-circuito').value.trim() || null,
-            config:   { grupos: state.grupos },
-        })
-        .eq('id', state.congregacaoId);
+            config: { grupos: state.grupos },
+          })
+          .eq('id', state.congregacaoId);
 
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
 
-    if (error) { mostrarToast('Erro ao salvar configurações.', 'error'); return; }
-    mostrarToast('Configurações salvas!', 'success');
-    carregarEstatisticas();
-}
+        if (error) { mostrarToast('Erro ao salvar configurações.', 'error'); return; }
+        mostrarToast('Configurações salvas!', 'success');
+        carregarEstatisticas();
+      }
 
-function renderizarGrupos() {
-    const list = document.getElementById('grupos-list');
-    if (state.grupos.length === 0) {
-        list.innerHTML = `<p style="font-size:0.8rem;color:var(--text-disabled)">Nenhum grupo cadastrado.</p>`;
-        return;
-    }
-    list.innerHTML = state.grupos.map((g, i) => `
+      function renderizarGrupos() {
+        const list = document.getElementById('grupos-list');
+        if (state.grupos.length === 0) {
+          list.innerHTML = `<p style="font-size:0.8rem;color:var(--text-disabled)">Nenhum grupo cadastrado.</p>`;
+          return;
+        }
+        list.innerHTML = state.grupos.map((g, i) => `
         <div class="grupo-item">
             <i class="fas fa-grip-lines" style="color:var(--text-disabled);font-size:0.75rem;cursor:grab"></i>
             <span>${esc(g)}</span>
@@ -1730,102 +1964,102 @@ function renderizarGrupos() {
                 <i class="fas fa-times"></i>
             </button>
         </div>`).join('');
-}
+      }
 
-function adicionarGrupo() {
-    const input = document.getElementById('novo-grupo-input');
-    const nome  = input.value.trim();
-    if (!nome) return;
-    if (state.grupos.includes(nome)) {
-        mostrarToast('Esse grupo já existe.', 'error');
-        return;
-    }
-    state.grupos.push(nome);
-    input.value = '';
-    renderizarGrupos();
-}
+      function adicionarGrupo() {
+        const input = document.getElementById('novo-grupo-input');
+        const nome = input.value.trim();
+        if (!nome) return;
+        if (state.grupos.includes(nome)) {
+          mostrarToast('Esse grupo já existe.', 'error');
+          return;
+        }
+        state.grupos.push(nome);
+        input.value = '';
+        renderizarGrupos();
+      }
 
-function removerGrupo(index) {
-    state.grupos.splice(index, 1);
-    renderizarGrupos();
-}
+      function removerGrupo(index) {
+        state.grupos.splice(index, 1);
+        renderizarGrupos();
+      }
 
-// ================================================================
-//  TRANSFERIR ADMIN
-// ================================================================
-function abrirModalTransferencia() {
-    const select = document.getElementById('select-novo-admin');
-    const id     = select.value;
-    const nome   = select.options[select.selectedIndex]?.text;
+      // ================================================================
+      //  TRANSFERIR ADMIN
+      // ================================================================
+      function abrirModalTransferencia() {
+        const select = document.getElementById('select-novo-admin');
+        const id = select.value;
+        const nome = select.options[select.selectedIndex]?.text;
 
-    if (!id) { mostrarToast('Selecione um membro para transferir.', 'error'); return; }
+        if (!id) { mostrarToast('Selecione um membro para transferir.', 'error'); return; }
 
-    state.usuarioAlvoId   = id;
-    state.usuarioAlvoNome = nome;
-    document.getElementById('nome-novo-admin').textContent = nome;
-    abrirModal('modal-transferir');
-}
+        state.usuarioAlvoId = id;
+        state.usuarioAlvoNome = nome;
+        document.getElementById('nome-novo-admin').textContent = nome;
+        abrirModal('modal-transferir');
+      }
 
-async function confirmarTransferencia() {
-    const { data, error } = await window.supabaseClient
-        .rpc('fn_transferir_admin', { p_novo_admin_id: state.usuarioAlvoId });
+      async function confirmarTransferencia() {
+        const { data, error } = await window.supabaseClient
+          .rpc('fn_transferir_admin', { p_novo_admin_id: state.usuarioAlvoId });
 
-    if (error || data?.erro) {
-        mostrarToast(data?.erro || 'Erro ao transferir.', 'error');
-        return;
-    }
+        if (error || data?.erro) {
+          mostrarToast(data?.erro || 'Erro ao transferir.', 'error');
+          return;
+        }
 
-    fecharModal('modal-transferir');
-    mostrarToast('Administração transferida com sucesso!', 'success');
-    setTimeout(() => window.location.reload(), 1500);
-}
+        fecharModal('modal-transferir');
+        mostrarToast('Administração transferida com sucesso!', 'success');
+        setTimeout(() => window.location.reload(), 1500);
+      }
 
-// ================================================================
-//  LOGS
-// ================================================================
-async function carregarLogPreview() {
-    const { data } = await window.supabaseClient
-        .from('logs_atividade')
-        .select('acao, criado_em, usuario_id, detalhes')
-        .eq('congregacao_id', state.congregacaoId)
-        .order('criado_em', { ascending: false })
-        .limit(5);
+      // ================================================================
+      //  LOGS
+      // ================================================================
+      async function carregarLogPreview() {
+        const { data } = await window.supabaseClient
+          .from('logs_atividade')
+          .select('acao, criado_em, usuario_id, detalhes')
+          .eq('congregacao_id', state.congregacaoId)
+          .order('criado_em', { ascending: false })
+          .limit(5);
 
-    renderizarLogs(data, 'log-preview');
-}
+        renderizarLogs(data, 'log-preview');
+      }
 
-async function carregarLogs() {
-    const { data } = await window.supabaseClient
-        .from('logs_atividade')
-        .select(`acao, criado_em, detalhes, usuarios(nome)`)
-        .eq('congregacao_id', state.congregacaoId)
-        .order('criado_em', { ascending: false })
-        .limit(100);
+      async function carregarLogs() {
+        const { data } = await window.supabaseClient
+          .from('logs_atividade')
+          .select(`acao, criado_em, detalhes, usuarios(nome)`)
+          .eq('congregacao_id', state.congregacaoId)
+          .order('criado_em', { ascending: false })
+          .limit(100);
 
-    renderizarLogs(data, 'logs-list');
-}
+        renderizarLogs(data, 'logs-list');
+      }
 
-function renderizarLogs(data, containerId) {
-    const container = document.getElementById(containerId);
-    if (!data || data.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><p>Sem registros.</p></div>`;
-        return;
-    }
+      function renderizarLogs(data, containerId) {
+        const container = document.getElementById(containerId);
+        if (!data || data.length === 0) {
+          container.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><p>Sem registros.</p></div>`;
+          return;
+        }
 
-    const acaoCores = {
-        criacao_congregacao: ['var(--success-dim)','var(--success)'],
-        aprovacao_usuario:   ['var(--success-dim)','var(--success)'],
-        rejeicao_usuario:    ['var(--error-dim)','var(--error)'],
-        solicitacao_acesso:  ['var(--warning-dim)','var(--warning)'],
-        troca_admin:         ['var(--info-dim)','var(--info)'],
-        uso_convite:         ['var(--info-dim)','var(--info)'],
-        alteracao_config:    ['var(--accent-dim)','var(--accent)'],
-    };
+        const acaoCores = {
+          criacao_congregacao: ['var(--success-dim)', 'var(--success)'],
+          aprovacao_usuario: ['var(--success-dim)', 'var(--success)'],
+          rejeicao_usuario: ['var(--error-dim)', 'var(--error)'],
+          solicitacao_acesso: ['var(--warning-dim)', 'var(--warning)'],
+          troca_admin: ['var(--info-dim)', 'var(--info)'],
+          uso_convite: ['var(--info-dim)', 'var(--info)'],
+          alteracao_config: ['var(--accent-dim)', 'var(--accent)'],
+        };
 
-    container.innerHTML = data.map(l => {
-        const [bg, cor] = acaoCores[l.acao] || ['var(--bg-hover)','var(--text-secondary)'];
-        const atorNome = l.usuarios?.nome || 'Sistema';
-        return `
+        container.innerHTML = data.map(l => {
+          const [bg, cor] = acaoCores[l.acao] || ['var(--bg-hover)', 'var(--text-secondary)'];
+          const atorNome = l.usuarios?.nome || 'Sistema';
+          return `
         <div class="log-item">
             <span class="log-time">${formatarDataHora(l.criado_em)}</span>
             <div>
@@ -1835,32 +2069,32 @@ function renderizarLogs(data, containerId) {
                 <div class="log-desc">por <span class="log-actor">${esc(atorNome)}</span></div>
             </div>
         </div>`;
-    }).join('');
-}
+        }).join('');
+      }
 
-// ================================================================
-//  TERRITÓRIOS
-// ================================================================
-async function carregarTerritorios() {
-    const tbody = document.getElementById('tbody-territorios');
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">Carregando...</td></tr>';
-    try {
-        const { data, error } = await window.supabaseClient
+      // ================================================================
+      //  TERRITÓRIOS
+      // ================================================================
+      async function carregarTerritorios() {
+        const tbody = document.getElementById('tbody-territorios');
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem">Carregando...</td></tr>';
+        try {
+          const { data, error } = await window.supabaseClient
             .from('territorios')
             .select('id, numero_mapa, bairro, tipo, descricao, imagem_url, ativo')
             .eq('congregacao_id', state.congregacaoId)
             .order('numero_mapa', { ascending: true });
 
-        if (error) throw error;
-        const territorios = data || [];
+          if (error) throw error;
+          const territorios = data || [];
 
-        if (territorios.length === 0) {
+          if (territorios.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--text-disabled);font-size:0.82rem"><i class="fas fa-map" style="margin-right:.4rem"></i>Nenhum território cadastrado.</td></tr>';
             return;
-        }
+          }
 
-        const tipoLabel = { residencial: 'Residencial', comercial: 'Comercial', rural: 'Rural', especial: 'Especial' };
-        tbody.innerHTML = territorios.map(t => `
+          const tipoLabel = { residencial: 'Residencial', comercial: 'Comercial', rural: 'Rural', especial: 'Especial' };
+          tbody.innerHTML = territorios.map(t => `
             <tr>
                 <td><strong>${t.numero_mapa}</strong></td>
                 <td>${esc(t.bairro)}</td>
@@ -1879,167 +2113,170 @@ async function carregarTerritorios() {
                 </td>
             </tr>`).join('');
 
-        // search filter
-        document.getElementById('search-territorios').oninput = function() {
+          // search filter
+          document.getElementById('search-territorios').oninput = function () {
             const q = this.value.toLowerCase();
             document.querySelectorAll('#tbody-territorios tr').forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+              row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
             });
-        };
-    } catch (err) {
-        console.error('Erro ao carregar territórios:', err);
-        tbody.innerHTML = '<tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--error);font-size:0.82rem">Erro ao carregar dados.</td></tr>';
-    }
-}
+          };
+        } catch (err) {
+          console.error('Erro ao carregar territórios:', err);
+          tbody.innerHTML = '<tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--error);font-size:0.82rem">Erro ao carregar dados.</td></tr>';
+        }
+      }
 
-async function abrirModalTerritorio(id) {
-    document.getElementById('m-ter-id').value = id || '';
-    document.getElementById('m-ter-numero').value = '';
-    document.getElementById('m-ter-bairro').value = '';
-    document.getElementById('m-ter-tipo').value = 'residencial';
-    document.getElementById('m-ter-descricao').value = '';
-    document.getElementById('m-ter-imagem').value = '';
-    document.getElementById('m-ter-numero').readOnly = false;
-    document.getElementById('modal-territorio-title').textContent = 'Novo Território';
+      async function abrirModalTerritorio(id) {
+        document.getElementById('m-ter-id').value = id || '';
+        document.getElementById('m-ter-numero').value = '';
+        document.getElementById('m-ter-bairro').value = '';
+        document.getElementById('m-ter-tipo').value = 'residencial';
+        document.getElementById('m-ter-descricao').value = '';
+        document.getElementById('m-ter-imagem').value = '';
+        document.getElementById('m-ter-numero').readOnly = false;
+        document.getElementById('modal-territorio-title').textContent = 'Novo Território';
 
-    if (id) {
-        document.getElementById('modal-territorio-title').textContent = 'Editar Território';
-        const { data } = await window.supabaseClient.from('territorios').select('*').eq('id', id).single();
-        if (data) {
+        if (id) {
+          document.getElementById('modal-territorio-title').textContent = 'Editar Território';
+          const { data } = await window.supabaseClient.from('territorios').select('*').eq('id', id).single();
+          if (data) {
             document.getElementById('m-ter-numero').value = data.numero_mapa;
             document.getElementById('m-ter-numero').readOnly = true;
             document.getElementById('m-ter-bairro').value = data.bairro;
             document.getElementById('m-ter-tipo').value = data.tipo || 'residencial';
             document.getElementById('m-ter-descricao').value = data.descricao || '';
             document.getElementById('m-ter-imagem').value = data.imagem_url || '';
+          }
         }
-    }
-    abrirModal('modal-territorio');
-}
+        abrirModal('modal-territorio');
+      }
 
-async function salvarTerritorio() {
-    const id = document.getElementById('m-ter-id').value;
-    const numero = parseInt(document.getElementById('m-ter-numero').value, 10);
-    const bairro = document.getElementById('m-ter-bairro').value.trim();
-    const tipo = document.getElementById('m-ter-tipo').value;
-    const descricao = document.getElementById('m-ter-descricao').value.trim();
-    const imagem_url = document.getElementById('m-ter-imagem').value.trim() || null;
+      async function salvarTerritorio() {
+        const id = document.getElementById('m-ter-id').value;
+        const numero = parseInt(document.getElementById('m-ter-numero').value, 10);
+        const bairro = document.getElementById('m-ter-bairro').value.trim();
+        const tipo = document.getElementById('m-ter-tipo').value;
+        const descricao = document.getElementById('m-ter-descricao').value.trim();
+        const imagem_url = document.getElementById('m-ter-imagem').value.trim() || null;
 
-    if (!numero || !bairro) { mostrarToast('Preencha número e bairro!', 'error'); return; }
+        if (!numero || !bairro) { mostrarToast('Preencha número e bairro!', 'error'); return; }
 
-    const btn = document.getElementById('btn-salvar-territorio');
-    btn.disabled = true;
-    try {
-        if (id) {
+        const btn = document.getElementById('btn-salvar-territorio');
+        btn.disabled = true;
+        try {
+          if (id) {
             const { error } = await window.supabaseClient.from('territorios')
-                .update({ bairro, tipo, descricao: descricao || null, imagem_url })
-                .eq('id', id);
+              .update({ bairro, tipo, descricao: descricao || null, imagem_url })
+              .eq('id', id);
             if (error) throw error;
             mostrarToast('Território atualizado com sucesso!');
-        } else {
+          } else {
             const { data: existe } = await window.supabaseClient.from('territorios')
-                .select('id').eq('congregacao_id', state.congregacaoId).eq('numero_mapa', numero);
+              .select('id').eq('congregacao_id', state.congregacaoId).eq('numero_mapa', numero);
             if (existe && existe.length > 0) { mostrarToast('Já existe um território com esse número!', 'error'); return; }
 
             const { error } = await window.supabaseClient.from('territorios').insert([{
-                congregacao_id: state.congregacaoId,
-                numero_mapa: numero, bairro, tipo,
-                descricao: descricao || null, imagem_url
+              congregacao_id: state.congregacaoId,
+              numero_mapa: numero, bairro, tipo,
+              descricao: descricao || null, imagem_url
             }]);
             if (error) throw error;
             mostrarToast('Território criado com sucesso!');
+          }
+          fecharModal('modal-territorio');
+          carregarTerritorios();
+          carregarEstatisticas();
+        } catch (err) {
+          console.error('Erro ao salvar território:', err);
+          mostrarToast('Erro: ' + err.message, 'error');
+        } finally {
+          btn.disabled = false;
         }
-        fecharModal('modal-territorio');
-        carregarTerritorios();
-        carregarEstatisticas();
-    } catch (err) {
-        console.error('Erro ao salvar território:', err);
-        mostrarToast('Erro: ' + err.message, 'error');
-    } finally {
-        btn.disabled = false;
-    }
-}
+      }
 
-async function excluirTerritorio(id, numero) {
-    if (!confirm(`Excluir território #${numero}? Esta ação não pode ser desfeita.`)) return;
-    try {
-        const { error } = await window.supabaseClient.from('territorios').delete().eq('id', id);
-        if (error) throw error;
-        mostrarToast('Território excluído!');
-        carregarTerritorios();
-        carregarEstatisticas();
-    } catch (err) {
-        console.error('Erro ao excluir:', err);
-        mostrarToast('Erro: ' + err.message, 'error');
-    }
-}
+      async function excluirTerritorio(id, numero) {
+        if (!confirm(`Excluir território #${numero}? Esta ação não pode ser desfeita.`)) return;
+        try {
+          const { error } = await window.supabaseClient.from('territorios').delete().eq('id', id);
+          if (error) throw error;
+          mostrarToast('Território excluído!');
+          carregarTerritorios();
+          carregarEstatisticas();
+        } catch (err) {
+          console.error('Erro ao excluir:', err);
+          mostrarToast('Erro: ' + err.message, 'error');
+        }
+      }
 
-// ================================================================
-//  UTILITÁRIOS
-// ================================================================
-function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
-function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
-function abrirModalNovoConvite() { abrirModal('modal-convite'); }
+      // ================================================================
+      //  UTILITÁRIOS
+      // ================================================================
+      function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+      function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+      function abrirModalNovoConvite() { abrirModal('modal-convite'); }
 
-function mostrarToast(mensagem, tipo = 'success') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    const icone = tipo === 'success' ? 'fa-check-circle'
-                : tipo === 'error'   ? 'fa-exclamation-circle'
-                : 'fa-info-circle';
-    toast.className = `toast ${tipo}`;
-    toast.innerHTML = `<i class="fas ${icone}"></i> ${mensagem}`;
-    container.appendChild(toast);
-    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(20px)';
-                       toast.style.transition = 'all 0.3s'; setTimeout(() => toast.remove(), 300); }, 3500);
-}
+      function mostrarToast(mensagem, tipo = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const icone = tipo === 'success' ? 'fa-check-circle'
+          : tipo === 'error' ? 'fa-exclamation-circle'
+            : 'fa-info-circle';
+        toast.className = `toast ${tipo}`;
+        toast.innerHTML = `<i class="fas ${icone}"></i> ${mensagem}`;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0'; toast.style.transform = 'translateX(20px)';
+          toast.style.transition = 'all 0.3s'; setTimeout(() => toast.remove(), 300);
+        }, 3500);
+      }
 
-async function copiarTexto(texto, btn) {
-    try {
-        await navigator.clipboard.writeText(texto);
-        if (btn) {
+      async function copiarTexto(texto, btn) {
+        try {
+          await navigator.clipboard.writeText(texto);
+          if (btn) {
             const original = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
             btn.classList.add('copied');
             setTimeout(() => { btn.innerHTML = original; btn.classList.remove('copied'); }, 2000);
-        }
-        mostrarToast('Link copiado para a área de transferência!', 'success');
-    } catch { mostrarToast('Não foi possível copiar.', 'error'); }
-}
+          }
+          mostrarToast('Link copiado para a área de transferência!', 'success');
+        } catch { mostrarToast('Não foi possível copiar.', 'error'); }
+      }
 
-function badgePapel(papel) {
-    const map = {
-        admin:    ['var(--accent-dim)','var(--accent)','crown'],
-        auxiliar: ['var(--info-dim)','var(--info)','star'],
-        membro:   ['var(--bg-hover)','var(--text-secondary)','user'],
-        pendente: ['var(--warning-dim)','var(--warning)','clock'],
-        rejeitado:['var(--error-dim)','var(--error)','ban'],
-    };
-    const [bg, cor, icon] = map[papel] || map.membro;
-    return `<span class="badge" style="background:${bg};color:${cor}">
+      function badgePapel(papel) {
+        const map = {
+          admin: ['var(--accent-dim)', 'var(--accent)', 'crown'],
+          auxiliar: ['var(--info-dim)', 'var(--info)', 'star'],
+          membro: ['var(--bg-hover)', 'var(--text-secondary)', 'user'],
+          pendente: ['var(--warning-dim)', 'var(--warning)', 'clock'],
+          rejeitado: ['var(--error-dim)', 'var(--error)', 'ban'],
+        };
+        const [bg, cor, icon] = map[papel] || map.membro;
+        return `<span class="badge" style="background:${bg};color:${cor}">
                 <i class="fas fa-${icon}" style="font-size:0.65em"></i>
                 ${papel}
             </span>`;
-}
+      }
 
-function iniciais(nome) {
-    return (nome || '?').split(' ').slice(0,2).map(p => p[0]).join('').toUpperCase();
-}
+      function iniciais(nome) {
+        return (nome || '?').split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
+      }
 
-function esc(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+      function esc(str) {
+        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
 
-function formatarData(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
-}
+      function formatarData(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
 
-function formatarDataHora(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-}
-</script>
-<script src="../js/theme.js"></script>
-</body>
+      function formatarDataHora(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      }
+    </script>
+    <script src="../js/theme.js"></script>
+  </body>
+
 </html>
