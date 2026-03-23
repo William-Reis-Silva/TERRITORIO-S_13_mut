@@ -719,13 +719,13 @@ tbody td {
   .nav-divider { display: none; }
 }
 
-/* ── TEMA TOGGLE ─────────────────────────────────────── */
+/* ── TEMA TOGGLE ────────────────────────────────────── */
 .theme-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 32px !important;
+  height: 32px !important;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
