@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <script>
+  (function(){
+    var t = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -191,6 +197,9 @@
     <span class="site-logo-text">S-13</span>
   </a>
   <nav class="site-nav">
+    <button class="theme-toggle" id="btn-theme" title="Alternar tema">
+  <i class="fas fa-sun"></i>
+</button>
     <a href="index.html" class="nav-link">
       <i class="fas fa-arrow-left" style="font-size:0.8em"></i> Voltar
     </a>
@@ -545,5 +554,6 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
+<script src="js/theme.js"></script>
 </body>
 </html>
