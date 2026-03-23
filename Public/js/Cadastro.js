@@ -46,22 +46,31 @@ document.addEventListener('DOMContentLoaded', function () {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
 
     try {
-      // 1. Criar conta no Supabase Auth
+      // 1. Criar conta no Supabase Auth (ou recuperar sessão se já existir)
+      let session;
       const { data: authData, error: authError } = await window.supabaseClient.auth.signUp({
         email,
         password: senha,
       });
 
       if (authError) {
-        let msg = authError.message;
-        if (msg.includes('already registered') || msg.includes('User already registered'))
-          msg = 'Este e-mail já está cadastrado. Faça login ou recupere sua senha.';
-        throw new Error(msg);
+        const isExisting = authError.message.includes('already registered') ||
+                           authError.message.includes('User already registered');
+        if (!isExisting) throw new Error(authError.message);
+
+        // Email já existe no auth mas sem perfil — tenta autenticar para criar o perfil
+        const { data: signInData, error: signInError } = await window.supabaseClient.auth.signInWithPassword({
+          email,
+          password: senha,
+        });
+        if (signInError) throw new Error('E-mail já cadastrado, mas a senha está incorreta. Use a mesma senha da conta existente.');
+        session = signInData.session;
+      } else {
+        session = authData.session;
       }
 
       // Verificar se veio sessão imediata (email confirmation desabilitado)
       // ou se precisa confirmar email
-      const session = authData.session;
 
       if (!session) {
         // Email confirmation ativado: orientar o usuário

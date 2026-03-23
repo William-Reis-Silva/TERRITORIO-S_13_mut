@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start \"\" \"http://localhost:5500/S_13.html\")"
+    ]
+  }
+}
