@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <script>
+    (function(){
+      var t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Painel Admin | Território S-13</title>
@@ -643,6 +649,12 @@
     <span class="site-logo-badge">Admin</span>
   </a>
   <nav class="site-nav">
+    <button class="theme-toggle" id="btn-theme" title="Alternar tema">
+      <i class="fas fa-sun"></i>
+    </button>
+    <a href="../admin-master.html" id="nav-master" class="nav-link" style="display:none">
+      <i class="fas fa-shield-alt" style="font-size:0.8em"></i> Master
+    </a>
     <div class="user-chip">
       <span class="user-dot"></span>
       <span id="admin-nome">Admin</span>
@@ -1215,6 +1227,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!perfil || !['admin', 'auxiliar'].includes(perfil.papel)) {
         window.location.replace('../index.html');
         return;
+    }
+
+    if (perfil.papel === 'master') {
+      document.getElementById('nav-master').style.display = 'inline-flex';
     }
 
     state.congregacaoId = perfil.congregacao_id;
@@ -2024,5 +2040,6 @@ function formatarDataHora(iso) {
     return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
 </script>
+<script src="../js/theme.js"></script>
 </body>
 </html>
