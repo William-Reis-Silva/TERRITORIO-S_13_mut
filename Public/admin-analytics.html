@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <title>Admin Analytics | Território S-13</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase_config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-paper: #f5f5f0;
+      --text-main: #1a1a1a;
+      --accent: #f04721;
+      --border-main: 2px solid #1a1a1a;
+      --font-mono: 'Courier New', monospace;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg-paper);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--bg-dark);
+      color: white;
+      padding: 1.5rem 2rem;
+      border-bottom: var(--border-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: var(--bg-dark);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 4px 4px 0px var(--text-main);
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-title {
+      margin-bottom: 2rem;
+    }
+
+    .page-title h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-title p {
+      opacity: 0.7;
+      font-size: 1rem;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card {
+      background: white;
+      border: var(--border-main);
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .chart-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      font-family: var(--font-mono);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .insight-card {
+      background: white;
+      border: var(--border-main);
+      padding: 1.5rem;
+    }
+
+    .insight-card h4 {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    .insight-list {
+      list-style: none;
+    }
+
+    .insight-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e5e5e5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .insight-list li:last-child {
+      border-bottom: none;
+    }
+
+    .metric-value {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    .loading i {
+      font-size: 2rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .insights-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>
+      <i class="fas fa-chart-line"></i>
+      Analytics Dashboard
+    </h1>
+    <div class="header-actions">
+      <a href="admin-master.html" class="btn secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
+      <button class="btn" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> Sair
+      </button>
+    </div>
+  </div>
+
+  <div class="container">
+    
+    <div class="page-title">
+      <h2>Análise de Dados</h2>
+      <p>Métricas e insights sobre o uso do sistema</p>
+    </div>
+
+    <div id="loading-state" class="loading">
+      <i class="fas fa-spinner"></i>
+      <p>Carregando dados de analytics...</p>
+    </div>
+
+    <div id="analytics-content" style="display: none;">
+      
+      <!-- Charts Grid -->
+      <div class="charts-grid">
+        
+        <!-- Chart 1: Crescimento de Usuários -->
+        <div class="chart-card">
+          <h3><i class="fas fa-users"></i> Crescimento de Usuários</h3>
+          <div class="chart-container">
+            <canvas id="usersGrowthChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Territórios por Status -->
+        <div class="chart-card">
+          <h3><i class="fas fa-map-marked-alt"></i> Territórios por Status</h3>
+          <div class="chart-container">
+            <canvas id="territoriesStatusChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Taxa de Conclusão por Congregação -->
+        <div class="chart-card">
+          <h3><i class="fas fa-church"></i> Taxa de Conclusão por Congregação</h3>
+          <div class="chart-container">
+            <canvas id="completionRateChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 4: Tempo Médio de Conclusão -->
+        <div class="chart-card">
+          <h3><i class="fas fa-clock"></i> Tempo Médio de Conclusão (Dias)</h3>
+          <div class="chart-container">
+            <canvas id="avgTimeChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 5: Atividade Mensal -->
+        <div class="chart-card">
+          <h3><i class="fas fa-calendar"></i> Atividade Mensal</h3>
+          <div class="chart-container">
+            <canvas id="monthlyActivityChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 6: Top Designados -->
+        <div class="chart-card">
+          <h3><i class="fas fa-trophy"></i> Top 5 Designados</h3>
+          <div class="chart-container">
+            <canvas id="topDesignadosChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Insights Grid -->
+      <div class="insights-grid">
+        
+        <div class="insight-card">
+          <h4><i class="fas fa-fire"></i> Territórios Mais Ativos</h4>
+          <ul class="insight-list" id="hot-territories">
+            <li>Carregando...</li>
+          </ul>
+        </div>
+
+        <div class="insight-card">
+          <h4><i class="fas fa-snowflake"></i> Territórios Inativos</h4>
+          <ul class="insight-list" id="cold-territories">
+            <li>Carregando...</li>
+          </ul>
+        </div>
+
+        <div class="insight-card">
+          <h4><i class="fas fa-exclamation-triangle"></i> Alertas</h4>
+          <ul class="insight-list" id="alerts">
+            <li>Carregando...</li>
+          </ul>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let charts = {};
+
+    // Logout
+    async function handleLogout() {
+      if (confirm('Tem certeza que deseja sair?')) {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = 'login.html';
+      }
+    }
+
+    // Format Date
+    function formatDateOnly(dateString) {
+      if (!dateString) return '-';
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    }
+
+    // Initialize Charts
+    function initCharts() {
+      const chartConfig = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          }
+        }
+      };
+
+      // Users Growth Chart
+      charts.usersGrowth = new Chart(
+        document.getElementById('usersGrowthChart'),
+        {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'Novos Usuários',
+              data: [],
+              borderColor: '#f04721',
+              backgroundColor: 'rgba(240, 71, 33, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: chartConfig
+        }
+      );
+
+      // Territories Status Chart
+      charts.territoriesStatus = new Chart(
+        document.getElementById('territoriesStatusChart'),
+        {
+          type: 'doughnut',
+          data: {
+            labels: ['Em Andamento', 'Concluídos'],
+            datasets: [{
+              data: [0, 0],
+              backgroundColor: ['#f59e0b', '#10b981'],
+              borderWidth: 2,
+              borderColor: '#1a1a1a'
+            }]
+          },
+          options: chartConfig
+        }
+      );
+
+      // Completion Rate Chart
+      charts.completionRate = new Chart(
+        document.getElementById('completionRateChart'),
+        {
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'Taxa de Conclusão (%)',
+              data: [],
+              backgroundColor: '#10b981',
+              borderWidth: 2,
+              borderColor: '#1a1a1a'
+            }]
+          },
+          options: {
+            ...chartConfig,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        }
+      );
+
+      // Average Time Chart
+      charts.avgTime = new Chart(
+        document.getElementById('avgTimeChart'),
+        {
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'Dias Médios',
+              data: [],
+              backgroundColor: '#3b82f6',
+              borderWidth: 2,
+              borderColor: '#1a1a1a'
+            }]
+          },
+          options: {
+            ...chartConfig,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        }
+      );
+
+      // Monthly Activity Chart
+      charts.monthlyActivity = new Chart(
+        document.getElementById('monthlyActivityChart'),
+        {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: 'Novos Registros',
+                data: [],
+                borderColor: '#f04721',
+                backgroundColor: 'rgba(240, 71, 33, 0.1)',
+                tension: 0.4
+              },
+              {
+                label: 'Concluídos',
+                data: [],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4
+              }
+            ]
+          },
+          options: chartConfig
+        }
+      );
+
+      // Top Designados Chart
+      charts.topDesignados = new Chart(
+        document.getElementById('topDesignadosChart'),
+        {
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'Total de Designações',
+              data: [],
+              backgroundColor: '#f04721',
+              borderWidth: 2,
+              borderColor: '#1a1a1a'
+            }]
+          },
+          options: {
+            ...chartConfig,
+            indexAxis: 'y',
+            scales: {
+              x: {
+                beginAtZero: true
+              }
+            }
+          }
+        }
+      );
+    }
+
+    // Load Users Growth Data
+    async function loadUsersGrowth() {
+      try {
+        const { data: users, error } = await window.supabaseClient
+          .from('usuarios')
+          .select('created_at')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        // Group by month
+        const monthlyData = {};
+        users.forEach(user => {
+          const month = new Date(user.created_at).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' });
+          monthlyData[month] = (monthlyData[month] || 0) + 1;
+        });
+
+        const labels = Object.keys(monthlyData);
+        const data = Object.values(monthlyData);
+
+        charts.usersGrowth.data.labels = labels;
+        charts.usersGrowth.data.datasets[0].data = data;
+        charts.usersGrowth.update();
+
+      } catch (error) {
+        console.error('Erro ao carregar crescimento de usuários:', error);
+      }
+    }
+
+    // Load Territories Status
+    async function loadTerritoriesStatus() {
+      try {
+        const { data: territories, error } = await window.supabaseClient
+          .from('designacoes')
+          .select('data_conclusao');
+
+        if (error) throw error;
+
+        const active = territories.filter(t => !t.data_conclusao).length;
+        const completed = territories.filter(t => t.data_conclusao).length;
+
+        charts.territoriesStatus.data.datasets[0].data = [active, completed];
+        charts.territoriesStatus.update();
+
+      } catch (error) {
+        console.error('Erro ao carregar status dos territórios:', error);
+      }
+    }
+
+    // Load Completion Rate by Congregação
+    async function loadCompletionRate() {
+      try {
+        const { data: congregacoes, error } = await window.supabaseClient
+          .from('congregacoes')
+          .select('id, nome');
+
+        if (error) throw error;
+
+        const rates = await Promise.all(
+          congregacoes.map(async (cong) => {
+            const { data: territories } = await window.supabaseClient
+              .from('designacoes')
+              .select('data_conclusao')
+              .eq('congregacao_id', cong.id);
+
+            const total = territories?.length || 0;
+            const completed = territories?.filter(t => t.data_conclusao).length || 0;
+            const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            return { nome: cong.nome, rate };
+          })
+        );
+
+        charts.completionRate.data.labels = rates.map(r => r.nome);
+        charts.completionRate.data.datasets[0].data = rates.map(r => r.rate);
+        charts.completionRate.update();
+
+      } catch (error) {
+        console.error('Erro ao carregar taxa de conclusão:', error);
+      }
+    }
+
+    // Load Average Completion Time
+    async function loadAvgTime() {
+      try {
+        const { data: congregacoes, error } = await window.supabaseClient
+          .from('congregacoes')
+          .select('id, nome');
+
+        if (error) throw error;
+
+        const avgTimes = await Promise.all(
+          congregacoes.map(async (cong) => {
+            const { data: territories } = await window.supabaseClient
+              .from('designacoes')
+              .select('data_inicio, data_conclusao')
+              .eq('congregacao_id', cong.id)
+              .not('data_conclusao', 'is', null);
+
+            if (!territories || territories.length === 0) {
+              return { nome: cong.nome, avgDays: 0 };
+            }
+
+            const totalDays = territories.reduce((sum, t) => {
+              const days = Math.floor((new Date(t.data_conclusao) - new Date(t.data_inicio)) / (1000 * 60 * 60 * 24));
+              return sum + days;
+            }, 0);
+
+            const avgDays = Math.round(totalDays / territories.length);
+            return { nome: cong.nome, avgDays };
+          })
+        );
+
+        charts.avgTime.data.labels = avgTimes.map(a => a.nome);
+        charts.avgTime.data.datasets[0].data = avgTimes.map(a => a.avgDays);
+        charts.avgTime.update();
+
+      } catch (error) {
+        console.error('Erro ao carregar tempo médio:', error);
+      }
+    }
+
+    // Load Monthly Activity
+    async function loadMonthlyActivity() {
+      try {
+        const { data: territories, error } = await window.supabaseClient
+          .from('designacoes')
+          .select('data_inicio, data_conclusao')
+          .order('data_inicio', { ascending: true });
+
+        if (error) throw error;
+
+        // Group by month
+        const monthlyNew = {};
+        const monthlyCompleted = {};
+
+        territories.forEach(t => {
+          const startMonth = new Date(t.data_inicio).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' });
+          monthlyNew[startMonth] = (monthlyNew[startMonth] || 0) + 1;
+
+          if (t.data_conclusao) {
+            const endMonth = new Date(t.data_conclusao).toLocaleDateString('pt-BR', { year: 'numeric', month: 'short' });
+            monthlyCompleted[endMonth] = (monthlyCompleted[endMonth] || 0) + 1;
+          }
+        });
+
+        const allMonths = [...new Set([...Object.keys(monthlyNew), ...Object.keys(monthlyCompleted)])].sort();
+
+        charts.monthlyActivity.data.labels = allMonths;
+        charts.monthlyActivity.data.datasets[0].data = allMonths.map(m => monthlyNew[m] || 0);
+        charts.monthlyActivity.data.datasets[1].data = allMonths.map(m => monthlyCompleted[m] || 0);
+        charts.monthlyActivity.update();
+
+      } catch (error) {
+        console.error('Erro ao carregar atividade mensal:', error);
+      }
+    }
+
+    // Load Top Designados
+    async function loadTopDesignados() {
+      try {
+        const { data: territories, error } = await window.supabaseClient
+          .from('designacoes')
+          .select('designado_para');
+
+        if (error) throw error;
+
+        const counts = {};
+        territories.forEach(t => {
+          counts[t.designado_para] = (counts[t.designado_para] || 0) + 1;
+        });
+
+        const sorted = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+
+        charts.topDesignados.data.labels = sorted.map(s => s[0]);
+        charts.topDesignados.data.datasets[0].data = sorted.map(s => s[1]);
+        charts.topDesignados.update();
+
+      } catch (error) {
+        console.error('Erro ao carregar top designados:', error);
+      }
+    }
+
+    // Load Hot Territories
+    async function loadHotTerritories() {
+      try {
+        const { data: territories, error } = await window.supabaseClient
+          .from('designacoes')
+          .select('numero_mapa, bairro')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const counts = {};
+        territories.forEach(t => {
+          const key = `${t.numero_mapa} - ${t.bairro}`;
+          counts[key] = (counts[key] || 0) + 1;
+        });
+
+        const sorted = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+
+        const html = sorted.map(([name, count]) => `
+          <li>
+            <span>${name}</span>
+            <span class="metric-value">${count}x</span>
+          </li>
+        `).join('');
+
+        document.getElementById('hot-territories').innerHTML = html || '<li>Nenhum dado disponível</li>';
+
+      } catch (error) {
+        console.error('Erro ao carregar territórios ativos:', error);
+      }
+    }
+
+    // Load Cold Territories
+    async function loadColdTerritories() {
+      try {
+        const { data: territories, error } = await window.supabaseClient
+          .from('designacoes')
+          .select('numero_mapa, bairro, data_inicio, data_conclusao')
+          .is('data_conclusao', null)
+          .order('data_inicio', { ascending: true })
+          .limit(5);
+
+        if (error) throw error;
+
+        const html = territories.map(t => {
+          const days = Math.floor((new Date() - new Date(t.data_inicio)) / (1000 * 60 * 60 * 24));
+          return `
+            <li>
+              <span>${t.numero_mapa} - ${t.bairro || 'N/A'}</span>
+              <span class="metric-value">${days} dias</span>
+            </li>
+          `;
+        }).join('');
+
+        document.getElementById('cold-territories').innerHTML = html || '<li>Nenhum território em andamento</li>';
+
+      } catch (error) {
+        console.error('Erro ao carregar territórios inativos:', error);
+      }
+    }
+
+    // Load Alerts
+    async function loadAlerts() {
+      try {
+        const alerts = [];
+
+        // Usuários não confirmados
+        const { count: unconfirmed } = await window.supabaseClient
+          .from('usuarios')
+          .select('*', { count: 'exact', head: true })
+          .is('email_confirmed_at', null);
+
+        if (unconfirmed > 0) {
+          alerts.push(`<li><span>${unconfirmed} usuário(s) pendente(s) de confirmação</span></li>`);
+        }
+
+        // Territórios em andamento há mais de 60 dias
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+        const { count: longRunning } = await window.supabaseClient
+          .from('designacoes')
+          .select('*', { count: 'exact', head: true })
+          .is('data_conclusao', null)
+          .lt('data_inicio', sixtyDaysAgo.toISOString());
+
+        if (longRunning > 0) {
+          alerts.push(`<li><span>${longRunning} território(s) em andamento há mais de 60 dias</span></li>`);
+        }
+
+        document.getElementById('alerts').innerHTML = alerts.length > 0 
+          ? alerts.join('') 
+          : '<li style="color: #10b981;"><i class="fas fa-check"></i> Nenhum alerta no momento</li>';
+
+      } catch (error) {
+        console.error('Erro ao carregar alertas:', error);
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check authentication
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Initialize charts
+      initCharts();
+
+      // Load all data
+      await Promise.all([
+        loadUsersGrowth(),
+        loadTerritoriesStatus(),
+        loadCompletionRate(),
+        loadAvgTime(),
+        loadMonthlyActivity(),
+        loadTopDesignados(),
+        loadHotTerritories(),
+        loadColdTerritories(),
+        loadAlerts()
+      ]);
+
+      // Hide loading, show content
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('analytics-content').style.display = 'block';
+    });
+  </script>
+
+</body>
+</html>

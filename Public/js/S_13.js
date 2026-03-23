@@ -1,4 +1,5 @@
-firebase.auth().onAuthStateChanged(function (user) {
+window.supabaseClient.auth.onAuthStateChange(function (event, session) {
+  const user = session?.user;
   const usuarioLogado = !!user;
 
   // Verificar se o elemento existe antes de tentar acessá-lo
@@ -24,19 +25,19 @@ firebase.auth().onAuthStateChanged(function (user) {
       userGreeting.style.display = "block";
     }
 
-    if (user.uid) {
-      const userId = user.uid;
-      const userDocRef = firebase.firestore().collection("usuarios").doc(userId);
+    if (user.id) {
+      const userId = user.id;
 
-      userDocRef
-        .get()
-        .then(function (doc) {
+      window.supabaseClient.from("usuarios")
+        .select("*")
+        .eq("id", userId)
+        .single()
+        .then(function ({ data: userData, error: docError }) {
           const usernameElement = document.getElementById("username");
           if (!usernameElement) return;
 
-          if (doc.exists) {
-            const userData = doc.data();
-            if (userData && userData.usuario) {
+          if (userData && !docError) {
+            if (userData.usuario) {
               usernameElement.textContent = userData.usuario;
             } else {
               usernameElement.textContent = "Usuário";
@@ -57,13 +58,18 @@ let mapData = {}; // Dados agrupados por número do mapa
 let currentYear = getCurrentServiceYear();
 
 document.addEventListener("DOMContentLoaded", async function () {
-  const db = firebase.firestore();
+  if (!window.getTenantQuery) {
+      console.warn("getTenantQuery não carregado, usando query padrão.");
+  }
+  
+  const { data: snapshot, error } = await (window.getTenantQuery ? window.getTenantQuery("designacoes") : window.supabaseClient.from("designacoes").select("*"));
+  
+  if (error) {
+      console.error("Erro ao carregar designações do tenant:", error);
+      return;
+  }
 
-  // Obtemos todos os documentos da coleção 'designacoes'
-  const snapshot = await db.collection("designacoes").get();
-
-  snapshot.forEach((doc) => {
-    const data = doc.data();
+  snapshot.forEach((data) => {
     const { mapa } = data;
     if (!mapData[mapa]) mapData[mapa] = [];
     mapData[mapa].push(data);

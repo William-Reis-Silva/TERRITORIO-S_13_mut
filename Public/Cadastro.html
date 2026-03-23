@@ -1,43 +1,449 @@
 <!DOCTYPE html>
 <html lang="pt">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cadastro</title>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" type="text/css" href="css/Login.css" />
-    <link rel="stylesheet" type="text/css" href="css/index.css" />
-    <script src="js/Firebaseconfig.js"></script>
-  </head>
+<head>
+  <title>Cadastro | Território S-13</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/design-system.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase_config.js"></script>
+  <style>
+    html, body { height: 100%; }
 
-  <body>
-    <div class="container">
-      <form id="cadastro-form">
-        <h1>Cadastro de Usuário</h1>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      background: var(--bg-root);
+    }
 
-        <input type="text" id="usuário" name="usuário" placeholder="Nome de usuário" required />
-        <input type="email" id="email" name="email" placeholder="Email" required />
-        <input type="password" id="senha" name="senha" placeholder="Senha" required />
-        <input type="password" id="confirmarSenha" name="confirmarSenha" placeholder="Confirmar Senha" required />
-        <div id="mensagem-erro"></div>
-        <div id="mensagem-sucesso"></div>
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(232,64,28,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
 
-        <br />
-        <button type="submit">Cadastrar</button>
-      </form>
+    .cadastro-shell {
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .top-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      text-decoration: none;
+    }
+    .top-logo img { height: 24px; filter: invert(1) brightness(0.85); }
+    .top-logo span {
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .top-step-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-disabled);
+    }
+
+    .cadastro-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .card-header { padding: 1.75rem 2rem 0; }
+
+    .step-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    .step-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .card-body { padding: 0 2rem 2rem; }
+
+    .form-step { display: none; }
+    .form-step.active {
+      display: block;
+      animation: revealUp 0.35s var(--ease);
+    }
+
+    /* Grid de colunas */
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 80px;
+      gap: 0 0.75rem;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+    .btn-grid-full { grid-template-columns: 1fr; }
+
+    .btn-back-sm {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      padding: 0 1rem;
+      width: auto;
+      font-size: 0.875rem;
+    }
+    .btn-back-sm:hover { color: var(--text-primary); border-color: var(--border-hover); background: var(--bg-hover); }
+
+    /* Feedback de congregação */
+    .cong-feedback {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 500;
+      margin-bottom: 1.1rem;
+      line-height: 1.4;
+    }
+    .cong-feedback.nova {
+      background: var(--accent-dim);
+      border: 1px solid rgba(232,64,28,0.2);
+      color: var(--accent);
+    }
+    .cong-feedback.existente {
+      background: var(--info-dim);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: var(--info);
+    }
+
+    /* Tela de espera (pendente) */
+    #tela-espera {
+      display: none;
+      text-align: center;
+      padding: 2.5rem 2rem;
+    }
+    .espera-icon {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--warning-dim);
+      border: 1px solid rgba(245,158,11,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+      font-size: 1.5rem;
+      color: var(--warning);
+    }
+    .espera-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .espera-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    #mensagem-erro {
+      background: var(--error-dim);
+      color: var(--error);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.875rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: none;
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 0.82rem;
+      color: var(--text-disabled);
+      text-decoration: none;
+      transition: color var(--duration);
+    }
+    .back-link:hover { color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+
+<div class="cadastro-shell">
+  <!-- Topo -->
+  <div class="top-bar reveal">
+    <a href="index.html" class="top-logo">
+      <img src="img/logo.png" alt="Logo" />
+      <span>Território S-13</span>
+    </a>
+    <span class="top-step-label" id="step-counter">Passo 1 de 2</span>
+  </div>
+
+  <!-- Card -->
+  <div class="cadastro-card reveal stagger-1">
+    <div class="card-header">
+      <div class="step-track" style="margin-bottom:1.5rem">
+        <div id="bar-1" class="step-bar active"></div>
+        <div id="bar-2" class="step-bar"></div>
+      </div>
     </div>
-    <script src="js/Cadastro.js"></script>
 
-    <style>
-      p {
-        font-size: 20px;
-        color: blue;
-      }
-    </style>
-  </body>
+    <form id="cadastro-form">
+
+      <!-- PASSO 1 — Dados pessoais -->
+      <div id="step-1" class="form-step active">
+        <div class="card-header" style="padding-top:0">
+          <div class="step-eyebrow">Identificação</div>
+          <h2 class="step-title">Criar conta</h2>
+          <p class="step-desc">Informe seus dados de acesso.</p>
+        </div>
+        <div class="card-body">
+          <label for="usuario">Nome completo</label>
+          <input type="text" id="usuario" placeholder="Seu nome completo" required />
+
+          <label for="email">E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com" required />
+
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" placeholder="Mínimo 6 caracteres" required />
+
+          <label for="confirmarSenha">Confirmar senha</label>
+          <input type="password" id="confirmarSenha" placeholder="Repita a senha" required />
+
+          <div class="btn-grid btn-grid-full">
+            <button type="button" class="btn-primary" onclick="nextStep()">
+              Continuar <i class="fas fa-arrow-right" style="font-size:0.8em"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 2 — Dados da congregação -->
+      <div id="step-2" class="form-step">
+        <div class="card-header" style="padding-top:0">
+          <div class="step-eyebrow">Unidade local</div>
+          <h2 class="step-title">Congregação</h2>
+          <p class="step-desc">Informe o número oficial da sua congregação.</p>
+        </div>
+        <div class="card-body">
+          <label for="congregacaoId">Número da congregação</label>
+          <input type="number" id="congregacaoId"
+                 placeholder="Ex: 12345" required min="1"
+                 onblur="verificarCongregacao(this.value)" />
+
+          <!-- Feedback do número -->
+          <div id="cong-feedback" class="cong-feedback">
+            <i id="cong-feedback-icon" class="fas fa-star"></i>
+            <span id="cong-feedback-msg"></span>
+          </div>
+
+          <label for="congregacaoNome">Nome da congregação</label>
+          <input type="text" id="congregacaoNome"
+                 placeholder="Nome da congregação" required />
+
+          <div class="input-grid">
+            <div>
+              <label for="cidade">Cidade</label>
+              <input type="text" id="cidade" placeholder="Sua cidade" required />
+            </div>
+            <div>
+              <label for="estado">UF</label>
+              <select id="estado" required>
+                <option value="">UF</option>
+                <option>AC</option><option>AL</option><option>AP</option>
+                <option>AM</option><option>BA</option><option>CE</option>
+                <option>DF</option><option>ES</option><option>GO</option>
+                <option>MA</option><option>MT</option><option>MS</option>
+                <option>MG</option><option>PA</option><option>PB</option>
+                <option>PR</option><option>PE</option><option>PI</option>
+                <option>RJ</option><option>RN</option><option>RS</option>
+                <option>RO</option><option>RR</option><option>SC</option>
+                <option selected>SP</option><option>SE</option><option>TO</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="circuito">Circuito <span style="color:var(--text-disabled);font-weight:400">(opcional)</span></label>
+          <input type="text" id="circuito" placeholder="Ex: Circuito 10-B" />
+
+          <div class="btn-grid">
+            <button type="button" class="btn-back-sm" onclick="prevStep()">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <button type="submit" id="submit-btn" class="btn-primary">
+              Finalizar cadastro <i class="fas fa-check" style="font-size:0.8em"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+
+    <!-- Tela de espera (pendente) -->
+    <div id="tela-espera">
+      <div class="espera-icon">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="espera-title">Solicitação enviada</div>
+      <p class="espera-desc">
+        Aguardando aprovação do administrador da<br>
+        <strong id="cong-nome-espera" style="color:var(--text-primary)"></strong>
+      </p>
+      <p class="espera-desc">Você receberá acesso assim que for aprovado.</p>
+      <button type="button" class="btn-danger" onclick="fazerLogout()" style="width:auto;margin:0 auto;padding:0.6rem 1.5rem">
+        <i class="fas fa-sign-out-alt" style="font-size:0.85em"></i> Sair
+      </button>
+    </div>
+
+    <div style="padding: 0 2rem">
+      <div id="mensagem-erro"></div>
+    </div>
+    <div style="height:1.5rem"></div>
+  </div>
+
+  <a href="login.html" class="back-link reveal stagger-2">
+    Já tem uma conta? Entrar agora →
+  </a>
+</div>
+
+<script>
+// ── ESTADO ────────────────────────────────────────────────────────
+const cad = {
+  congregacaoExiste: false,
+  congregacaoNomeAtual: '',
+  verificando: false,
+};
+
+// ── STEP NAVIGATION ───────────────────────────────────────────────
+function nextStep() {
+  const nome     = document.getElementById('usuario').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const senha    = document.getElementById('senha').value;
+  const confirma = document.getElementById('confirmarSenha').value;
+
+  if (!nome || !email || !senha || !confirma) {
+    showError('Preencha todos os campos antes de continuar.');
+    return;
+  }
+  if (senha !== confirma) { showError('As senhas não coincidem.'); return; }
+  if (senha.length < 6)   { showError('A senha deve ter pelo menos 6 caracteres.'); return; }
+
+  hideError();
+  document.getElementById('step-1').classList.remove('active');
+  document.getElementById('step-2').classList.add('active');
+  document.getElementById('bar-2').classList.add('active');
+  document.getElementById('step-counter').textContent = 'Passo 2 de 2';
+}
+
+function prevStep() {
+  document.getElementById('step-2').classList.remove('active');
+  document.getElementById('step-1').classList.add('active');
+  document.getElementById('bar-2').classList.remove('active');
+  document.getElementById('step-counter').textContent = 'Passo 1 de 2';
+  hideError();
+}
+
+// ── VERIFICAÇÃO DE CONGREGAÇÃO (ao sair do campo) ─────────────────
+async function verificarCongregacao(valor) {
+  const num = parseInt(valor, 10);
+  const feedbackEl  = document.getElementById('cong-feedback');
+  const feedbackMsg = document.getElementById('cong-feedback-msg');
+  const feedbackIcon= document.getElementById('cong-feedback-icon');
+
+  if (!num || num < 1) {
+    feedbackEl.style.display = 'none';
+    return;
+  }
+
+  try {
+    const { data } = await window.supabaseClient
+      .from('congregacoes')
+      .select('id, nome')
+      .eq('id', num)
+      .maybeSingle();
+
+    if (data) {
+      // Congregação existe → usuário ficará pendente
+      cad.congregacaoExiste     = true;
+      cad.congregacaoNomeAtual  = data.nome;
+
+      // Pré-preencher nome (readonly pois já existe)
+      document.getElementById('congregacaoNome').value    = data.nome;
+      document.getElementById('congregacaoNome').readOnly = true;
+
+      feedbackEl.className    = 'cong-feedback existente';
+      feedbackIcon.className  = 'fas fa-info-circle';
+      feedbackMsg.textContent = `Congregação encontrada: "${data.nome}". Sua solicitação aguardará aprovação do administrador.`;
+    } else {
+      // Congregação nova → usuário será admin
+      cad.congregacaoExiste     = false;
+      cad.congregacaoNomeAtual  = '';
+      document.getElementById('congregacaoNome').readOnly = false;
+
+      feedbackEl.className    = 'cong-feedback nova';
+      feedbackIcon.className  = 'fas fa-star';
+      feedbackMsg.textContent = 'Congregação nova. Você será o primeiro administrador.';
+    }
+    feedbackEl.style.display = 'flex';
+  } catch {
+    feedbackEl.style.display = 'none';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('mensagem-erro');
+  el.textContent   = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('mensagem-erro').style.display = 'none';
+}
+
+async function fazerLogout() {
+  await window.supabaseClient.auth.signOut();
+  window.location.href = 'login.html';
+}
+</script>
+
+<script src="js/Cadastro.js"></script>
+</body>
 </html>

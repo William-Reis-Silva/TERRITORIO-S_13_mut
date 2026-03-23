@@ -1,107 +1,549 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="css/Formularios.css" />
-    <title>Registro_S13</title>
-    <!-- Firebase Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/design-system.css" />
+  <title>Novo Registro | S-13</title>
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    main { flex: 1; }
 
-  <body>
-    <h1 class="titulo">Registro_S_13</h1>
+    .form-layout {
+      max-width: 660px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
 
-    <form id="Registro">
-      <p>Olá, <span id="user-greeting">Carregando...</span>!</p>
-      <div id="box">
-        <div class="topo-box">
-          <img id="icone" src="img/logo.png" alt="Ícone" />
-        </div>
+    /* ── CARD ── */
+    .form-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
 
-        <div class="form-group">
-          <label for="numero_mapa">Número do Mapa:</label>
-          <input type="number" id="numero_mapa" name="numero_mapa" required min="1" />
-        </div>
+    .form-card-header {
+      padding: 1.25rem 1.75rem;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem;
+    }
+    .form-card-header h2 { font-size: 0.95rem; font-weight: 700; }
+    .form-badge {
+      font-family: var(--font-mono); font-size: 0.68rem; font-weight: 500;
+      color: var(--accent); background: var(--accent-dim);
+      border: 1px solid rgba(232,64,28,0.2);
+      padding: 0.2rem 0.6rem; border-radius: var(--radius-full);
+    }
 
-        <div class="form-group">
-          <label for="bairro">Bairro:</label>
-          <input type="text" id="bairro" name="bairro" readonly placeholder="Será preenchido automaticamente" />
-        </div>
-        <div class="form-group">
-          <label for="mapa-preview" style="display: none">Mapa do Território</label>
-          <div class="mapa-container">
-            <div id="mapa-loading" class="mapa-loading" style="display: none"></div>
-            <img
-              id="mapa-preview"
-              src=""
-              alt="Selecione um número de mapa para visualizar"
-              style="
-                display: none;
-                max-width: 100%;
-                max-height: 400px;
-                border: 2px solid #ddd;
-                border-radius: 8px;
-                margin-top: 10px;
-                object-fit: contain;
-              " />
-            <div id="mapa-error" class="mapa-error" style="display: none">
-              Não foi possível carregar a imagem do mapa.
+    .user-banner {
+      padding: 0.55rem 1.75rem;
+      background: var(--bg-root);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .user-banner strong { color: var(--text-primary); font-weight: 600; }
+
+    .form-body { padding: 1.75rem; }
+
+    /* ── TERRITORY LOOKUP ── */
+    .lookup-wrap { position: relative; }
+    .lookup-spin {
+      position: absolute; right: 0.875rem; top: 50%;
+      transform: translateY(-60%);
+      color: var(--text-disabled); font-size: 0.85rem;
+      display: none; pointer-events: none;
+    }
+
+    /* ── MAPA PREVIEW ── */
+    .mapa-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden; position: relative;
+      margin-bottom: 1.1rem;
+      transition: border-color var(--duration);
+      min-height: 72px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .mapa-box.has-image { min-height: 180px; }
+
+    #mapa-preview {
+      width: 100%; max-height: 320px;
+      object-fit: contain; display: none;
+    }
+
+    .mapa-placeholder {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0.5rem;
+      padding: 1.5rem; text-align: center;
+      color: var(--text-disabled); font-size: 0.78rem;
+    }
+    .mapa-placeholder i { font-size: 1.6rem; opacity: 0.25; }
+
+    .mapa-no-img {
+      display: none;
+      align-items: center; gap: 0.4rem;
+      padding: 1rem; font-size: 0.75rem;
+      color: var(--text-disabled);
+      font-style: italic;
+    }
+
+    .mapa-error {
+      display: none;
+      align-items: center; gap: 0.4rem;
+      padding: 1rem; font-size: 0.75rem;
+      color: var(--warning);
+    }
+
+    /* ── TERRITORY STATUS ── */
+    .territory-found {
+      display: none;
+      align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--success-dim);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem; color: var(--success);
+      margin-bottom: 1.1rem; font-weight: 500;
+    }
+
+    .territory-not-found {
+      display: none;
+      align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--error-dim);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem; color: var(--error);
+      margin-bottom: 1.1rem; font-weight: 500;
+    }
+
+    /* ── FORM ACTIONS ── */
+    .form-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.6rem; margin-top: 0.5rem;
+    }
+
+    .btn-cancel-form {
+      background: var(--bg-elevated);
+      border-color: var(--border);
+      color: var(--text-secondary);
+      width: auto; padding: 0.65rem 1rem;
+    }
+    .btn-cancel-form:hover { color: var(--text-primary); border-color: var(--border-hover); background: var(--bg-hover); }
+
+    /* ── DIALOG ── */
+    .dialog-overlay {
+      display: none; position: fixed; inset: 0;
+      background: var(--bg-overlay);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 400;
+      align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .dialog-overlay.open { display: flex; }
+
+    .dialog-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      padding: 2rem; max-width: 380px; width: 100%;
+      text-align: center;
+      animation: modalIn 0.22s var(--ease);
+    }
+
+    .dialog-icon {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem; font-size: 1.3rem;
+    }
+    .dialog-icon.ok    { background: var(--success-dim); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+    .dialog-icon.error { background: var(--error-dim);   color: var(--error);   border: 1px solid rgba(239,68,68,0.2); }
+
+    #dialog-message {
+      font-size: 0.875rem; color: var(--text-secondary);
+      line-height: 1.6; margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .form-body { padding: 1.25rem; }
+      .form-card-header { padding: 1rem 1.25rem; }
+      .user-banner { padding: 0.5rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <a href="index.html" class="site-logo">
+    <img src="img/logo.png" alt="Logo" />
+    <span class="site-logo-text">S-13</span>
+  </a>
+  <nav class="site-nav">
+    <a href="index.html" class="nav-link">
+      <i class="fas fa-arrow-left" style="font-size:0.8em"></i> Voltar
+    </a>
+  </nav>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="form-layout">
+    <div class="reveal" style="margin-bottom:1.25rem">
+      <div class="page-eyebrow">Formulário</div>
+      <h1>Novo Registro</h1>
+    </div>
+
+    <div class="form-card reveal stagger-1">
+      <div class="form-card-header">
+        <h2>
+          <i class="fas fa-map-marked-alt" style="color:var(--accent);margin-right:0.5rem;font-size:0.9em"></i>
+          Designação de Território
+        </h2>
+        <span class="form-badge">S-13</span>
+      </div>
+
+      <div class="user-banner">
+        <i class="fas fa-user-circle" style="color:var(--accent);font-size:1rem"></i>
+        Publicador: <strong id="user-nome">Carregando...</strong>
+      </div>
+
+      <div class="form-body">
+        <form id="form-registro" onsubmit="salvarRegistro(event)">
+
+          <!-- Número do Mapa com debounce -->
+          <label for="numero_mapa">Número do Mapa</label>
+          <div class="lookup-wrap">
+            <input type="number" id="numero_mapa" name="numero_mapa"
+                   placeholder="Digite o número..." required min="1"
+                   oninput="onNumeroInput(this.value)" />
+            <i class="fas fa-spinner fa-spin lookup-spin" id="lookup-spin"></i>
+          </div>
+
+          <!-- Feedback de território -->
+          <div id="territorio-found" class="territory-found">
+            <i class="fas fa-check-circle"></i>
+            <span id="territorio-found-msg"></span>
+          </div>
+          <div id="territorio-not-found" class="territory-not-found">
+            <i class="fas fa-exclamation-circle"></i>
+            Território não encontrado. Verifique o número ou cadastre-o primeiro.
+          </div>
+
+          <!-- Bairro (readonly) -->
+          <label for="bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" readonly
+                 placeholder="Preenchido automaticamente" />
+
+          <!-- Preview do mapa -->
+          <div class="mapa-box" id="mapa-box">
+            <div class="mapa-placeholder" id="mapa-placeholder">
+              <i class="fas fa-map"></i>
+              Digite o número para visualizar o mapa
             </div>
-
-            <div
-              id="mapa-no-image"
-              style="display: none; color: #6c757d; font-style: italic; padding: 10px; margin-top: 10px">
-              Nenhuma imagem disponível para este território.
+            <img id="mapa-preview" src="" alt="Mapa do território"
+                 onload="onImagemCarregada()"
+                 onerror="onImagemErro()" />
+            <div class="mapa-no-img" id="mapa-no-img">
+              <i class="fas fa-image"></i> Nenhuma imagem disponível para este território.
+            </div>
+            <div class="mapa-error" id="mapa-error">
+              <i class="fas fa-exclamation-triangle"></i> Não foi possível carregar a imagem.
             </div>
           </div>
-        </div>
-        <div class="form-group">
-          <label for="designado_para">Designado Para:</label>
+
+          <!-- Designado Para (carregado da config) -->
+          <label for="designado_para">Designado Para</label>
           <select id="designado_para" required>
-            <option value="Congregação">Congregação</option>
-            <option value="Grupo Primavera">Grupo Primavera</option>
-            <option value="Grupo Timirim">Grupo Timirim</option>
-            <option value="Grupo Olaria">Grupo Olaria</option>
-            <option value="Campanha Congresso">Campanha Congresso</option>
-            <option value="Campanha Celebração"> Campanha Celebração</option>
+            <option value="" disabled selected>Carregando opções...</option>
           </select>
-        </div>
 
-        <div class="form-group">
-          <label for="data_inicio">Data de Início:</label>
+          <!-- Datas -->
+          <label for="data_inicio">Data de Início</label>
           <input type="date" id="data_inicio" name="data_inicio" required />
-        </div>
 
-        <div class="form-group">
-          <label for="data_conclusao">Data de Conclusão:</label>
+          <label for="data_conclusao">
+            Data de Conclusão
+            <span style="color:var(--text-disabled);font-weight:400">(opcional)</span>
+          </label>
           <input type="date" id="data_conclusao" name="data_conclusao" />
-        </div>
 
-        <div class="button-group">
-          <button id="Salvar" type="submit" class="btn btn-primary"><span>💾</span> Salvar</button>
-          <button onclick="voltar()" id="Voltar" type="button" class="btn btn-secondary">Voltar</button>
-        </div>
-      </div>
-    </form>
+          <!-- Erro do form -->
+          <div id="form-erro" style="display:none;font-size:0.8rem;color:var(--error);margin-bottom:0.75rem;padding:0.6rem 0.75rem;background:var(--error-dim);border-radius:var(--radius-sm)"></div>
 
-    <!-- Dialog Modal -->
-    <div id="dialog" class="dialog-overlay" style="display: none">
-      <div class="dialog-content">
-        <span class="close-dialog" id="close-dialog">&times;</span>
-        <p id="dialog-message" class="dialog-message"></p>
+          <div class="form-actions">
+            <button type="submit" id="btn-salvar" class="btn-primary">
+              <i class="fas fa-save" style="font-size:0.85em"></i> Salvar Registro
+            </button>
+            <button type="button" class="btn-cancel-form"
+                    onclick="window.location.href='index.html'">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-    <script>
-      function voltar() {
-        window.location.href = "index.html";
-      }
-    </script>
-    <script src="js/Firebaseconfig.js"></script>
-    <script type="module" src="js/Registro_S13.js"></script>
-  </body>
+  </div>
+</main>
+
+<!-- DIALOG -->
+<div id="dialog" class="dialog-overlay">
+  <div class="dialog-box">
+    <div id="dialog-icon-wrap" class="dialog-icon ok">
+      <i id="dialog-icon" class="fas fa-check"></i>
+    </div>
+    <p id="dialog-message"></p>
+    <button id="btn-dialog-ok" class="btn-primary"
+            style="width:auto;padding:0.6rem 2rem;margin:0 auto;display:flex">
+      OK
+    </button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <p>© 2024 Territórios</p>
+  <p>Desenvolvido por <a href="https://github.com/william-Reis-Silva" target="_blank">William Silva</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase_config.js"></script>
+<script>
+// ================================================================
+//  ESTADO
+// ================================================================
+const reg = {
+  userId:        null,
+  congregacaoId: null,
+  territorioId:  null,   // UUID do território encontrado
+  debounceTimer: null,
+};
+
+const GRUPOS_FALLBACK = [
+  'Congregação','Grupo Primavera','Grupo Timirim',
+  'Grupo Olaria','Campanha Congresso','Campanha Celebração',
+];
+
+// ================================================================
+//  BOOT
+// ================================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await window.supabaseClient.auth.getSession();
+  if (!session) { window.location.replace('login.html'); return; }
+  reg.userId = session.user.id;
+
+  const { data: perfil } = await window.supabaseClient
+    .from('usuarios')
+    .select('nome, papel, congregacao_id')
+    .eq('id', reg.userId)
+    .single();
+
+  if (!perfil || ['pendente','rejeitado'].includes(perfil.papel)) {
+    window.location.replace('login.html'); return;
+  }
+
+  reg.congregacaoId = perfil.congregacao_id;
+  document.getElementById('user-nome').textContent = perfil.nome;
+
+  // Data de início padrão = hoje
+  document.getElementById('data_inicio').value = new Date().toISOString().split('T')[0];
+
+  // Carregar grupos
+  await carregarGrupos();
+
+  // Dialog OK
+  document.getElementById('btn-dialog-ok').addEventListener('click', () => {
+    document.getElementById('dialog').classList.remove('open');
+    window.location.href = 'index.html';
+  });
+});
+
+// ================================================================
+//  GRUPOS DE DESIGNAÇÃO
+// ================================================================
+async function carregarGrupos() {
+  const select = document.getElementById('designado_para');
+  try {
+    const { data } = await window.supabaseClient
+      .from('congregacoes')
+      .select('config')
+      .eq('id', reg.congregacaoId)
+      .single();
+
+    const grupos = data?.config?.grupos;
+    const lista  = (Array.isArray(grupos) && grupos.length > 0) ? grupos : GRUPOS_FALLBACK;
+    select.innerHTML = lista.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+  } catch {
+    select.innerHTML = GRUPOS_FALLBACK.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+  }
+}
+
+// ================================================================
+//  DEBOUNCE — BUSCA DE TERRITÓRIO
+// ================================================================
+function onNumeroInput(valor) {
+  clearTimeout(reg.debounceTimer);
+  ocultarFeedbackTerritorio();
+  ocultarImagem();
+  reg.territorioId = null;
+  document.getElementById('bairro').value = '';
+
+  const num = parseInt(valor, 10);
+  if (!num || num < 1) return;
+
+  reg.debounceTimer = setTimeout(() => buscarTerritorio(num), 500);
+}
+
+async function buscarTerritorio(numero) {
+  const spin = document.getElementById('lookup-spin');
+  spin.style.display = 'block';
+
+  const { data, error } = await window.supabaseClient
+    .from('territorios')
+    .select('id, bairro, imagem_url')
+    .eq('congregacao_id', reg.congregacaoId)
+    .eq('numero_mapa', numero)
+    .eq('ativo', true)
+    .single();
+
+  spin.style.display = 'none';
+
+  if (error || !data) {
+    document.getElementById('territorio-not-found').style.display = 'flex';
+    return;
+  }
+
+  // Território encontrado
+  reg.territorioId = data.id;
+  document.getElementById('bairro').value = data.bairro;
+
+  const msg = document.getElementById('territorio-found-msg');
+  msg.textContent = `Território encontrado — ${data.bairro}`;
+  document.getElementById('territorio-found').style.display = 'flex';
+
+  // Carregar imagem se houver URL
+  if (data.imagem_url) {
+    carregarImagem(data.imagem_url);
+  } else {
+    document.getElementById('mapa-placeholder').style.display = 'none';
+    document.getElementById('mapa-no-img').style.display = 'flex';
+  }
+}
+
+// ================================================================
+//  IMAGEM DO MAPA
+// ================================================================
+function carregarImagem(url) {
+  document.getElementById('mapa-placeholder').style.display = 'none';
+  document.getElementById('mapa-no-img').style.display      = 'none';
+  document.getElementById('mapa-error').style.display       = 'none';
+  const img = document.getElementById('mapa-preview');
+  img.src = url;
+  // onload e onerror configurados no HTML
+}
+
+function onImagemCarregada() {
+  document.getElementById('mapa-preview').style.display = 'block';
+  document.getElementById('mapa-box').classList.add('has-image');
+}
+
+function onImagemErro() {
+  // Link externo quebrado — tratar com elegância
+  document.getElementById('mapa-preview').style.display = 'none';
+  document.getElementById('mapa-box').classList.remove('has-image');
+  document.getElementById('mapa-error').style.display   = 'flex';
+}
+
+function ocultarImagem() {
+  document.getElementById('mapa-preview').style.display  = 'none';
+  document.getElementById('mapa-preview').src            = '';
+  document.getElementById('mapa-box').classList.remove('has-image');
+  document.getElementById('mapa-placeholder').style.display = 'flex';
+  document.getElementById('mapa-no-img').style.display   = 'none';
+  document.getElementById('mapa-error').style.display    = 'none';
+}
+
+function ocultarFeedbackTerritorio() {
+  document.getElementById('territorio-found').style.display     = 'none';
+  document.getElementById('territorio-not-found').style.display = 'none';
+}
+
+// ================================================================
+//  SALVAR REGISTRO
+// ================================================================
+async function salvarRegistro(e) {
+  e.preventDefault();
+  const erroEl = document.getElementById('form-erro');
+  erroEl.style.display = 'none';
+
+  // Validações
+  if (!reg.territorioId) {
+    mostrarErro('Selecione um território válido pelo número do mapa.'); return;
+  }
+
+  const inicio    = document.getElementById('data_inicio').value;
+  const conclusao = document.getElementById('data_conclusao').value;
+  const designado = document.getElementById('designado_para').value;
+
+  if (!inicio)    { mostrarErro('Data de início é obrigatória.'); return; }
+  if (!designado) { mostrarErro('Selecione para quem será designado.'); return; }
+  if (conclusao && conclusao < inicio) {
+    mostrarErro('A data de conclusão não pode ser anterior ao início.'); return;
+  }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+  const { error } = await window.supabaseClient
+    .from('designacoes')
+    .insert({
+      congregacao_id: reg.congregacaoId,
+      territorio_id:  reg.territorioId,
+      designado_para: designado,
+      data_inicio:    inicio,
+      data_conclusao: conclusao || null,
+      criado_por:     reg.userId,
+    });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-save"></i> Salvar Registro';
+
+  if (error) {
+    mostrarErro('Erro ao salvar o registro. Tente novamente.');
+    console.error(error);
+    return;
+  }
+
+  // Exibir dialog de sucesso
+  const wrap = document.getElementById('dialog-icon-wrap');
+  wrap.className = 'dialog-icon ok';
+  document.getElementById('dialog-icon').className = 'fas fa-check';
+  document.getElementById('dialog-message').textContent = 'Designação registrada com sucesso!';
+  document.getElementById('dialog').classList.add('open');
+}
+
+function mostrarErro(msg) {
+  const el = document.getElementById('form-erro');
+  el.textContent  = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
 </html>

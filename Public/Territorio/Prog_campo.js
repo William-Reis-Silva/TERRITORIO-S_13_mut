@@ -1,19 +1,12 @@
 /*************************************************
  * 🔐 AUTENTICAÇÃO
  *************************************************/
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    console.log("✅ Usuário autenticado");
+window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+  if (!session?.user) {
+    console.warn("⚠️ Usuário não autenticado. Redirecionando para login...");
+    window.location.href = "../login.html";
   } else {
-    console.log("🔓 Realizando login automático...");
-    firebase
-      .auth()
-      .signInWithEmailAndPassword(
-        "williamsilvatj@hotmail.com",
-        "356473"
-      )
-      .then(() => console.log("✅ Login automático realizado"))
-      .catch((error) => console.error("❌ Erro no login:", error));
+    console.log("✅ Usuário autenticado:", session.user.email);
   }
 });
 
@@ -29,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("🚀 DOM pronto, iniciando carregamento");
   configurarBotoes();
   obterSemana(0);
+  carregarMapas();
 });
 
 /*************************************************
@@ -99,23 +93,24 @@ function atualizarTextoSemana(inicio, fim) {
   el.textContent = `Semana de ${formatar(inicio)} a ${formatar(fim)}`;
 }
 
-/*************************************************
- * 🆔 GERA ID DO DOCUMENTO
- *************************************************/
-function docId(tipo, data) {
-  const y = data.getFullYear();
-  const m = String(data.getMonth() + 1).padStart(2, "0");
-  const d = String(data.getDate()).padStart(2, "0");
-  return `${tipo}_${y}-${m}-${d}`;
-}
+// Helpers format YYYY-MM-DD local
+const toISODate = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 /*************************************************
- * 📦 CARREGA DADOS DO FIRESTORE (ATUALIZADO)
+ * 📦 CARREGA DADOS DO SUPABASE
  *************************************************/
-function carregarDados(inicioSemana) {
-  console.log("📦 Carregando dados Firestore");
+async function carregarDados(inicioSemana) {
+  console.log("📦 Carregando dados Supabase");
 
-  const db = firebase.firestore();
+  if (!window.getTenantQuery) {
+    console.error("Multitenancy helpers não encontrados! Verifique se supabase_config.js carregou.");
+    return;
+  }
 
   const segunda = new Date(inicioSemana);
   segunda.setHours(0, 0, 0, 0);
@@ -125,9 +120,6 @@ function carregarDados(inicioSemana) {
 
   const domingo = new Date(segunda);
   domingo.setDate(segunda.getDate() + 6);
-
-  // Obter o ano para acessar a coleção correta
-  const ano = sabado.getFullYear();
 
   const sabadoEl = document.getElementById("sabado");
   const domingoEl = document.getElementById("domingo");
@@ -140,71 +132,147 @@ function carregarDados(inicioSemana) {
   if (idosoEl) idosoEl.textContent = "-";
   if (acompanhanteEl) acompanhanteEl.textContent = "-";
 
-  // 🔹 SÁBADO - Nova estrutura
-  db.collection("programacao")
-    .doc(String(ano))
-    .collection("agendamentos")
-    .doc(docId("sabado", sabado))
-    .get()
-    .then((doc) => {
-      if (doc.exists && sabadoEl) {
-        sabadoEl.textContent = doc.data().dirigente || "-";
-        console.log("✅ Dirigente sábado:", doc.data().dirigente);
-      } else {
-        console.log("⚠️ Nenhum dirigente encontrado para este sábado");
-      }
-    })
-    .catch((error) => {
-      console.error("❌ Erro ao buscar sábado:", error);
-      if (sabadoEl) sabadoEl.textContent = "Erro";
+  const dataSabado = toISODate(sabado);
+  const dataDomingo = toISODate(domingo);
+
+  // 🔹 BUSCA AGENDAMENTOS MÓVEIS DE SÁBADO, DOMINGO E IDOSO
+  // Sabado
+  const { data: qSabado } = await window.getTenantQuery("programacao")
+    .eq('data_agendamento', dataSabado)
+    .eq('tipo', 'sabado')
+    .maybeSingle();
+  if (qSabado && sabadoEl) sabadoEl.textContent = qSabado.dirigente || "-";
+
+  // Domingo
+  const { data: qDomingo } = await window.getTenantQuery("programacao")
+    .eq('data_agendamento', dataDomingo)
+    .eq('tipo', 'domingo')
+    .maybeSingle();
+  if (qDomingo && domingoEl) domingoEl.textContent = qDomingo.grupo || "-";
+
+  // Idoso
+  const { data: qIdoso } = await window.getTenantQuery("programacao")
+    .eq('data_agendamento', dataSabado)
+    .eq('tipo', 'idosos')
+    .maybeSingle();
+  if (qIdoso) {
+    if (idosoEl) idosoEl.textContent = qIdoso.idoso || "-";
+    if (acompanhanteEl) acompanhanteEl.textContent = qIdoso.acompanhante || "-";
+  }
+
+  // 🔹 BUSCA E GERA A PROGRAMAÇÃO FIXA
+  const tenantId = window.currentCongregacaoId;
+  if (!tenantId) return;
+
+  const { data: congDoc } = await window.supabaseClient.from("congregacoes").select("config").eq("id", tenantId).single();
+
+  const tbody = document.getElementById("corpo-tabela-programacao");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (congDoc && congDoc.config && congDoc.config.programacaoFixa) {
+    const progFixa = congDoc.config.programacaoFixa;
+    
+    // Renderizar a programação fixa
+    const ordemDias = { "Segunda":1, "Terça":2, "Quarta":3, "Quinta":4, "Sexta":5 };
+    progFixa.sort((a,b) => (ordemDias[a.dia] || 9) - (ordemDias[b.dia] || 9) || a.hora.localeCompare(b.hora));
+    
+    progFixa.forEach((prog) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${prog.dia}</td>
+        <td>${prog.modalidade}</td>
+        <td>${prog.hora}</td>
+        <td>${prog.dirigente}</td>
+        <td>${prog.saida}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Re-adicionar o sábado e domingo
+  const trSab = document.createElement("tr");
+  trSab.innerHTML = `
+    <td>Sábado</td>
+    <td>Casa em casa</td>
+    <td>09:00</td>
+    <td id="sabado_dinamico"></td>
+    <td>-</td>
+  `;
+  const trDom = document.createElement("tr");
+  trDom.innerHTML = `
+    <td>Domingo</td>
+    <td>Carrinho na Feira</td>
+    <td>07:30</td>
+    <td id="domingo_dinamico"></td>
+    <td>-</td>
+  `;
+  tbody.appendChild(trSab);
+  tbody.appendChild(trDom);
+  
+  const sabNovo = document.getElementById("sabado_dinamico");
+  const domNovo = document.getElementById("domingo_dinamico");
+  
+  if (sabNovo && sabadoEl) sabNovo.textContent = sabadoEl.textContent;
+  if (domNovo && domingoEl) domNovo.textContent = domingoEl.textContent;
+}
+
+/*************************************************
+ * 🗺️ CARREGAR MAPAS DINAMICAMENTE
+ *************************************************/
+async function carregarMapas() {
+  const dropdownMenu = document.getElementById("dropdown-mapas");
+  const mapasContainer = document.getElementById("mapas");
+  if (!dropdownMenu || !mapasContainer || !window.getTenantQuery) return;
+
+  try {
+    const { data: territorios } = await window.getTenantQuery("territorios").select('*');
+    if (!territorios) return;
+
+    // Agrupar imagens por bairro
+    const bairrosMap = {};
+    territorios.forEach(t => {
+      if (!t.bairro) return;
+      if (!bairrosMap[t.bairro]) bairrosMap[t.bairro] = [];
+      if (t.foto_url) bairrosMap[t.bairro].push(t);
     });
 
-  // 🔹 DOMINGO - Nova estrutura
-  db.collection("programacao")
-    .doc(String(ano))
-    .collection("agendamentos")
-    .doc(docId("domingo", domingo))
-    .get()
-    .then((doc) => {
-      if (doc.exists && domingoEl) {
-        domingoEl.textContent = doc.data().grupo || "-";
-        console.log("✅ Grupo domingo:", doc.data().grupo);
-      } else {
-        console.log("⚠️ Nenhum grupo encontrado para este domingo");
+    dropdownMenu.innerHTML = "";
+    Object.keys(bairrosMap).forEach(bairro => {
+      const idBairro = bairro.replace(/\s+/g, '-').toLowerCase();
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="javascript:void(0);" onclick="showSection('${idBairro}')">${bairro}</a>`;
+      dropdownMenu.appendChild(li);
+
+      if (!document.getElementById(idBairro)) {
+        const divSection = document.createElement("div");
+        divSection.id = idBairro;
+        divSection.className = "section";
+        divSection.style.display = "none";
+        
+        let header = `<h1>${bairro}</h1>`;
+        let imgsHtml = bairrosMap[bairro].map(item => `
+          <img src="${item.foto_url}" alt="Mapa ${item.numero || ''}" onclick="openFullscreen(this.src)" />
+        `).join("");
+
+        divSection.innerHTML = header + `<div class="conteudo">${imgsHtml}</div>`;
+        mapasContainer.appendChild(divSection);
       }
-    })
-    .catch((error) => {
-      console.error("❌ Erro ao buscar domingo:", error);
-      if (domingoEl) domingoEl.textContent = "Erro";
     });
 
-  // 🔹 IDOSOS - Nova estrutura
-  db.collection("programacao")
-    .doc(String(ano))
-    .collection("agendamentos")
-    .doc(docId("idosos", sabado))
-    .get()
-    .then((doc) => {
-      if (!doc.exists) {
-        console.log("⚠️ Nenhum idoso encontrado para este sábado");
-        return;
-      }
-
-      const d = doc.data();
-
-      if (idosoEl) {
-        idosoEl.textContent = d.idoso || "-";
-        console.log("✅ Idoso:", d.idoso);
-      }
-
-      if (acompanhanteEl) {
-        acompanhanteEl.textContent = d.acompanhante || "-";
-        console.log("✅ Acompanhante:", d.acompanhante);
-      }
-    })
-    .catch((error) => {
-      console.error("❌ Erro ao buscar idosos:", error);
-      if (idosoEl) idosoEl.textContent = "Erro";
-      if (acompanhanteEl) acompanhanteEl.textContent = "Erro";
+    document.querySelectorAll('.dropdown').forEach(dropdown => {
+      dropdown.replaceWith(dropdown.cloneNode(true));
     });
+    
+    document.querySelectorAll('.dropdown').forEach(dropdown => {
+      dropdown.addEventListener('click', function (e) {
+        e.preventDefault();
+        const submenu = this.querySelector('.dropdown-menu');
+        if (submenu) submenu.classList.toggle('show');
+      });
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar mapas dinâmicos:", err);
+  }
 }

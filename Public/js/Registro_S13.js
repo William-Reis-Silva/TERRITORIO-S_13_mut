@@ -264,7 +264,7 @@ class MapaLoader {
 
 class RegistroS13 {
   constructor() {
-    this.auth = firebase.auth();
+    this.auth = window.supabaseClient.auth;
     this.currentUser = null;
     this.mapaLoader = new MapaLoader();
     this.debounceTimer = null; // Timer unificado para debounce
@@ -288,6 +288,7 @@ class RegistroS13 {
       this._setupEventListeners();
       this._setupUnifiedListeners();
       this._setupMapaLoader();
+      await this._carregarGruposDesignados();
 
       console.log("✅ RegistroS13 inicializado");
     } catch (error) {
@@ -298,8 +299,9 @@ class RegistroS13 {
 
   async _aguardarLogin() {
     return new Promise((resolve, reject) => {
-      const unsubscribe = this.auth.onAuthStateChanged((user) => {
-        unsubscribe();
+      const { data: { subscription } } = this.auth.onAuthStateChange((event, session) => {
+        subscription.unsubscribe();
+        const user = session?.user;
         if (user) {
           this.currentUser = user;
           resolve();
@@ -310,6 +312,32 @@ class RegistroS13 {
         }
       });
     });
+  }
+
+  async _carregarGruposDesignados() {
+    const select = document.getElementById("designado_para");
+    if (!select || !window.getTenantCollection) return;
+
+    try {
+      const docRef = window.getTenantCollection("config").doc("geral");
+      const docSnap = await docRef.get();
+      
+      if (docSnap.exists && docSnap.data().gruposDesignacao) {
+        const grupos = docSnap.data().gruposDesignacao;
+        if (grupos.length > 0) {
+          select.innerHTML = "";
+          grupos.forEach(grupo => {
+            const option = document.createElement("option");
+            option.value = grupo;
+            option.textContent = grupo;
+            select.appendChild(option);
+          });
+          console.log("✅ Grupos carregados dinamicamente:", grupos);
+        }
+      }
+    } catch (err) {
+      console.error("❌ Erro ao carregar grupos:", err);
+    }
   }
 
   _configurarInterface() {

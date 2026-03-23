@@ -545,7 +545,7 @@ _formatarData(dataStr) {
 
     async _realizarLogout() {
         try {
-            await firebase.auth().signOut();
+            await window.supabaseClient.auth.signOut();
             console.log("👋 Logout realizado");
             window.location.href = "login.html";
         } catch (error) {

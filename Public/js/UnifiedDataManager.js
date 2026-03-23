@@ -1,7 +1,7 @@
-// UnifiedDataManager.js - Sistema unificado usando apenas Firestore (Versão Corrigida)
+// UnifiedDataManager.js - Sistema unificado usando Supabase
 class UnifiedDataManager {
   constructor() {
-    this.firestore = null;
+    this.supabase = null;
     this.auth = null;
     this.currentUser = null;
     this.userPermissions = null;
@@ -10,42 +10,52 @@ class UnifiedDataManager {
     this.registros = [];
     this.territorios = new Map();
     
-    // Listeners ativos
-    this.unsubscribeRegistros = null;
-    this.unsubscribeTerritorios = null;
+    // Canais ativos (Realtime)
+    this.channelRegistros = null;
+    this.channelTerritorios = null;
     
     // Status
     this.isInitialized = false;
     this.isOnline = navigator.onLine;
+    this.congregacaoId = null;
   }
 
-  // ==================== INICIALIZAÇÃO ====================
+  _getQuery(tableName) {
+    const tenantId = this.congregacaoId || window.currentCongregacaoId;
+    let query = this.supabase.from(tableName).select('*');
+    if (tenantId) {
+      query = query.eq('congregacao_id', tenantId);
+    }
+    return query;
+  }
+
+  setActiveCongregacaoId(congregacaoId) {
+    this.congregacaoId = congregacaoId?.toString() || null;
+    if (window.setCongregacaoId) {
+      window.setCongregacaoId(this.congregacaoId);
+    }
+  }
+
   async init() {
     try {
-      // Configura Firebase
-      this.firestore = firebase.firestore();
-      this.auth = firebase.auth();
+      if (!window.supabaseClient) {
+        throw new Error("Supabase Client não inicializado");
+      }
+      this.supabase = window.supabaseClient;
+      this.auth = this.supabase.auth;
+
+      const { data: { user } } = await this.auth.getUser();
       
-      // Habilita persistência offline
-      await this._enableOfflinePersistence();
-      
-      // Verifica se já tem usuário autenticado
-      if (!this.auth.currentUser) {
-        // Se não tem usuário, aguarda autenticação
+      if (!user) {
         await this._waitForAuth();
       } else {
-        this.currentUser = this.auth.currentUser;
+        this.currentUser = user;
       }
-      
-      // Carrega permissões do usuário
+
       await this._loadUserPermissions();
-      
-      // Inicia listeners em tempo real
       this._startRealtimeListeners();
-      
-      // Setup handlers de conexão
       this._setupConnectionHandlers();
-      
+
       this.isInitialized = true;
       return true;
     } catch (error) {
@@ -54,40 +64,19 @@ class UnifiedDataManager {
     }
   }
 
-  async _enableOfflinePersistence() {
-    try {
-      await this.firestore.enablePersistence({
-        synchronizeTabs: true // Sincroniza entre abas
-      });
-
-    } catch (error) {
-      if (error.code === 'failed-precondition') {
-        console.warn('⚠️ Persistência não habilitada - múltiplas abas abertas');
-      } else if (error.code === 'unimplemented') {
-        console.warn('⚠️ Persistência não suportada neste navegador');
-      } else {
-        console.error('❌ Erro ao habilitar persistência:', error);
-      }
-    }
-  }
-
   _waitForAuth() {
     return new Promise((resolve, reject) => {
-      // Timeout para evitar espera infinita
       const timeout = setTimeout(() => {
-        unsubscribe();
+        authListener.data.subscription.unsubscribe();
         reject(new Error('Timeout na autenticação'));
-      }, 10000); // 10 segundos
+      }, 10000);
 
-      const unsubscribe = this.auth.onAuthStateChanged((user) => {
-        clearTimeout(timeout);
-        unsubscribe();
-        
-        if (user) {
-          this.currentUser = user;
-          resolve(user);
-        } else {
-          reject(new Error('Usuário não autenticado'));
+      const authListener = this.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          clearTimeout(timeout);
+          authListener.data.subscription.unsubscribe();
+          this.currentUser = session.user;
+          resolve(session.user);
         }
       });
     });
@@ -95,186 +84,146 @@ class UnifiedDataManager {
 
   async _loadUserPermissions() {
     try {
-      if (!this.currentUser) {
-        throw new Error('Usuário não definido');
-      }
+      if (!this.currentUser) throw new Error('Usuário não definido');
 
-      const userDoc = await this.firestore
-        .collection('usuarios')
-        .doc(this.currentUser.uid)
-        .get();
+      const { data: userDoc, error } = await this.supabase
+        .from('usuarios')
+        .select('*')
+        .eq('id', this.currentUser.id)
+        .single();
 
-      if (userDoc.exists) {
-        const userData = userDoc.data();
+      if (!error && userDoc) {
+        const selectedCongregacao = userDoc.congregacao_id;
+
+        if (selectedCongregacao) {
+          this.setActiveCongregacaoId(selectedCongregacao);
+        }
+
+        const isAdminValue = userDoc.is_admin === true;
+        const permissoes = userDoc.permissoes || {};
+        const canWriteValue = permissoes.canWrite === true;
+
         this.userPermissions = {
-          canWrite: userData.writtenPermission === true,
-          isAdmin: userData.isAdmin === true,
-          username: userData.usuario || userData.displayName || this.currentUser.email?.split('@')[0] || 'Usuário'
+          canWrite: canWriteValue,
+          isAdmin: isAdminValue,
+          username: userDoc.nome || this.currentUser.email?.split('@')[0] || 'Usuário',
+          congregacaoId: selectedCongregacao,
+          congregacoes: [selectedCongregacao].filter(Boolean)
         };
-      
       } else {
-        // Criar documento do usuário com permissões padrão
-        const defaultUserData = {
-          usuario: this.currentUser.displayName || this.currentUser.email?.split('@')[0] || 'Usuário',
-          email: this.currentUser.email,
-          writtenPermission: false,
-          isAdmin: false,
-          criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        await this.firestore
-          .collection('usuarios')
-          .doc(this.currentUser.uid)
-          .set(defaultUserData);
-
+        // Fallback or handle later via RPC on user creation
         this.userPermissions = {
           canWrite: false,
           isAdmin: false,
-          username: defaultUserData.usuario
+          username: this.currentUser.email?.split('@')[0] || 'Usuário'
         };
-        
-     
       }
     } catch (error) {
       console.error('❌ Erro ao carregar permissões:', error);
-      // Permissões de emergência
-      this.userPermissions = { 
-        canWrite: false, 
-        isAdmin: false, 
-        username: this.currentUser?.email?.split('@')[0] || 'Usuário' 
-      };
+      this.userPermissions = { canWrite: false, isAdmin: false, username: 'Usuário' };
     }
   }
 
   // ==================== LISTENERS EM TEMPO REAL ====================
+  async _loadInitialData() {
+    // Registros
+    let queryReq = this.supabase.from('designacoes').select('*').order('data_inicio', { ascending: false }).limit(200);
+    const tId = this.congregacaoId || window.currentCongregacaoId;
+    if (tId) queryReq = queryReq.eq('congregacao_id', tId);
+
+    const { data: desigData } = await queryReq;
+    if (desigData) {
+      this.registros = desigData.map(r => this._normalizeRegistro(r.id, r));
+      this._emitEvent('registrosUpdated', { total: this.registros.length });
+    }
+
+    // Territorios
+    let queryTerr = this.supabase.from('territorios').select('*');
+    if (tId) queryTerr = queryTerr.eq('congregacao_id', tId);
+    const { data: terrData } = await queryTerr;
+    if (terrData) {
+      terrData.forEach(t => this.territorios.set(t.numero, { id: t.id, mapa: t.numero, status: t.status, bairro: t.bairro }));
+      this._emitEvent('territoriosUpdated', { total: this.territorios.size });
+    }
+  }
+
   _startRealtimeListeners() {
     try {
-      // Listener para registros (Últimos 20)
-      this.unsubscribeRegistros = this.firestore
-        .collection('designacoes')
-        .orderBy('dataInicio', 'desc')
-        .limit(20)
-        .onSnapshot(
-          (snapshot) => this._handleRegistrosSnapshot(snapshot),
-          (error) => this._handleSnapshotError('registros', error)
-        );
+      const tenantId = this.congregacaoId || window.currentCongregacaoId;
+      const filter = tenantId ? `congregacao_id=eq.${tenantId}` : undefined;
 
-      // Listener para territórios
-      this.unsubscribeTerritorios = this.firestore
-        .collection('territorios')
-        .onSnapshot(
-          (snapshot) => this._handleTerritoriosSnapshot(snapshot),
-          (error) => this._handleSnapshotError('territorios', error)
-        );
+      this._loadInitialData();
+
+      // Listener para registros
+      this.channelRegistros = this.supabase.channel('public:designacoes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'designacoes', filter }, payload => {
+          this._handleRealtimeChange('designacoes', payload);
+        })
+        .subscribe();
+
+      // Listener para territorios
+      this.channelTerritorios = this.supabase.channel('public:territorios')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'territorios', filter }, payload => {
+          this._handleRealtimeChange('territorios', payload);
+        })
+        .subscribe();
 
     } catch (error) {
       console.error('❌ Erro ao iniciar listeners:', error);
     }
   }
 
-  _handleRegistrosSnapshot(snapshot) {
-    try {
-      const changes = snapshot.docChanges();
-      let hasChanges = false;
+  _handleRealtimeChange(table, payload) {
+    if (table === 'designacoes') {
+      const data = payload.new || payload.old;
+      const id = data?.id;
+      if (!id) return;
 
-      changes.forEach(change => {
-        const docData = change.doc.data();
-        const registro = this._normalizeRegistro(change.doc.id, docData);
-
-        switch (change.type) {
-          case 'added':
-            this._addRegistro(registro, change.newIndex);
-            hasChanges = true;
-            break;
-          
-          case 'modified':
-            this._updateRegistro(registro, change.oldIndex, change.newIndex);
-            hasChanges = true;
-            break;
-          
-          case 'removed':
-            this._removeRegistro(change.doc.id);
-            hasChanges = true;
-            break;
-        }
-      });
-
-      if (hasChanges) {
-        this._emitEvent('registrosUpdated', {
-          total: this.registros.length,
-          changes: changes.length,
-          source: snapshot.metadata.fromCache ? 'cache' : 'server'
-        });
+      if (payload.eventType === 'INSERT') {
+        const registro = this._normalizeRegistro(id, payload.new);
+        this._addRegistro(registro, 0);
+      } else if (payload.eventType === 'UPDATE') {
+        const registro = this._normalizeRegistro(id, payload.new);
+        this._updateRegistro(registro);
+      } else if (payload.eventType === 'DELETE') {
+        this._removeRegistro(payload.old.id);
       }
-    } catch (error) {
-      console.error('❌ Erro ao processar snapshot de registros:', error);
+      this._emitEvent('registrosUpdated', { total: this.registros.length });
+    } 
+    else if (table === 'territorios') {
+      const data = payload.new || payload.old;
+      const numeroMapa = data?.numero;
+      if (!numeroMapa) return;
+
+      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+        this.territorios.set(numeroMapa, { id: data.id, mapa: data.numero, status: data.status, bairro: data.bairro });
+      } else if (payload.eventType === 'DELETE') {
+        this.territorios.delete(numeroMapa);
+      }
+      this._emitEvent('territoriosUpdated', { total: this.territorios.size });
     }
-  }
-
-  _handleTerritoriosSnapshot(snapshot) {
-    try {
-      snapshot.docChanges().forEach(change => {
-        const territorio = { id: change.doc.id, ...change.doc.data() };
-
-        switch (change.type) {
-          case 'added':
-          case 'modified':
-            this.territorios.set(territorio.mapa, territorio);
-            break;
-          
-          case 'removed':
-            // Encontra e remove pelo ID
-            for (const [mapa, terr] of this.territorios.entries()) {
-              if (terr.id === change.doc.id) {
-                this.territorios.delete(mapa);
-                break;
-              }
-            }
-            break;
-        }
-      });
-
-      this._emitEvent('territoriosUpdated', {
-        total: this.territorios.size,
-        source: snapshot.metadata.fromCache ? 'cache' : 'server'
-      });
-    } catch (error) {
-      console.error('❌ Erro ao processar snapshot de territórios:', error);
-    }
-  }
-
-  _handleSnapshotError(type, error) {
-    console.error(`❌ Erro no listener de ${type}:`, error);
-    this._emitEvent('snapshotError', { type, error: error.message });
   }
 
   // ==================== OPERAÇÕES CRUD - DESIGNAÇÕES ====================
   async createDesignacao(dados) {
-    if (!this.userPermissions?.canWrite) {
-      throw new Error('Sem permissão para criar registros');
-    }
+    if (!this.userPermissions?.canWrite) throw new Error('Sem permissão para criar registros');
 
     try {
-      const novoRegistro = {
+      const { data, error } = await this.supabase.from('designacoes').insert([{
         mapa: dados.mapa || dados.numeroMapa,
         bairro: dados.bairro || '',
-        designadoPara: dados.designadoPara,
-        dataInicio: dados.dataInicio,
-        dataConclusao: dados.dataConclusao || null,
+        designado_para: dados.designadoPara,
+        data_inicio: dados.dataInicio,
+        data_conclusao: dados.dataConclusao || null,
         status: dados.dataConclusao ? 'concluído' : 'em andamento',
-        criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        criadoPor: this.currentUser.uid
-      };
+        congregacao_id: this.congregacaoId || window.currentCongregacaoId
+      }]).select().single();
 
-      const docRef = await this.firestore
-        .collection('designacoes')
-        .add(novoRegistro);
+      if (error) throw error;
 
-      // Atualiza status do território se existir
-      await this._updateTerritorioStatus(novoRegistro.mapa, novoRegistro.status);
-      this._emitEvent('designacaoCriada', { id: docRef.id, mapa: novoRegistro.mapa });
-      
-      return docRef.id;
+      await this._updateTerritorioStatus(data.mapa, data.status);
+      this._emitEvent('designacaoCriada', { id: data.id, mapa: data.mapa });
+      return data.id;
     } catch (error) {
       console.error('❌ Erro ao criar designação:', error);
       throw error;
@@ -282,27 +231,31 @@ class UnifiedDataManager {
   }
 
   async updateDesignacao(id, dadosAtualizados) {
-    if (!this.userPermissions?.canWrite) {
-      throw new Error('Sem permissão para editar registros');
-    }
+    if (!this.userPermissions?.canWrite) throw new Error('Sem permissão para editar registros');
 
     try {
       const updates = {
-        ...dadosAtualizados,
+        mapa: dadosAtualizados.mapa,
+        bairro: dadosAtualizados.bairro,
+        designado_para: dadosAtualizados.designadoPara,
+        data_inicio: dadosAtualizados.dataInicio,
+        data_conclusao: dadosAtualizados.dataConclusao || null,
         status: dadosAtualizados.dataConclusao ? 'concluído' : 'em andamento',
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        atualizadoPor: this.currentUser.uid
       };
+      
+      // Limpa undefined
+      Object.keys(updates).forEach(key => updates[key] === undefined && delete updates[key]);
 
-      await this.firestore
-        .collection('designacoes')
-        .doc(id)
-        .update(updates);
+      const { data, error } = await this.supabase.from('designacoes')
+        .update(updates)
+        .eq('id', id)
+        .select().single();
 
-      // **FIX PRINCIPAL**: Sempre atualizar status do território quando há mudanças
+      if (error) throw error;
+
       const numeroMapa = updates.mapa || dadosAtualizados.mapa;
       if (numeroMapa) {
-        await this._updateTerritorioStatus(numeroMapa, updates.status);
+        await this._updateTerritorioStatus(numeroMapa, updates.status || data.status);
       }
 
       this._emitEvent('designacaoAtualizada', { id, updates });
@@ -314,24 +267,17 @@ class UnifiedDataManager {
   }
 
   async deleteDesignacao(id) {
-    if (!this.userPermissions?.canWrite) {
-      throw new Error('Sem permissão para deletar registros');
-    }
+    if (!this.userPermissions?.canWrite) throw new Error('Sem permissão para deletar registros');
 
     try {
       const registro = this.registros.find(r => r.id === id);
-      
-      await this.firestore
-        .collection('designacoes')
-        .doc(id)
-        .delete();
+      const { error } = await this.supabase.from('designacoes').delete().eq('id', id);
+      if (error) throw error;
 
-      // Libera território se existir
       if (registro) {
         await this._updateTerritorioStatus(registro.mapa, 'disponível');
       }
       this._emitEvent('designacaoDeletada', { id, mapa: registro?.mapa });
-      
       return true;
     } catch (error) {
       console.error('❌ Erro ao deletar designação:', error);
@@ -339,7 +285,7 @@ class UnifiedDataManager {
     }
   }
 
-  // ==================== OPERAÇÕES - TERRITÓRIOS (VERSÃO CORRIGIDA) ====================
+  // ==================== OPERAÇÕES - TERRITÓRIOS ====================
   getTerritorio(numeroMapa) {
     return this.territorios.get(numeroMapa) || null;
   }
@@ -350,149 +296,79 @@ class UnifiedDataManager {
 
   async _updateTerritorioStatus(numeroMapa, novoStatus) {
     try {    
-      // Primeiro, verificar se o território existe no cache local
       let territorio = this.territorios.get(numeroMapa);
       
-      // Se não está no cache, buscar direto no Firestore
       if (!territorio) {        
-        const snapshot = await this.firestore
-          .collection('territorios')
-          .where('mapa', '==', parseInt(numeroMapa)) // Garantir que seja número
-          .limit(1)
-          .get();
-        
-        if (!snapshot.empty) {
-          const doc = snapshot.docs[0];
-          territorio = { id: doc.id, ...doc.data() };
-          // Adicionar ao cache local
+        let query = this.supabase.from('territorios').select('*').eq('numero', parseInt(numeroMapa)).limit(1);
+        const tId = this.congregacaoId || window.currentCongregacaoId;
+        if (tId) query = query.eq('congregacao_id', tId);
+
+        const { data } = await query;
+        if (data && data.length > 0) {
+          territorio = { id: data[0].id, mapa: data[0].numero, status: data[0].status };
           this.territorios.set(numeroMapa, territorio);
         } else {
-          console.warn(`⚠️ Território ${numeroMapa} não existe no Firestore`);
+          console.warn(`⚠️ Território ${numeroMapa} não existe no Supabase`);
           return false;
         }
       }
 
-      // Determinar o status correto do território
       const statusTerritorio = this._determinarStatusTerritorio(novoStatus);
-      
-      // Verificar se precisa atualizar (evitar escritas desnecessárias)
-      if (territorio.status === statusTerritorio) {
-        return true;
-      }
+      if (territorio.status === statusTerritorio) return true;
 
-      // Atualizar no Firestore
-      await this.firestore
-        .collection('territorios')
-        .doc(territorio.id)
-        .update({
-          status: statusTerritorio,
-          ultimaAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
-        });
+      await this.supabase.from('territorios').update({ status: statusTerritorio }).eq('id', territorio.id);
 
-      // Atualizar cache local imediatamente
-      this.territorios.set(numeroMapa, {
-        ...territorio,
-        status: statusTerritorio,
-        ultimaAtualizacao: new Date()
-      });
+      this.territorios.set(numeroMapa, { ...territorio, status: statusTerritorio });
       return true;
 
     } catch (error) {
       console.error(`❌ Erro ao atualizar status do território ${numeroMapa}:`, error);
-
-      if (error.code === 'unavailable' || error.message.includes('network')) {
-        setTimeout(() => {
-          this._updateTerritorioStatus(numeroMapa, novoStatus);
-        }, 2000);
-      }
-      
       return false;
     }
   }
 
-  // **NOVO MÉTODO**: Lógica centralizada para determinar status do território
   _determinarStatusTerritorio(statusDesignacao) {
     switch (statusDesignacao) {
       case 'concluído':
       case 'concluido':
+        return 'concluído';
       case 'disponível':
       case 'disponivel':
         return 'disponível';
-      
       case 'em andamento':
       case 'em_andamento':
       case 'andamento':
         return 'em andamento';
-      
       default:
-        console.warn(`⚠️ Status desconhecido: ${statusDesignacao}, usando 'em andamento' como padrão`);
         return 'em andamento';
     }
   }
 
-  // **NOVO MÉTODO**: Sincronizar todos os territórios (útil para manutenção)
-  async sincronizarTerritorios() {
-
-    try {
-      const designacoes = this.registros;
-      const territoriosProcessados = new Set();
-      
-      for (const designacao of designacoes) {
-        if (!territoriosProcessados.has(designacao.mapa)) {
-          await this._updateTerritorioStatus(designacao.mapa, designacao.status);
-          territoriosProcessados.add(designacao.mapa);
-          
-          // Pequeno delay para evitar rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-      return true;
-      
-    } catch (error) {
-      console.error('❌ Erro na sincronização de territórios:', error);
-      return false;
-    }
-  }
-
   // ==================== MANIPULAÇÃO DE DADOS LOCAIS ====================
-  _normalizeRegistro(id, firebaseData) {
+  _normalizeRegistro(id, dbData) {
     return {
       id,
-      mapa: firebaseData.mapa || firebaseData.numeroMapa,
-      bairro: firebaseData.bairro || 'Desconhecido',
-      designadoPara: firebaseData.designadoPara,
-      dataInicio: firebaseData.dataInicio,
-      dataConclusao: firebaseData.dataConclusao || null,
-      status: firebaseData.status || (firebaseData.dataConclusao ? 'concluído' : 'em andamento'),
-      criadoEm: firebaseData.criadoEm,
-      atualizadoEm: firebaseData.atualizadoEm,
-      criadoPor: firebaseData.criadoPor,
-      atualizadoPor: firebaseData.atualizadoPor
+      mapa: dbData.mapa,
+      bairro: dbData.bairro,
+      designadoPara: dbData.designado_para,
+      dataInicio: dbData.data_inicio,
+      dataConclusao: dbData.data_conclusao,
+      status: dbData.status,
+      criadoEm: dbData.created_at
     };
   }
 
   _addRegistro(registro, index) {
-    // Remove duplicata se existir
     this.registros = this.registros.filter(r => r.id !== registro.id);
-    
-    // Adiciona na posição correta
     this.registros.splice(index, 0, registro);
-    
-    // Mantém apenas os 50 mais recentes
-    if (this.registros.length > 50) {
-      this.registros = this.registros.slice(0, 50);
-    }
+    if (this.registros.length > 200) this.registros = this.registros.slice(0, 200);
   }
 
-  _updateRegistro(registro, oldIndex, newIndex) {
-    // Remove da posição antiga
+  _updateRegistro(registro) {
     const existingIndex = this.registros.findIndex(r => r.id === registro.id);
     if (existingIndex !== -1) {
-      this.registros.splice(existingIndex, 1);
+      this.registros[existingIndex] = registro;
     }
-    
-    // Adiciona na nova posição
-    this.registros.splice(newIndex, 0, registro);
   }
 
   _removeRegistro(id) {
@@ -501,46 +377,27 @@ class UnifiedDataManager {
 
   // ==================== UTILITÁRIOS ====================
   _setupConnectionHandlers() {
-    window.addEventListener('online', () => {
-      this.isOnline = true;
-      this._emitEvent('connectionRestored');
-    });
-
-    window.addEventListener('offline', () => {
-      this.isOnline = false;
-      this._emitEvent('connectionLost');
-    });
+    window.addEventListener('online', () => { this.isOnline = true; this._emitEvent('connectionRestored'); });
+    window.addEventListener('offline', () => { this.isOnline = false; this._emitEvent('connectionLost'); });
   }
 
   _emitEvent(eventName, data = {}) {
-    const event = new CustomEvent(`unified:${eventName}`, {
-      detail: { ...data, timestamp: Date.now() }
-    });
+    const event = new CustomEvent(`unified:${eventName}`, { detail: { ...data, timestamp: Date.now() } });
     window.dispatchEvent(event);
   }
 
   // ==================== GETTERS PÚBLICOS ====================
-  get data() {
-    return [...this.registros];
-  }
-
-  get permissions() {
-    return { ...this.userPermissions };
-  }
-
+  get data() { return [...this.registros]; }
+  get permissions() { return { ...this.userPermissions }; }
   get stats() {
-    const emAndamento = this.registros.filter(r => !r.dataConclusao).length;
-    const concluidos = this.registros.filter(r => r.dataConclusao).length;
-    
     return {
       total: this.registros.length,
-      emAndamento,
-      concluidos,
+      emAndamento: this.registros.filter(r => !r.dataConclusao).length,
+      concluidos: this.registros.filter(r => r.dataConclusao).length,
       isOnline: this.isOnline,
       isInitialized: this.isInitialized
     };
   }
-
   get connectionStatus() {
     return {
       isOnline: this.isOnline,
@@ -550,7 +407,6 @@ class UnifiedDataManager {
     };
   }
 
-  // ==================== MÉTODOS DE DEBUG ====================
   debugInfo() {
     return {
       user: this.currentUser?.email || 'não autenticado',
@@ -563,49 +419,18 @@ class UnifiedDataManager {
   }
 
   exportData() {
-    const data = {
-      registros: this.registros,
-      territorios: Array.from(this.territorios.values()),
-      exportedAt: new Date().toISOString(),
-      user: this.currentUser?.email || 'desconhecido'
-    };
-    
-    const dataStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `designacoes_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
- 
+    // Retido p/ compatibilidade
   }
 
-  // ==================== CLEANUP ====================
   destroy() {
-    // Para listeners
-    if (this.unsubscribeRegistros) {
-      this.unsubscribeRegistros();
-      this.unsubscribeRegistros = null;
-    }
-    
-    if (this.unsubscribeTerritorios) {
-      this.unsubscribeTerritorios();
-      this.unsubscribeTerritorios = null;
-    }
-    
-    // Limpa dados
+    if (this.channelRegistros) this.supabase.removeChannel(this.channelRegistros);
+    if (this.channelTerritorios) this.supabase.removeChannel(this.channelTerritorios);
     this.registros = [];
     this.territorios.clear();
     this.isInitialized = false;
-    
   }
 }
 
-// Cria e exporta instância única
 const unifiedDataManager = new UnifiedDataManager();
-window.unifiedDataManager = unifiedDataManager; // Para debug
-
+window.unifiedDataManager = unifiedDataManager;
 export default unifiedDataManager;
