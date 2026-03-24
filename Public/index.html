@@ -336,6 +336,29 @@
         .hide-sm {
           display: none;
         }
+
+        /* Oculta colunas menos críticas na tabela em mobile */
+        #tabelaDados th:nth-child(2),
+        #tabelaDados td:nth-child(2),
+        #tabelaDados th:nth-child(5),
+        #tabelaDados td:nth-child(5) {
+          display: none;
+        }
+
+        /* Toolbar: botão de suporte fica só com ícone */
+        .btn-suporte-text { display: none; }
+      }
+
+      @media (max-width: 480px) {
+        /* Toolbar empilhada verticalmente */
+        .toolbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .toolbar-right {
+          width: 100%;
+          justify-content: flex-end;
+        }
       }
 
     </style>
@@ -365,25 +388,24 @@
 
         <button id="nav-master" class="nav-link" style="display:none" onclick="window.location.href='admin-master.html'">
           <i class="fa-solid fa-chart-line"></i>
-          Master
+          <span class="nav-text">Master</span>
         </button>
 
-       
-        <button id="nav-admin"class="nav-link" style="display:none" onclick="window.location.href='./Painel/painel.html'">
+        <button id="nav-admin" class="nav-link" style="display:none" onclick="window.location.href='./Painel/painel.html'">
           <i class="fa-solid fa-users-gear"></i>
-          Admin
+          <span class="nav-text">Admin</span>
         </button>
 
         <div class="nav-divider"></div>
         <button class="nav-link" onclick="window.location.href='Registro_S13.html'">
           <i class="fa-solid fa-plus"></i>
-          Novo
+          <span class="nav-text">Novo</span>
         </button>
 
         <div class="nav-divider"></div>
-        <button class="nav-link"onclick="handleLogout()">
+        <button class="nav-link" onclick="handleLogout()">
           <i class="fas fa-sign-out-alt"></i>
-          Sair
+          <span class="nav-text">Sair</span>
         </button>
       </nav>
     </header>
@@ -416,8 +438,8 @@
             </a>
             <a href="https://wa.me/5533988076494?text=Olá,%20preciso%20de%20suporte%20no%20sistema%20S-13.claud"
               target="_blank" class="btn btn-primary" style="width:auto;padding:0.55rem 1rem;font-size:0.85rem;">
-
-              <i class="fab fa-whatsapp" style="font-size:0.8em"></i> Suporte
+              <i class="fab fa-whatsapp" style="font-size:0.8em"></i>
+              <span class="btn-suporte-text">Suporte</span>
             </a>
 
           </div>

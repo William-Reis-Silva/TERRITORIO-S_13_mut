@@ -182,6 +182,73 @@ tbody tr:hover td {
   background-color: var(--bg-hover, #E8EBF2);
 }
 
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+
+/* Wrapper para scroll horizontal da tabela */
+.table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  /* Header: permite que os grupos quebrem linha */
+  .site-header {
+    height: auto !important;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: 0.5rem 1rem !important;
+    gap: 0.4rem;
+  }
+
+  /* yearControls vai para segunda linha, largura total */
+  #yearControls {
+    order: 3;
+    width: 100%;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.07));
+    padding: 0.4rem 0 0.1rem;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* Botões de ano menores */
+  #yearControls button {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  /* Tabela: remove margem lateral que causa overflow */
+  table {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    font-size: 0.75rem;
+  }
+
+  th, td {
+    padding: 7px 5px;
+    white-space: nowrap;
+  }
+
+  h2 {
+    padding: 12px 1rem 10px;
+    font-size: 0.95rem;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  #yearControls #prevYearBtn,
+  #yearControls #nextYearBtn {
+    font-size: 0.72rem;
+    padding: 5px 8px;
+    gap: 4px;
+  }
+
+  #serviceYear {
+    font-size: 0.78rem !important;
+  }
+}
+
 /* ── PRINT: cores fixas para PDF ─────────────────────────────── */
 @media print {
   body {
