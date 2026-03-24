@@ -15,8 +15,9 @@ body {
   min-height: 100vh;
 }
 main{
-  width: 100%;  
+  width: 100%;
   margin: 0 auto;
+  overflow-x: hidden;
   background-color: var(--bg-root, #cf2a2a);
 }
 /* ── TÍTULO ──────────────────────────────────────────────────── */
@@ -144,8 +145,9 @@ h2 {
 /* ── TABELA ──────────────────────────────────────────────────── */
 table {
   width: 100%;
+  min-width: 620px;
   border-collapse: collapse;
-  margin : 20px;
+  margin: 20px 0;
   background-color: var(--bg-surface, #fff);
   box-shadow: var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.08));
   border-radius: var(--radius, 10px);
@@ -187,8 +189,11 @@ tbody tr:hover td {
 /* Wrapper para scroll horizontal da tabela */
 .table-scroll-wrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  /* Garante que o wrapper não deixe a página inteira scrollar */
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
