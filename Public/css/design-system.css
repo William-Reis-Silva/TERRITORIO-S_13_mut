@@ -722,11 +722,31 @@ tbody td {
   .modal-box { padding: 1.25rem; border-radius: var(--radius-lg); }
   .modal-actions { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; }
+  .site-nav { gap: 0.15rem; }
+}
+
+@media (max-width: 640px) {
+  /* Toast ocupa largura toda em telas pequenas */
+  .toast-wrap {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+  /* Utilitário: ocultar em telas xs */
+  .hide-xs { display: none !important; }
 }
 
 @media (max-width: 480px) {
   .user-chip { display: none; }
   .nav-divider { display: none; }
+  /* Oculta rótulos de texto nos botões de nav — mantém apenas ícones */
+  .nav-text { display: none; }
+  /* Oculta badge de versão no logo para ganhar espaço */
+  .site-logo-badge { display: none; }
 }
 
 /* ── TEMA TOGGLE ────────────────────────────────────────── */

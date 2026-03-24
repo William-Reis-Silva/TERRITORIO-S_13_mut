@@ -845,6 +845,40 @@
           grid-template-columns: 1fr;
         }
       }
+
+      @media (max-width: 480px) {
+        .admin-content {
+          padding: 1rem 0.75rem 2rem;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 0.6rem;
+        }
+
+        .sidebar-item {
+          font-size: 0.62rem;
+          padding: 0.45rem 0.6rem;
+          min-width: 56px;
+        }
+
+        .sidebar-item i {
+          font-size: 0.8rem;
+        }
+
+        .section-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .section-header-actions {
+          width: 100%;
+        }
+
+        .section-header-actions button {
+          width: 100%;
+        }
+      }
     </style>
   </head>
 
@@ -871,27 +905,27 @@
         
         <button class="nav-link" onclick="window.location.href='../index.html'">
           <i class="fa-solid fa-home"></i>
-          Início
+          <span class="nav-text">Início</span>
         </button>
 
         <div class="nav-divider"></div>
-     
+
         <button id="nav-master" class="nav-link" style="display:none; padding-left: 15px;" onclick="window.location.href='../admin-master.html'">
           <i class="fa-solid fa-chart-line"></i>
-          Master
+          <span class="nav-text">Master</span>
         </button>
 
         <div class="nav-divider"></div>
-     
+
         <button class="nav-link" onclick="window.location.href='../S_13.html'">
-         <i class="fa-solid fa-clipboard-list"></i>
-          Relatório S-13
+          <i class="fa-solid fa-clipboard-list"></i>
+          <span class="nav-text">Relatório S-13</span>
         </button>
 
         <div class="nav-divider"></div>
         <button class="nav-link" onclick="handleLogout()">
           <i class="fas fa-sign-out-alt"></i>
-          Sair
+          <span class="nav-text">Sair</span>
         </button>
       </nav>
     </header>
